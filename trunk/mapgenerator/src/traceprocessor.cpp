@@ -360,9 +360,6 @@ namespace mapgeneration
 			return path_entry._position;
 		}*/
 		
-		
-		
-		
 		GeoCoordinate entry_coordinate = _tile_cache->
 			get(Node::tile_id(path_entry._node_id))->
 			nodes()[Node::local_id(path_entry._node_id)].second;
@@ -515,7 +512,7 @@ namespace mapgeneration
 			{
 				double points = build_connections(path, path_iter, only_connected);
 				// If we set this to 1000 the programm need lots of memory!!!!! ????
-				points += 10.0;
+				//points += 10.0;
 				points -= distance_from_to(current_entry->_node_id, path_iter->_node_id) / 10;
 				points -= angle_difference(current_entry->_node_id, path_iter->_node_id);
 								
@@ -600,6 +597,7 @@ namespace mapgeneration
 				(path_iter->_position < start_position + 50.0))
 			{
 				double points = build_connections(path, path_iter, true);
+				points -= path_iter->_position - start_position;
 				
 //				std::cout << points << " points.";
 				
@@ -644,6 +642,7 @@ namespace mapgeneration
 					(path_iter->_position < start_position + 50.0))
 				{
 					double points = build_connections(path, path_iter, false);
+					points -= path_iter->_position - start_position;
 					
 //					std::cout << points << " points.";
 					
