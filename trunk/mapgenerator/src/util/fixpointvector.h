@@ -43,13 +43,13 @@ namespace mapgeneration_util
 					
 					iterator next_pair();
 				
-					bool operator==(const iterator& iter);
-					bool operator!=(const iterator& iter);
+					inline bool operator==(const iterator& iter);
+					inline bool operator!=(const iterator& iter);
 					iterator operator++();
-					std::pair<bool, T_ElemType>& operator*();
-					std::pair<bool, T_ElemType>* operator->();
+					inline std::pair<bool, T_ElemType>& operator*();
+					inline std::pair<bool, T_ElemType>* operator->();
 				
-					int position_number();
+					inline int position_number();
 			
 				private:
 					std::pair<bool, T_ElemType>* _start_position;
@@ -68,13 +68,13 @@ namespace mapgeneration_util
 					
 					const_iterator next_pair();
 				
-					bool operator==(const const_iterator& iter);
-					bool operator!=(const const_iterator& iter);
+					inline bool operator==(const const_iterator& iter);
+					inline bool operator!=(const const_iterator& iter);
 					const_iterator operator++();
-					const std::pair<bool, T_ElemType>& operator*();
-					const std::pair<bool, T_ElemType>* operator->();
+					inline const std::pair<bool, T_ElemType>& operator*();
+					inline const std::pair<bool, T_ElemType>* operator->();
 				
-					int position_number();
+					inline int position_number();
 			
 				private:
 					std::pair<bool, T_ElemType>* _start_position;
@@ -93,7 +93,7 @@ namespace mapgeneration_util
 			 * \brief Returns an iterator pointing at the first element.
 			 * @return An iterator pointing at the first element.
 			 */
-			iterator
+			inline iterator
 			begin();
 			
 			
@@ -101,7 +101,7 @@ namespace mapgeneration_util
 			 * \brief Returns an const_iterator pointing at the first element.
 			 * @return An const_iterator pointing at the first element.
 			 */
-			const_iterator
+			inline const_iterator
 			begin() const;
 	
 			
@@ -109,14 +109,14 @@ namespace mapgeneration_util
 			 * \brief Returns the current capacity of the FixpointVector.
 			 * @return The current capacity of the FixpointVector.
 			 */
-			size_t
+			inline size_t
 			capacity() const;
 			
 			
 			/**
 			 * \brief Removes all elements from the FixpointVector.
 			 */
-			void
+			inline void
 			clear();
 			
 			
@@ -133,7 +133,7 @@ namespace mapgeneration_util
 			 * \brief Returns an iterator that points "behind" the last element.
 			 * @return A pointer that points "behind" the last element.
 			 */
-			iterator
+			inline iterator
 			end();
 
 
@@ -141,7 +141,7 @@ namespace mapgeneration_util
 			 * \brief Returns an iterator that points "behind" the last element.
 			 * @return A pointer that points "behind" the last element.
 			 */			
-			const_iterator
+			inline const_iterator
 			end() const;
 			
 			
@@ -171,7 +171,7 @@ namespace mapgeneration_util
 			 * (false, T_ElemType) otherwise
 			 * @param pos The position of the element to return.
 			 */
-			std::pair<bool, T_ElemType>&
+			inline std::pair<bool, T_ElemType>&
 			operator[] (int pos);
 
 
@@ -181,7 +181,7 @@ namespace mapgeneration_util
 			 * @return (true, T_ElemType) if element is valid, 
 			 * (false, T_ElemType) otherwise
 			 */
-			const std::pair<bool, T_ElemType>&
+			inline const std::pair<bool, T_ElemType>&
 			operator[] (int pos) const;
 
 
@@ -198,7 +198,7 @@ namespace mapgeneration_util
 			 * FixpointVector.
 			 * @return Current number of elements.
 			 */
-			size_t 
+			inline size_t 
 			size() const;
 
 		
@@ -207,7 +207,7 @@ namespace mapgeneration_util
 			 * of holes in the vector.
 			 * @return Size including holes.
 			 */
-			size_t
+			inline size_t
 			size_including_holes() const;
 			
 			
@@ -216,7 +216,7 @@ namespace mapgeneration_util
 			 * accurate.
 			 * @return Memory usage in byte.
 			 */
-			int
+			inline int
 			size_of() const;
 
 	
@@ -249,7 +249,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	typename FixpointVector<T_ElemType>::iterator
+	inline typename FixpointVector<T_ElemType>::iterator
 	FixpointVector<T_ElemType>::iterator::next_pair()
 	{
 		++_position;
@@ -259,7 +259,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	bool 
+	inline bool 
 	FixpointVector<T_ElemType>::iterator::operator==(const iterator& a)
 	{
 		if (a._position == _position)
@@ -270,7 +270,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	bool 
+	inline bool 
 	FixpointVector<T_ElemType>::iterator::operator!=(const iterator& a)
 	{
 		return !operator==(a);
@@ -281,18 +281,23 @@ namespace mapgeneration_util
 	typename FixpointVector<T_ElemType>::iterator
 	FixpointVector<T_ElemType>::iterator::operator++()
 	{
-		do
+		/*do
 		{
 			++_position;
 		} while (_position >= _start_position && _position < _end_position && 
-			(*_position).first == false);
+			(*_position).first == false);*/
+		
+		do
+		{
+			++_position;
+		} while (_position < _end_position && (*_position).first == false);
 	
 		return *this;
 	}
 
 
 	template <typename T_ElemType>
-	std::pair<bool, T_ElemType>&
+	inline std::pair<bool, T_ElemType>&
 	FixpointVector<T_ElemType>::iterator::operator*()
 	{
 		return *_position;
@@ -300,7 +305,7 @@ namespace mapgeneration_util
 	
 	
 	template <typename T_ElemType>
-	std::pair<bool, T_ElemType>*
+	inline std::pair<bool, T_ElemType>*
 	FixpointVector<T_ElemType>::iterator::operator->()
 	{
 		return _position;
@@ -308,7 +313,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	int
+	inline int
 	FixpointVector<T_ElemType>::iterator::position_number()
 	{
 		return _position - _start_position;
@@ -332,7 +337,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	typename FixpointVector<T_ElemType>::const_iterator
+	inline typename FixpointVector<T_ElemType>::const_iterator
 	FixpointVector<T_ElemType>::const_iterator::next_pair()
 	{
 		++_position;
@@ -342,7 +347,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	bool 
+	inline bool 
 	FixpointVector<T_ElemType>::const_iterator::operator==(const const_iterator& a)
 	{
 		if (a._position == _position)
@@ -353,7 +358,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	bool 
+	inline bool 
 	FixpointVector<T_ElemType>::const_iterator::operator!=(const const_iterator& a)
 	{
 		return !operator==(a);
@@ -364,18 +369,23 @@ namespace mapgeneration_util
 	typename FixpointVector<T_ElemType>::const_iterator
 	FixpointVector<T_ElemType>::const_iterator::operator++()
 	{
-		do
+		/*do
 		{
 			++_position;
 		} while (_position >= _start_position && _position < _end_position && 
-			(*_position).first == false);
-	
+			(*_position).first == false);*/
+			
+		do
+		{
+			++_position;
+		} while (_position < _end_position && (*_position).first == false);
+		
 		return *this;
 	}
 
 
 	template <typename T_ElemType>
-	const std::pair<bool, T_ElemType>&
+	inline const std::pair<bool, T_ElemType>&
 	FixpointVector<T_ElemType>::const_iterator::operator*()
 	{
 		return *_position;
@@ -383,7 +393,7 @@ namespace mapgeneration_util
 	
 	
 	template <typename T_ElemType>
-	const std::pair<bool, T_ElemType>*
+	inline const std::pair<bool, T_ElemType>*
 	FixpointVector<T_ElemType>::const_iterator::operator->()
 	{
 		return _position;
@@ -391,7 +401,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	int
+	inline int
 	FixpointVector<T_ElemType>::const_iterator::position_number()
 	{
 		return _position - _start_position;
@@ -411,7 +421,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	typename FixpointVector<T_ElemType>::iterator
+	inline typename FixpointVector<T_ElemType>::iterator
 	FixpointVector<T_ElemType>::begin()
 	{
 		std::pair<bool, T_ElemType>* first_element
@@ -421,7 +431,7 @@ namespace mapgeneration_util
 	
 	
 	template <typename T_ElemType>
-	typename FixpointVector<T_ElemType>::const_iterator
+	inline typename FixpointVector<T_ElemType>::const_iterator
 	FixpointVector<T_ElemType>::begin() const
 	{
 		const std::pair<bool, T_ElemType>* first_element
@@ -431,7 +441,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	size_t FixpointVector<T_ElemType>::capacity() const
+	inline size_t FixpointVector<T_ElemType>::capacity() const
 	{
 		/** @todo Check if this works correctly!!! */
 		return std::vector< std::pair<bool, T_ElemType> >::capacity() 
@@ -440,7 +450,7 @@ namespace mapgeneration_util
 	
 	
 	template <typename T_Elem>
-	void
+	inline void
 	FixpointVector<T_Elem>::clear()
 	{
 		std::vector< std::pair<bool, T_Elem> >::clear();
@@ -482,7 +492,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	typename FixpointVector<T_ElemType>::iterator
+	inline typename FixpointVector<T_ElemType>::iterator
 	FixpointVector<T_ElemType>::end()
 	{
 		std::pair<bool, T_ElemType>* last_element
@@ -492,7 +502,7 @@ namespace mapgeneration_util
 	
 	
 	template <typename T_ElemType>
-	typename FixpointVector<T_ElemType>::const_iterator
+	inline typename FixpointVector<T_ElemType>::const_iterator
 	FixpointVector<T_ElemType>::end() const
 	{
 		const std::pair<bool, T_ElemType>* last_element
@@ -544,7 +554,7 @@ namespace mapgeneration_util
 
 	
 	template <typename T_Elem>
-	std::pair<bool, T_Elem>&
+	inline std::pair<bool, T_Elem>&
 	FixpointVector<T_Elem>::operator[] (int pos)
 	{
 		return std::vector< std::pair<bool, T_Elem> >::operator[](pos);
@@ -552,7 +562,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_Elem>
-	const std::pair<bool, T_Elem>&
+	inline const std::pair<bool, T_Elem>&
 	FixpointVector<T_Elem>::operator[] (int pos) const
 	{
 		return std::vector< std::pair<bool, T_Elem> >::operator[](pos);
@@ -583,7 +593,7 @@ namespace mapgeneration_util
 	
 
 	template <typename T_ElemType>
-	size_t
+	inline size_t
 	FixpointVector<T_ElemType>::size() const
 	{
 		return std::vector<std::pair<bool, T_ElemType> >::size() 
@@ -592,7 +602,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	size_t
+	inline size_t
 	FixpointVector<T_ElemType>::size_including_holes() const
 	{
 		return std::vector<std::pair<bool, T_ElemType> >::size();
@@ -600,7 +610,7 @@ namespace mapgeneration_util
 	
 	
 	template <typename T_ElemType>
-	int
+	inline int
 	FixpointVector<T_ElemType>::size_of() const
 	{
 		return (this->size() * sizeof(T_ElemType)) + (_free_positions.size() * sizeof(int)) + sizeof(FixpointVector<T_ElemType>);

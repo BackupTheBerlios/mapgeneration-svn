@@ -22,7 +22,10 @@ namespace mapgeneration
   /**
    * Constructors/Destructors
    */
-  GeoCoordinate::GeoCoordinate(){}
+  GeoCoordinate::GeoCoordinate()
+  : _latitude(0.0), _longitude(0.0), _altitude(0.0)
+  {
+  }
   
   
   GeoCoordinate::GeoCoordinate(double latitude, double longitude, double altitude)
@@ -57,22 +60,39 @@ namespace mapgeneration
 
 		return direction;
 	}
-  
-  
-  double
-  GeoCoordinate::distance(GeoCoordinate geo_coordinate) const
+	
+	
+	double
+	GeoCoordinate::approximated_distance(GeoCoordinate geo_coordinate) const
 	{
-	  double longitude_difference = _longitude - geo_coordinate.get_longitude();
-	  double latitude2 = geo_coordinate.get_latitude();
+		double EARTH_UMFANG = 40010000.0;
+		
+		double longitude_difference = _longitude - geo_coordinate.get_longitude();
+		double latitude_difference = _latitude - geo_coordinate.get_latitude();
+		
+		double dlat = latitude_difference / 360.0 * EARTH_UMFANG;
+		double dlong = longitude_difference / 360.0 * EARTH_UMFANG * cos(_latitude * PI / 180);
+
+		return sqrt(dlat * dlat + dlong * dlong);
+	}
+  
+  
+	double
+	GeoCoordinate::distance(GeoCoordinate geo_coordinate) const
+	{
+		double EARTH_RADIUS = 6371.0;
+		
+		double longitude_difference = _longitude - geo_coordinate.get_longitude();
+		double latitude2 = geo_coordinate.get_latitude();
 	  
-	  /* calculates the distance between two GeoCoordinates with the
-	   * following formula */
-	   
-	   /* might be 0 before division: ask Rene! */
-	  return 1852 * 60 * acos(
-	  		(sin(_latitude * PI / 180) * sin(latitude2 * PI / 180))
-				+ (cos(_latitude * PI / 180) * cos(latitude2 * PI / 180) * cos(longitude_difference * PI / 180))
-			) * 180 /PI;
+		/* calculates the distance between two GeoCoordinates with the
+		 * following formula */
+
+		/* might be 0 before division: ask Rene! */		
+		return (1852 * 60 * acos(
+			(sin(_latitude * PI / 180) * sin(latitude2 * PI / 180))
+			+ (cos(_latitude * PI / 180) * cos(latitude2 * PI / 180) * cos(longitude_difference * PI / 180))
+			) * 180 /PI);
 	}
 
 
@@ -119,7 +139,7 @@ namespace mapgeneration
 		 *  calculation  of the distance between  the current GeoCoordinate 
 		 *  and the calculated tile border coordinate
 		 */
-		return distance(compare_point);
+		return approximated_distance(compare_point);
 	}
   
 

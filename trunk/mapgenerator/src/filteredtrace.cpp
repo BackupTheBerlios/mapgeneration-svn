@@ -25,7 +25,8 @@ namespace mapgeneration
 		_length_m(-1.0),
 		_needed_tile_ids(),
 		_points_from_previous_start(),
-		_service_list(service_list)
+		_service_list(service_list),
+		_cached_size(0)
 	{
 	}
 
@@ -37,7 +38,8 @@ namespace mapgeneration
 		_length_m(filtered_trace._length_m),
 		_needed_tile_ids(filtered_trace._needed_tile_ids),
 		_points_from_previous_start(filtered_trace._points_from_previous_start),
-		_service_list(filtered_trace._service_list)
+		_service_list(filtered_trace._service_list),
+		_cached_size(filtered_trace._cached_size)
 	{
 		/** @todo Check if this copy constructor works. */
 	}
@@ -162,7 +164,7 @@ namespace mapgeneration
 	GPSPoint
 	FilteredTrace::gps_point_at(double meters)
 	{
-		if (size() <= 1)
+		if (_cached_size <= 1)
 		{
 			mlog(MLog::error, "FilteredTrace") << "Empty FilteredTrace: "
 				<< "Cannot calculate new gps point at " << meters << "m!\n";
@@ -207,7 +209,8 @@ namespace mapgeneration
 		double* output_before_iter_meters,
 		double* output_after_iter_meters)
 	{
-		if (size() <= 0)
+		/** @todo exception?! */
+		if (_cached_size <= 0 || input_meters < 0.0 || input_meters > length_m())
 		{
 			if (output_before_iter != 0)
 				*output_before_iter = end();
@@ -226,6 +229,10 @@ namespace mapgeneration
 
 		double meters_per_entry = length_m() / static_cast<double>(_fast_access.size());
 		int entry = static_cast<int>(floor(input_meters / meters_per_entry));
+		
+		if (entry >= _fast_access.size())
+			entry = _fast_access.size() - 1;
+		
 		double current_meters = entry * meters_per_entry;
 
 		const_iterator iter = _fast_access[entry];
@@ -493,26 +500,31 @@ namespace mapgeneration
 	void
 	FilteredTrace::precompute_data()
 	{
-		std::cout << std::endl << "Precomputing data structures...";
+//		std::cout << std::endl << "Precomputing data structures...";
+
+		_cached_size = size();
 		
-		_length_m = length_m(begin(), --(end()));
-		
-		if (size() <= 0)
+		if (_cached_size <= 0)
 		{
 			_fast_access.clear();
-			std::cout << "ready (size <= 0)" << std::endl;
+//			std::cout << "ready (size <= 0)" << std::endl;
+			
+			_length_m = 0.0;
+			
 			return;
 		}
 
+		_length_m = length_m(begin(), --(end()));
+		
 		double size_factor;
 		_service_list->get_service_value("filteredtrace.size_factor", size_factor);
 		
-		std::cout << std::endl;
-		std::cout << "\tsize_factor = " << size_factor << std::endl;
-		std::cout << "\tfiltered_trace.size = " << size() << std::endl;
+//		std::cout << std::endl;
+//		std::cout << "\tsize_factor = " << size_factor << std::endl;
+//		std::cout << "\tfiltered_trace.size = " << size() << std::endl;
 
 		_fast_access.resize(static_cast<int>(ceil(static_cast<double>(size()) * size_factor)));
-		std::cout << "\tfast_access.size = " << _fast_access.size() << std::endl;
+//		std::cout << "\tfast_access.size = " << _fast_access.size() << std::endl;
 		_fast_access[0] = begin();
 
 		const_iterator iter = begin();
@@ -531,22 +543,22 @@ namespace mapgeneration
 		double current_meters = 0.0;
 		double meters_per_entry = length_m() / static_cast<double>(_fast_access.size());
 		
-		std::cout << "\tlength = " << length_m() << std::endl;
-		std::cout << "\tmeters_per_entry = " << meters_per_entry << std::endl;
+//		std::cout << "\tlength = " << length_m() << std::endl;
+//		std::cout << "\tmeters_per_entry = " << meters_per_entry << std::endl;
 
 		for (; iter != iter_end; ++iter, ++previous_iter, ++iter_index)
 		{
 			current_meters += length_m(previous_iter, iter);
-			std::cout << "\t\tcurrent_meters = " << current_meters << std::endl;
-			for (; current_meters > meters_per_entry * index; ++index)
+//			std::cout << "\t\tcurrent_meters = " << current_meters << std::endl;
+			for (; current_meters > meters_per_entry * index && index < _fast_access.size(); ++index)
 			{
 				_fast_access[index] = previous_iter;
-				std::cout << "\t_fast_access[" << index << "] at meter "
-					<< meters_per_entry * index << " = " << iter_index - 1 << std::endl;
+//				std::cout << "\t_fast_access[" << index << "] at meter "
+//					<< meters_per_entry * index << " = " << iter_index - 1 << std::endl;
 			}
 		}
 
-		std::cout << std::endl;
+//		std::cout << std::endl;
 	}
 	
 	

@@ -265,6 +265,9 @@ namespace mapgeneration
 			pubsub::ServiceList* _service_list;
 			
 			
+			std::list<GPSPoint>::size_type _cached_size;
+			
+			
 			double
 			length_m(const const_iterator& begin_incl,
 				const const_iterator& end_incl) const;

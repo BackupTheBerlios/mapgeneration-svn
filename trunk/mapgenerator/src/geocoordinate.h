@@ -67,6 +67,10 @@ namespace mapgeneration
 			
 			double
 			abs() const;
+			
+			
+			double
+			approximated_distance(GeoCoordinate geo_coordinate) const;
 
 
 			/**

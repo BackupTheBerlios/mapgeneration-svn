@@ -33,9 +33,10 @@ namespace mapgeneration
 		std::vector<Node::Id> cluster_nodes;
 		
 		FixpointVector<Node>::const_iterator iter = nodes().begin();
-		for(; iter != nodes().end(); ++iter)
+		FixpointVector<Node>::const_iterator iter_end = nodes().end();
+		for(; iter != iter_end; ++iter)
 		{
-			double distance = iter->second.distance(gps_point);
+			double distance = iter->second.approximated_distance(gps_point);
 			double angle_difference = iter->second.angle_difference(gps_point);
 			if ((distance <= search_radius) && (angle_difference <= search_angle))
 			{
@@ -64,7 +65,7 @@ namespace mapgeneration
 		FixpointVector<Node>::iterator iter = nodes().begin();
 		for(; iter != nodes().end(); ++iter)
 		{
-			double distance = iter->second.distance(geo_coordinate);
+			double distance = iter->second.approximated_distance(geo_coordinate);
 			if (distance <= search_radius)
 			{
 				nearest_nodes_vector.push_back(iter.position_number());
