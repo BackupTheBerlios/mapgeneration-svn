@@ -31,6 +31,7 @@ mainobjects := util/configuration.o util/pubsub/servicelist.o \
 	dbconnection.o tilecache.o
 
 # Directory definitions
+top_builddir := @top_builddir@
 bindir := @top_builddir@bin
 srcdir := @top_builddir@src
 guibindir = $(bindir)/gui/
@@ -43,7 +44,7 @@ guibinimagesdir = $(guibindir)/images/
 
 # Variables from autoconf
 CXX = @CXX@
-CPPFLAGS = -I$(srcdir) @CPPFLAGS@
+CPPFLAGS = -I$(srcdir) -I$(top_builddir) @CPPFLAGS@
 CXXFLAGS = @CXXFLAGS@
 DEFS = @DEFS@
 LDFLAGS = @LDFLAGS@

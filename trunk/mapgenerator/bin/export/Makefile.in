@@ -14,13 +14,14 @@ mainobjects :=  util/controlledthread.o util/mlog.o \
 	tile.o tilecache.o
 
 # Directory definitions
+top_builddir := @top_builddir@
 bindir := @top_builddir@bin
 srcdir := @top_builddir@src
 exportsrcdir = $(srcdir)/export
 
 # Variables from autoconf
 CXX = @CXX@
-CPPFLAGS = -I$(srcdir) @CPPFLAGS@
+CPPFLAGS = -I$(srcdir) -I$(top_builddir) @CPPFLAGS@
 CXXFLAGS = @CXXFLAGS@
 DEFS = @DEFS@
 LDFLAGS = @LDFLAGS@

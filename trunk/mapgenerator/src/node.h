@@ -9,6 +9,14 @@
 #ifndef NODE_H
 #define NODE_H
 
+#ifdef HAVE_CONFIG_H
+	#include "config.h"
+#endif
+
+#ifdef HAVE_STDINT_H
+	#include "stdint.h"
+#endif
+
 #include <iostream>
 #include <vector>
 #include "geocoordinate.h"
@@ -44,6 +52,7 @@ namespace mapgeneration
 		
 		
 			typedef std::pair<unsigned int, unsigned int> Id;
+			typedef uint64_t newID;
 		
 
 			/**

@@ -11,7 +11,7 @@
 AC_INIT(mapgenerator, 0.1)
 AC_CONFIG_SRCDIR([README])
 AC_CONFIG_AUX_DIR([./auxs])
-#AC_CONFIG_HEADER([src/config.h])
+AC_CONFIG_HEADER([config.h])
 
 
 # Checking host os
