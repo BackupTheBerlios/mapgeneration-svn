@@ -47,8 +47,11 @@ namespace mapgeneration
 					double _position;
 					Node::Id _node_id;
 					int _path_id;
+					int _time_stamp;
 					
-					std::vector<PathConnection> _connections;
+					double _points;
+										
+					PathEntry* _connection;
 					
 					
 					bool
@@ -62,30 +65,16 @@ namespace mapgeneration
 					
 					
 					PathEntry()
-					: _position(0), _path_id(0), _node_id(0), _connections()
+					: _position(0), _path_id(0), _node_id(0), _connection(0), _time_stamp(0)
 					{
 					}
 					
 					PathEntry(const double position, const int path_id, const Node::Id node_id)
-					: _position(position), _path_id(path_id), _node_id(node_id), _connections()
+					: _position(position), _path_id(path_id), _node_id(node_id), _connection(0), _time_stamp(0)
 					{
 					}
 			};
-			
-			
-			class PathConnection
-			{
-				public:
-				
-					double _points;
-					PathEntry* _destination;
-					
-					
-					PathConnection()
-					: _points(0), _destination(0)
-					{						
-					}
-			};
+
 		
 		
 		public:	
@@ -188,6 +177,11 @@ namespace mapgeneration
 			 * @brief The TraceProcessorLogger for this TraceProcessor
 			 */
 			TraceLogWriter* _trace_log;
+			
+			
+			double
+			build_connections(std::list<PathEntry>& path,
+				std::list<PathEntry>::iterator path_iter, bool only_connected);
 
 
 			/**
@@ -218,7 +212,7 @@ namespace mapgeneration
 			 * tracelog is started.
 			 */
 			void
-			TraceProcessor::create_needed_tiles();
+			create_needed_tiles();
 		
 
 			/**
@@ -230,6 +224,11 @@ namespace mapgeneration
 			 */
 			Node::Id
 			create_new_node(GPSPoint& gps_point);
+			
+			
+			double
+			TraceProcessor::distance_from_to(Node::Id node_id_1, 
+				Node::Id node_id_2);
 
 			
 			/**
@@ -255,6 +254,11 @@ namespace mapgeneration
 			
 			
 			void
+			TraceProcessor::rebuild_path(std::list<PathEntry>& path,
+				PathEntry* start_entry);
+			
+			
+			void
 			simplify_path(Node::Id previous_node_id, std::list<PathEntry>& path);
 			
 			
@@ -266,6 +270,9 @@ namespace mapgeneration
 			 */
 			TileCache::Pointer
 			tile(Node::Id node_id);
+			
+			
+			int _time;
 	};
 
 	

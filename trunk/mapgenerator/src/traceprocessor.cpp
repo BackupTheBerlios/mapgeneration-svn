@@ -18,7 +18,7 @@ namespace mapgeneration
 	TraceProcessor::TraceProcessor(unsigned int id, TileManager* tile_manager,
 		pubsub::ServiceList* service_list, FilteredTrace& filtered_trace)
 	: _filtered_trace(filtered_trace), _id(id), _service_list(service_list),
-		_tile_manager(tile_manager), _trace_log(0)
+		_tile_manager(tile_manager), _trace_log(0), _time(0)
 	{
 		_tile_cache = _tile_manager->get_tile_cache();
 
@@ -38,7 +38,7 @@ namespace mapgeneration
 			"traceprocessor.search_max_angle_difference_pi", _search_max_angle_difference_pi
 		);
 		
-		_search_max_angle_difference_pi = 0.3;
+		_search_max_angle_difference_pi = 0.4;
 		
 		mlog(MLog::debug, "TraceProcessor") << "Initialised (" << _id << ").\n";		
 	}
@@ -150,6 +150,17 @@ namespace mapgeneration
 //		_trace_log->new_node(new_node_id, new_node);
 		
 		return new_node_id;
+	}
+	
+	
+	double
+	TraceProcessor::distance_from_to(Node::Id node_id_1, Node::Id node_id_2)
+	{
+		TileCache::Pointer tile_1_pointer = _tile_cache->get(Node::tile_id(node_id_1));
+		TileCache::Pointer tile_2_pointer = _tile_cache->get(Node::tile_id(node_id_2));		
+		
+		return (tile_1_pointer->nodes()[Node::local_id(node_id_1)].second.
+			distance(tile_2_pointer->nodes()[Node::local_id(node_id_2)].second));
 	}
 	
 	
@@ -383,203 +394,243 @@ namespace mapgeneration
 	
 	
 	void
+	TraceProcessor::rebuild_path(std::list<PathEntry>& path,
+		PathEntry* start_entry)
+	{
+		std::list<PathEntry> new_path;
+		
+		std::cout << "Rebuilding path:\n";
+		
+		PathEntry* position = start_entry;
+		PathEntry* next_position = 0;
+		while (position != 0)
+		{
+			std::cout << Node::tile_id(position->_node_id) << ", " << 
+				Node::local_id(position->_node_id) << "\n";
+				
+			next_position = position->_connection;
+			position->_connection = 0;
+			new_path.push_back(*position);
+			
+			position = next_position;
+		}
+		
+		std::cout << "New path ready!\n";
+		
+		path.clear();
+		path.insert(path.end(), new_path.begin(), new_path.end());
+	}
+	
+	
+	double
+	TraceProcessor::build_connections(std::list<PathEntry>& path,
+		std::list<PathEntry>::iterator path_iter, bool only_connected)
+	{
+		std::cout << Node::tile_id(path_iter->_node_id) << ", " << 
+							Node::local_id(path_iter->_node_id) << "\n";
+		if (path_iter->_time_stamp == _time)
+			return path_iter->_points;
+		
+		std::list<PathEntry>::iterator current_entry = path_iter;
+		current_entry->_time_stamp = _time;
+		
+		std::list<PathEntry>::iterator destination_iter = path.end();
+		--destination_iter;
+		if (path_iter == destination_iter)
+		{
+			//std::cout << "Reached destination point!";
+			current_entry->_connection = 0;
+			current_entry->_points = 100000.0;
+			
+			return current_entry->_points;
+		}
+		
+		current_entry->_connection = 0;
+		current_entry->_points = -100000.0;
+		
+		TileCache::Pointer tile_pointer = _tile_cache->get(Node::tile_id(current_entry->_node_id));
+		std::vector<Node::Id>::const_iterator next_nodes_iter = 
+			tile_pointer->nodes()[Node::local_id(current_entry->_node_id)].second.next_node_ids().begin();
+		std::vector<Node::Id>::const_iterator next_nodes_iter_end =
+			tile_pointer->nodes()[Node::local_id(current_entry->_node_id)].second.next_node_ids().end();
+		for (; next_nodes_iter != next_nodes_iter_end; ++next_nodes_iter)
+		{
+			std::list<PathEntry>::iterator path_iter = path.begin();
+			std::list<PathEntry>::iterator path_iter_end = path.end();
+			for (; (path_iter != path_iter_end) && 
+				(path_iter->_node_id != *next_nodes_iter); ++path_iter);
+			
+			if (path_iter != path_iter_end)
+			{
+				std::cout << "C-->\n";
+				double points = build_connections(path, path_iter, only_connected);
+				std::cout << "C<--\n";
+			
+				std::cout << "Points: " << points;
+				
+				points -= distance_from_to(current_entry->_node_id, path_iter->_node_id) / 10;
+				
+				std::cout << "  Modified to " << points;
+					
+				std::cout << "\n";
+				
+				if (points > current_entry->_points)
+				{
+					current_entry->_points = points;
+					current_entry->_connection = &(*path_iter);
+				}
+			}
+		}
+		
+		if (!only_connected)
+		{
+			++path_iter;
+			std::list<PathEntry>::iterator path_iter_end = path.end();
+			while ((path_iter != path_iter_end) && 
+				(path_iter->_position < current_entry->_position + 50.0))
+			{
+				bool connected =
+					connection_from_to(current_entry->_node_id, path_iter->_node_id);
+					
+	//			if ((only_connected && connected) || !only_connected)
+				if (!connected)
+				{
+					std::cout << "-->\n";
+					double points = build_connections(path, path_iter, only_connected);
+					std::cout << "<--\n";
+				
+					std::cout << "Points: " << points;
+										
+					points -= 1000;
+					
+					points -= distance_from_to(current_entry->_node_id, path_iter->_node_id);
+					
+					std::cout << "  Modified to " << points;
+	
+					std::cout << "\n";
+					
+					if (points > current_entry->_points)
+					{
+						current_entry->_points = points;
+						current_entry->_connection = &(*path_iter);
+					}
+				}
+				
+				++path_iter;
+			}
+		}
+
+		return current_entry->_points;
+	}
+	
+	
+	void
 	TraceProcessor::simplify_path(Node::Id start_node_id, 
 		std::list<PathEntry>& path)
 	{
-		if (start_node_id != 0)
-		{
-			
-		} else
-		{
-		}
 		
-		/*
-		 * Very short pathes are simplified by clearing:
-		 * we don't want that short connections.
-		 */
-/*		if ((path.back()._position - path.front()._position) < 50.0)
+		if (path.size() < 2)
 		{
-			//std::cout << "Simplifying by clearing, path has a total length of just "
-			//	<< path.back()._position - path.front()._position << "\n";
-			path.clear();
+			std::cout << "PATH IS TOO SHORT!!!";
 			return;
 		}
 		
-		std::list< std::list< std::list<PathEntry>::iterator > > possible_paths;
-		
-		std::list<PathEntry>::iterator init_iter = path.begin();
-		std::list<PathEntry>::iterator path_end_iter = path.end();
-		int first_path_id = init_iter->_path_id;
-		std::list< std::list<PathEntry>::iterator > new_path;
-		new_path.push_back(init_iter);
-		possible_paths.push_back(new_path);
-		//std::cout << "Added path " << possible_paths.back().back()->_path_id << " to possible pathes.\n";
-		++init_iter;
-		
-		while ((init_iter != path_end_iter) && 
-			(first_path_id != init_iter->_path_id) &&
-			((init_iter->_position < (path.front()._position+20.0))))
-		{
-			new_path.clear();
-			new_path.push_back(init_iter);
-			possible_paths.push_back(new_path);
-			//std::cout << "Added path " << possible_paths.back().back()->_path_id << " to possible pathes.\n";
-			++init_iter;
-		}
-		
-		//std::cout << "Created " << possible_paths.size() << " initial possible pathes.\n";
-		
-		std::list< std::list< std::list<PathEntry>::iterator > > new_possible_paths;
-		bool end = false;
-		while (!end)
-		{
-			end = true;
-			
-			std::list< std::list< std::list<PathEntry>::iterator > >::iterator ppath_iter = possible_paths.begin();
-			for (; ppath_iter != possible_paths.end(); ++ppath_iter)
-			{
-				bool created_longer_path = false;
-				
-				std::vector<int> used_path_ids;
-				std::list<PathEntry>::iterator pos_iter = ppath_iter->back();
-				int last_path_id = ppath_iter->back()->_path_id;
-				++pos_iter;
-				while (pos_iter!=path.end() && pos_iter->_path_id!=last_path_id &&
-					std::find(used_path_ids.begin(), used_path_ids.end(), pos_iter->_path_id)==used_path_ids.end() &&
-					pos_iter->_position<ppath_iter->back()->_position+20.0) // DOES THAT WORK????
-				{
-					created_longer_path = true;
-					used_path_ids.push_back(pos_iter->_path_id);
-					std::list< std::list<PathEntry>::iterator > new_possible_path(*ppath_iter);
-					new_possible_path.push_back(pos_iter);
-					new_possible_paths.push_back(new_possible_path);
-					
-					//std::cout << "Added new_possible_path with length " << new_possible_path.size() << "\n";
-					
-					end = false;
-					++pos_iter;
-				}
-				
-				if (pos_iter != path.end())
-				{
-					created_longer_path = true;					
-					std::list< std::list<PathEntry>::iterator > new_possible_path(*ppath_iter);
-					new_possible_path.push_back(pos_iter);
-					new_possible_paths.push_back(new_possible_path);
-					
-					//std::cout << "Added new_possible_path with length " << new_possible_path.size() << "\n";
-					
-					end = false;
-				}
-				
-				if (created_longer_path == false)
-				{
-					std::list< std::list<PathEntry>::iterator > new_possible_path(*ppath_iter);
-					new_possible_paths.push_back(new_possible_path);
-					
-					//std::cout << "Copied new_possible_path with length " << new_possible_path.size() << "\n";
-				}
-			}
-			
-			possible_paths = new_possible_paths;
-			new_possible_paths.clear();
-		}
-		
-		std::cout << "Created " << possible_paths.size() << " final possible pathes.\n";
-		
-		std::list< std::list< std::list<PathEntry>::iterator > >::iterator ppath_iter = possible_paths.begin();
-		std::list< std::list< std::list<PathEntry>::iterator > >::iterator best_path_iter = possible_paths.begin();
-		double best_points = -1000000;
-		for (; ppath_iter != possible_paths.end(); ++ppath_iter)
-		{
-			double points = 0;
-			std::list< std::list<PathEntry>::iterator >::iterator x_iter = ppath_iter->begin();
-			std::list< std::list<PathEntry>::iterator >::iterator old_x_iter = x_iter;
-			if (x_iter != ppath_iter->end())
-				++x_iter;				
-			//std::cout << "**************************\n";
-			for (; x_iter != ppath_iter->end(); ++x_iter)
-			{				
-				Node::Id old_node_id = (*old_x_iter)->_node_id;
-				Node::Id node_id = (*x_iter)->_node_id;
-				//std::cout << old_node_id.first << ", " << old_node_id.second << " -> " << node_id.first << ", " << node_id.second << ": ";
-				
-				TileCache::Pointer p1 = _tile_cache->get(Node::tile_id(old_node_id));
-				TileCache::Pointer p2 = _tile_cache->get(Node::tile_id(node_id));*/
-				
-				/*
-				 * Negative points for distance between nodes that are not
-				 * connected.
-				 */
-/*				if (! p1->nodes()[Node::local_id(old_node_id)].second.is_reachable(node_id))
-					points -= p1->nodes()[Node::local_id(old_node_id)].second.
-					approximated_distance(p2->nodes()[Node::local_id(node_id)].second);*/
-				
-				/*
-				 * Negative points for the direction difference.
-				 */
-				// Not yet implemented.
-				
-				//std::cout << points << "\n";
-				
-/*				if (points < best_points) break;
-				
-				old_x_iter = x_iter;
-			}
-			
-			if (points > best_points)
-			{
-				best_points = points;
-				best_path_iter = ppath_iter;
-				std::cout << "Found new best path with " << points << " value points.\n";
-			}
-		}
+		double best_points = -100000.0;
+		PathEntry* best_start_entry = 0;
 
-
-		//std::cout << "Creating new path.\n";
-		std::list< std::list<PathEntry>::iterator >::iterator bp_iter = best_path_iter->begin();
-		std::list<PathEntry> n_path;
-		for (; bp_iter != best_path_iter->end(); ++bp_iter)
-		{
-			n_path.push_back(**bp_iter);
-		}
+		std::cout << "Trying to find connected way.\n";
 		
-		//std::cout << "Checking new path for too short connections.\n";
-		std::list<PathEntry>::iterator n_path_iter = n_path.begin();
-		std::list<PathEntry>::iterator previous_n_path_iter = n_path.begin();
-		std::list<PathEntry>::iterator switched_at_iter = n_path.begin();
-		int connection_length = 0;
-		while (n_path_iter != n_path.end())
+		++_time;
+		
+		if (start_node_id != 0)
 		{
-			if ((previous_n_path_iter != n_path_iter) &&
-				(!(_tile_cache->get(Node::tile_id(previous_n_path_iter->_node_id))->
-				nodes()[Node::local_id(previous_n_path_iter->_node_id)].second.
-				is_reachable(n_path_iter->_node_id))))
+			PathEntry start_entry;
+			
+			// The position is just a rough approximation, but that's 
+			// enough here.
+			start_entry._position = path.front()._position - 5.0;
+			start_entry._node_id = start_node_id;			
+			path.insert(path.begin(), start_entry);
+						
+			best_points = build_connections(path, path.begin(), true);
+			best_start_entry = path.front()._connection;
+		} else
+		{
+			double start_position = path.front()._position;
+			std::list<PathEntry>::iterator path_iter = path.begin();
+			std::list<PathEntry>::iterator path_iter_end = path.end();
+			while ((path_iter != path_iter_end) && 
+				(path_iter->_position < start_position + 50.0))
 			{
-				if (connection_length < 5)
-				{										
-					while (switched_at_iter != n_path_iter)
-						switched_at_iter = n_path.erase(switched_at_iter);
-					//std::cout << "Kicked to short connection of length " << connection_length << "\n";
+				double points = build_connections(path, path_iter, true);
+				
+				std::cout << points << " points.";
+				
+				if (points > best_points)
+				{
+					std::cout << " NEW BEST!";
+					best_points = points;
+					best_start_entry = &(*path_iter);
 				}
 				
-				switched_at_iter = n_path_iter; // See while loop above!
-				connection_length = 0;
+				std::cout << "\n";
+				
+				++path_iter;
 			}
-			
-			++connection_length;
-			previous_n_path_iter = n_path_iter;
-			++n_path_iter;
 		}
 		
-		path.clear();
+		if (best_start_entry == 0)
+		{
+			++_time;
+			
+			std::cout << "Could not find connection, searching for unconnected best way.\n";
+			if (start_node_id != 0)
+			{
+				PathEntry start_entry;
+				
+				// The position is just a rough approximation, but that's 
+				// enough here.
+				start_entry._position = path.front()._position - 5.0;
+				start_entry._node_id = start_node_id;			
+				path.insert(path.begin(), start_entry);
+							
+				best_points = build_connections(path, path.begin(), false);
+				best_start_entry = path.front()._connection;
+			} else
+			{
+				double start_position = path.front()._position;
+				std::list<PathEntry>::iterator path_iter = path.begin();
+				std::list<PathEntry>::iterator path_iter_end = path.end();
+				while ((path_iter != path_iter_end) && 
+					(path_iter->_position < start_position + 50.0))
+				{
+					double points = build_connections(path, path_iter, false);
+					
+					std::cout << points << " points.";
+					
+					if (points > best_points)
+					{
+						std::cout << " NEW BEST!";						
+						best_points = points;
+						best_start_entry = &(*path_iter);
+					}
+					
+					std::cout << "\n";
+					
+					++path_iter;
+				}
+			}	
+		}
 		
-		if (n_path.size() > 4)
-			path.insert(path.end(), n_path.begin(), n_path.end());
-		
-		std::cout << "New path has " << path.size() << " path entries\n";*/
-		
-		
+		if ((best_start_entry != 0) && (best_points > -10000.0))
+		{
+			std::cout << "Found way with " << best_points << " points.\n";
+			rebuild_path(path, best_start_entry);
+		} else
+		{
+			std::cout << "Could not find any way, clearing path.\n";
+			path.clear();
+		}
 				
 	}
 
@@ -597,10 +648,7 @@ namespace mapgeneration
 		_trace_log = new TraceLogWriter(_tile_manager, 
 			tracelog_filename.str(), _filtered_trace);
 
-		/* Filter the trace. */
-//		_filtered_trace.filter(); this is done in the TraceFilter!!!
-		//_filtered_trace.calculate_directions();
-		//_filtered_trace.calculate_times();
+		_filtered_trace.calculate_directions();
 		_filtered_trace.precompute_data();
 				
 		double trace_length_m = _filtered_trace.length_m();
@@ -622,9 +670,7 @@ namespace mapgeneration
 			);
 			
 			
-			//std::cout << "Found " << cluster_nodes.size() << " cluster nodes\n";
-
-
+			std::cout << "Found " << cluster_nodes.size() << " cluster nodes\n";
 			std::list<Node::Id>::iterator new_node_iter = cluster_nodes.begin();
 			while (new_node_iter != cluster_nodes.end())
 			{
@@ -655,10 +701,10 @@ namespace mapgeneration
 				
 				if (insert)
 				{										
-					/*std::cout << "Inserting new node into path: " <<
+					std::cout << "Inserting new node into path: " <<
 						Node::tile_id(new_entry._node_id) << ", " << 
 						Node::local_id(new_entry._node_id) << "  ID: " << 
-						new_entry._path_id << "\n";*/
+						new_entry._path_id << "\n";
 						
 					if (previous_path_id!=0 && new_entry._path_id!=previous_path_id)
 						used_different_path_ids = true;						
@@ -680,14 +726,16 @@ namespace mapgeneration
 			}
 
 
-			if (!used_different_path_ids || (!cluster_nodes.size() && !path.size()))
+			if (!cluster_nodes.size() && !path.size())
 			{
 				distinct_position_m = position_on_trace_m;
 				//std::cout << "Set distinct_position_m to " << distinct_position_m << "\n";
 			}
 
 
-			if ((path.size() && used_different_path_ids) ||
+/*			if ((path.size() && used_different_path_ids) ||
+				(path.size() && (path.back()._position < position_on_trace_m-20.0)))*/
+			if (path.size() > 5 ||
 				(path.size() && (path.back()._position < position_on_trace_m-20.0)))
 			{
 				used_different_path_ids = false;
@@ -706,10 +754,10 @@ namespace mapgeneration
 					++ident_path_ids;
 				if ((ident_path_ids > 5) || (path.back()._position < position_on_trace_m-20.0))
 				{
-					//std::cout << "Last " << ident_path_ids << " path ids are identically " << path_id << " simplifying path.\n";
+					std::cout << "Last " << ident_path_ids << " path ids are identically " << path_id << " simplifying path.\n";
 					simplify_path(previous_node_id, path);
 					distinct_position_m = position_on_trace_m;
-					//std::cout << "Done, set distinct position_m to " << distinct_position_m << "\n";
+					std::cout << "Done, set distinct position_m to " << distinct_position_m << "\n";
 				}
 			}
 
@@ -722,54 +770,25 @@ namespace mapgeneration
 					|| (!path.size() && complete_position_m<(distinct_position_m-20.0)))
 				{
 					complete_position_m += 10.0;
-					//std::cout << "Creating new node at position " << complete_position_m << "\n";
+					std::cout << "Creating new node at position " << complete_position_m << "\n";
 					GPSPoint new_node_position = _filtered_trace.
 						gps_point_at(complete_position_m);
 					Node::Id new_node_id = create_new_node(new_node_position);
 					if (previous_node_id != 0)
 						connect_nodes(previous_node_id, new_node_id);
 					previous_node_id = new_node_id;
-				} else if (path.size() /*&& complete_position_m>=(path.front()._position-20.0)*/)
-				{
-					bool connect = true;
-					if (previous_node_id!=0 && 
-						!connection_from_to(previous_node_id, path.front()._node_id))
-					{
-						int connection_length = 0;
-						std::list<PathEntry>::iterator path_iter = path.begin();
-						std::list<PathEntry>::iterator 
-							previous_path_iter = path_iter;
-						++path_iter;
-						while (path_iter!=path.end() && 
-							connection_from_to(previous_path_iter->_node_id,
-							path_iter->_node_id))
-						{
-							++connection_length;
-							previous_path_iter = path_iter;
-							++path_iter;
-						}	
-						std::cout << "Connection length is " << connection_length << "\n";
-						if (connection_length < 3)
-						{							
-							if (path_iter!=path.end() || path.back()._position<position_on_trace_m-20.0)
-							{								
-								std::cout << "Not using node at path position " << path.front()._position << "\n";								
-								path.pop_front();
-							}
-							end = true;
-							connect = false;
-						} 
-					}
-					if (connect)
-					{
-						std::cout << "Using node at path position " << complete_position_m << "\n";
-						complete_position_m = path.front()._position;
-						if (previous_node_id != 0)
-							connect_nodes(previous_node_id, path.front()._node_id);
-						previous_node_id = path.front()._node_id;
-						path.pop_front();
-					}
-			}
+				} else if (path.size()/* && complete_position_m>=(path.back()._position+20.0)*/)
+				{					
+					complete_position_m = path.front()._position;
+					Node::Id used_node_id = path.front()._node_id;
+					
+					std::cout << "Using node " << Node::tile_id(used_node_id) << ", " << 
+						Node::local_id(used_node_id) << " at path position " << complete_position_m << "\n";
+					if (previous_node_id != 0)
+						connect_nodes(previous_node_id, path.front()._node_id);
+					previous_node_id = path.front()._node_id;
+					path.pop_front();
+				}
 			}
 
 			position_on_trace_m += 10.0;
