@@ -31,6 +31,14 @@ namespace mapgeneration
   }
   
   
+  /* operates in 2D!!! */
+  double
+  GeoCoordinate::abs() const
+  {
+  	return sqrt(_latitude * _latitude + _longitude * _longitude);
+  }
+  
+  
   	double
 	GeoCoordinate::calculate_direction(const GeoCoordinate& geo_coordinate) const
 	{		
@@ -59,6 +67,8 @@ namespace mapgeneration
 	  
 	  /* calculates the distance between two GeoCoordinates with the
 	   * following formula */
+	   
+	   /* might be 0 before division: ask Rene! */
 	  return 1852 * 60 * acos(
 	  		(sin(_latitude * PI / 180) * sin(latitude2 * PI / 180))
 				+ (cos(_latitude * PI / 180) * cos(latitude2 * PI / 180) * cos(longitude_difference * PI / 180))
@@ -596,5 +606,93 @@ namespace mapgeneration
 		);
 	}
  
+
+	GeoCoordinate&
+	GeoCoordinate::operator+(const GeoCoordinate& geo_coordinate)
+	{
+		std::cout << "operator+: Class-member!" << std::endl;
+		_altitude += geo_coordinate._altitude;
+		_latitude += geo_coordinate._latitude;
+		_longitude += geo_coordinate._longitude;
+	}
+	
+	
+	GeoCoordinate&
+	GeoCoordinate::operator-(const GeoCoordinate& geo_coordinate)
+	{
+		std::cout << "operator-: Class-member!" << std::endl;
+		_altitude -= geo_coordinate._altitude;
+		_latitude -= geo_coordinate._latitude;
+		_longitude -= geo_coordinate._longitude;
+	}
+
+	
+	/* scalar produkt!!! */
+	/* operates in 2D!!! */
+	double
+	GeoCoordinate::operator*(const GeoCoordinate& geo_coordinate)
+	{
+		std::cout << "operator*: Class-member!" << std::endl;
+
+		return _latitude * geo_coordinate._latitude
+			+ _longitude * geo_coordinate._longitude;
+	}
+
+
+	GeoCoordinate
+	operator+(const GeoCoordinate& geo_coordinate_1,
+		const GeoCoordinate& geo_coordinate_2)
+	{
+		std::cout << "operator+: Namespace-member! Call class method..." << std::endl;
+		GeoCoordinate gc = geo_coordinate_1;
+
+		return gc.operator+(geo_coordinate_2);
+	}
+	
+	
+	GeoCoordinate
+	operator-(const GeoCoordinate& geo_coordinate_1,
+		const GeoCoordinate& geo_coordinate_2)
+	{
+		std::cout << "operator+: Namespace-member! Call class method..." << std::endl;
+		GeoCoordinate gc = geo_coordinate_1;
+
+		return gc.operator-(geo_coordinate_2);
+	}
+	
+	
+	/* scalar product!!! */
+	double
+	operator*(const GeoCoordinate& geo_coordinate_1,
+		const GeoCoordinate& geo_coordinate_2)
+	{
+		std::cout << "operator+: Namespace-member! Call class method..." << std::endl;
+		GeoCoordinate gc = geo_coordinate_1;
+
+		return gc.operator*(geo_coordinate_2);
+	}
+
+	GeoCoordinate
+	operator*(const GeoCoordinate& geo_coordinate, const double scalar)
+	{
+		GeoCoordinate gc = geo_coordinate;
+		gc.set_altitude(gc.get_altitude() * scalar);
+		gc.set_latitude(gc.get_latitude() * scalar);
+		gc.set_longitude(gc.get_longitude() * scalar);
+		
+		return gc;
+	}
+
+
+	GeoCoordinate
+	operator*(const double scalar, const GeoCoordinate& geo_coordinate)
+	{
+		GeoCoordinate gc = geo_coordinate;
+		gc.set_altitude(gc.get_altitude() * scalar);
+		gc.set_latitude(gc.get_latitude() * scalar);
+		gc.set_longitude(gc.get_longitude() * scalar);
+		
+		return gc;
+	}
 
 } // namespace mapgeneration

@@ -27,117 +27,7 @@ namespace mapgeneration
 	 * @see TraceProcessor
 	 * @see TraceProcessor::run() the cluster algorithm
 	 */
-	class FilteredTrace : protected std::list<GPSPoint> {
-
-		/* Proxy methods from std::list<GPSPoint> 
-		 * 
-		 * start.proxy */
-		public:
-		
-			typedef std::list<GPSPoint>::const_iterator const_iterator;
-			typedef std::list<GPSPoint>::iterator iterator;
-			typedef std::list<GPSPoint>::size_type size_type;
-			
-			
-			iterator
-			begin()
-			{
-				_fast_access_is_valid = false;
-				_length_meters_is_valid = false;
-				
-				std::cout << "********************************" << std::endl;
-				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
-				std::cout << "********************************" << std::endl;
-				
-				return std::list<GPSPoint>::begin();
-			}
-
-
-			const_iterator
-			begin() const
-			{
-				return std::list<GPSPoint>::begin();
-			}
-
-
-			iterator
-			end()
-			{
-				_fast_access_is_valid = false;
-				_length_meters_is_valid = false;
-				
-				std::cout << "********************************" << std::endl;
-				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
-				std::cout << "********************************" << std::endl;
-				
-				return std::list<GPSPoint>::end();
-			}
-
-
-			const_iterator
-			end() const
-			{
-				return std::list<GPSPoint>::end();
-			}
-			
-
-			iterator
-			erase(iterator item)
-			{
-				_fast_access_is_valid = false;
-				_length_meters_is_valid = false;
-				
-				std::cout << "********************************" << std::endl;
-				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
-				std::cout << "********************************" << std::endl;
-				
-				return std::list<GPSPoint>::erase(item);
-			}
-
-
-			iterator
-			erase(iterator from, iterator to)
-			{
-				_fast_access_is_valid = false;
-				_length_meters_is_valid = false;
-				
-				std::cout << "********************************" << std::endl;
-				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
-				std::cout << "********************************" << std::endl;
-				
-				return std::list<GPSPoint>::erase(from, to);
-			}
-
-
-			const GPSPoint&
-			front() const
-			{
-				return std::list<GPSPoint>::front();
-			}
-			
-			size_type
-			size() const
-			{
-				return std::list<GPSPoint>::size();
-			}
-			
-			
-			void
-			splice(iterator insert_at,	FilteredTrace& from_list,
-				iterator begin_incl, iterator end_excl)
-			{
-				_fast_access_is_valid = false;
-				_length_meters_is_valid = false;
-				
-				std::cout << "********************************" << std::endl;
-				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
-				std::cout << "********************************" << std::endl;
-				
-				return std::list<GPSPoint>::splice(insert_at, from_list,
-					begin_incl, end_excl);
-			}
-		/* end.proxy */
-
+	class FilteredTrace : public std::list<GPSPoint> {
 
 		public:
 
@@ -155,6 +45,14 @@ namespace mapgeneration
 			FilteredTrace(const FilteredTrace& filtered_trace);
 
 			
+			void
+			actualize_fast_access();
+			
+			
+			void
+			actualize_length_meters();
+
+
 			/**
 			 * @brief Calculates the directions of the GPSPoints.
 			 */
@@ -204,8 +102,8 @@ namespace mapgeneration
 			 * 
 			 * @return the time
 			 */ 
-			double
-			get_last_time();
+//			double
+//			get_last_time();
 			
 			
 			/**
@@ -213,8 +111,8 @@ namespace mapgeneration
 			 * 
 			 * @return the time
 			 */
-			double
-			get_time_from_previous_start();
+//			double
+//			get_time_from_previous_start();
 			
 			
 			/**
@@ -226,6 +124,15 @@ namespace mapgeneration
 			gps_point_at(double meters);
 			
 			
+			bool
+			gps_points_before_and_after(
+				double input_meters,
+				FilteredTrace::const_iterator* output_before_iter = 0,
+				FilteredTrace::const_iterator* output_after_iter = 0,
+				double* output_before_iter_meters = 0,
+				double* output_after_iter_meters = 0);
+			
+			
 			/**
 			 * @brief Returns corresponding member attribute.
 			 * 
@@ -234,15 +141,6 @@ namespace mapgeneration
 			 */
 			inline bool
 			gps_points_have_valid_altitudes();
-			
-			
-			bool
-			last_gps_point_before(
-				double input_meters,
-				FilteredTrace::const_iterator* output_before_iter = 0,
-				FilteredTrace::const_iterator* output_after_iter = 0,
-				double* output_before_iter_meters = 0,
-				double* output_after_iter_meters = 0);
 			
 			
 			/**
@@ -265,8 +163,8 @@ namespace mapgeneration
 			 *
 			 * @param new_start_point new starting point position
 			 */
-			void
-			move_start_point(GeoCoordinate& new_start_point);
+//			void
+//			move_start_point(GeoCoordinate& new_start_point);
 			
 			
 			/**
@@ -285,8 +183,8 @@ namespace mapgeneration
 			 * @param meter distance from beginning
 			 * @return iterator pointing to the new GPSPoint
 			 */
-			std::list<GPSPoint>::iterator
-			new_gps_point_at(double meter);
+//			std::list<GPSPoint>::iterator
+//			new_gps_point_at(double meter);
 			            
 			
 			/**
@@ -300,9 +198,9 @@ namespace mapgeneration
 			 * @return iterator pointing at the beginning of the FilteredTrace
 			 * (that is now the same like new_start_point)
 			 */
-			std::list<GPSPoint>::iterator
-			new_start(std::list<GPSPoint>::iterator new_start_point,
-				int* const removed_gps_points = 0);
+//			std::list<GPSPoint>::iterator
+//			new_start(std::list<GPSPoint>::iterator new_start_point,
+//				int* const removed_gps_points = 0);
 
 
 			/**
@@ -346,9 +244,6 @@ namespace mapgeneration
 			std::vector<const_iterator> _fast_access;
 			
 			
-			bool _fast_access_is_valid;
-			
-			
 			/**
 			 * @brief Flag indicating that the GPSPoints has valid altitudes.
 			 */
@@ -356,9 +251,6 @@ namespace mapgeneration
 			
 			
 			double _length_meters;
-			
-			
-			bool _length_meters_is_valid;
 			
 			
 			/**
@@ -377,10 +269,6 @@ namespace mapgeneration
 			pubsub::ServiceList* _service_list;
 			
 			
-			void
-			build_fast_access();
-
-
 			double
 			length_meters(const const_iterator& begin_incl,
 				const const_iterator& end_incl) const;
@@ -397,12 +285,6 @@ namespace mapgeneration
 	inline double
 	FilteredTrace::length_meters()
 	{
-		if ( !_length_meters_is_valid )
-		{
-			_length_meters = length_meters(begin(), --(end()));
-			_length_meters_is_valid = true;
-		}
-		
 		return _length_meters;
 	}
 	

@@ -169,7 +169,7 @@ namespace mapgeneration
 	void
 	TraceProcessor::merge_node_and_gps_point(/*bool first_point*/)
 	{
-		assert(_best_cluster_node != 0);
+/*		assert(_best_cluster_node != 0);
 		
 		_last_clustering_was_at_crossing = false;
 		
@@ -181,9 +181,9 @@ namespace mapgeneration
 		GPSPoint saved_gps_point_for_logging = _filtered_trace.front();
 		_filtered_trace.move_start_point(*_current_node);
 		
-		/* time correction */
-		/** @todo Fix time corrections. */
-/*		std::vector<unsigned int>::iterator current_node_edge_ids_iter = _current_node->edge_ids().begin();
+		/* time correction *
+		/** @todo Fix time corrections. *
+		std::vector<unsigned int>::iterator current_node_edge_ids_iter = _current_node->edge_ids().begin();
 		std::vector<unsigned int>::iterator current_node_edge_ids_iter_end = _current_node->edge_ids().end();
 		for (; current_node_edge_ids_iter != current_node_edge_ids_iter_end; ++current_node_edge_ids_iter)
 		{
@@ -227,13 +227,13 @@ namespace mapgeneration
 				double new_distance = _current_node->distance(next_node);
 				*_current_edge_times_iter = time_before_merge * (new_distance / old_distance);
 			}
-		}*/
+		}
 
 		if (_current_node->next_node_ids().size() > 1)
 			_last_clustering_was_at_crossing = true;
 		
 		_trace_log->merge_node(_best_cluster_node_id, saved_gps_point_for_logging,
-			*_best_cluster_node);
+			*_best_cluster_node);*/
 	}
 
 	
@@ -256,6 +256,120 @@ namespace mapgeneration
 	double
 	TraceProcessor::optimal_node_position(PathEntry path_entry)
 	{
+		/* That does not work really. I have to think about that. But probably
+		 * the implementation below is faster (and it's easier!).
+		 * 
+		 * Next Problem: We do not a cartesian coordinate system...
+		 */
+		 
+/*		FilteredTrace::const_iterator point_before;
+		FilteredTrace::const_iterator point_after;
+		double point_before_meters;
+		double point_after_meters;
+
+		FilteredTrace::const_iterator dummy;
+		double dummy_meters;
+		
+		bool successful
+			= _filtered_trace.gps_points_before_and_after(
+				path_entry._position - _search_radius_m,
+				&point_before,
+				&dummy,
+				&point_before_meters
+			);
+		if (!successful)
+			return path_entry._position;
+			
+		successful
+			= _filtered_trace.gps_points_before_and_after(
+				path_entry._position + _search_radius_m,
+				&dummy,
+				&point_after,
+				&dummy_meters,
+				&point_after_meters
+			);
+		if (!successful)
+			return path_entry._position;
+		
+		GeoCoordinate entry_coordinate =
+			_tile_cache->get(path_entry._node_id.first)->
+			nodes()[path_entry._node_id.second].second;
+
+		FilteredTrace::const_iterator iter = point_before;
+		FilteredTrace::const_iterator previous_iter = point_before;
+		++iter;
+		
+		FilteredTrace::const_iterator best_iter = point_before;
+		double best_distance = 1000000.0;
+		
+		while (previous_iter != point_after)
+		{
+			const GeoCoordinate p = entry_coordinate;
+			const GeoCoordinate o = *previous_iter;
+			const GeoCoordinate v = *iter - *previous_iter;
+			
+			const GeoCoordinate p_minus_o = p - o;
+
+			double t_0 = (v * p_minus_o) / (v * v);
+			GeoCoordinate o_plus_t_0_v = o + (t_0 * v);
+			double distance = (p - (o_plus_t_0_v)).abs();
+			if (distance < 0.0)
+				distance = p_minus_o.abs();
+			else if (distance > 1.0)
+				distance = (p - (o + v)).abs();
+			
+			if (distance < best_distance)
+			{
+				best_distance = t_0;
+				best_iter = previous_iter;
+			}
+			
+			++previous_iter;
+			++iter;
+		}
+		
+		if (best_distance <= 1.0)
+		{
+			FilteredTrace::const_iterator next_iter = best_iter;
+			++next_iter;
+			
+			double position = _filtered_trace.length_meters(point_before, best_iter)
+				+ t_0 * _filtered_trace.length_meters(best_iter, next_iter);
+			
+			return position;
+			
+		} else // explicit: if (best_distance > 1.0)
+		{
+			
+		}
+		
+		
+			
+			
+			
+			/* calculate ...
+			double t_0 = [v * (p - o)] / [ v * v]
+			point p = o + t_0 * v
+			
+			o = point_before
+			v = point_after - point_before
+			p = entry_coordinate *
+			
+			const GeoCoordinate p = entry_coordinate;
+			const GeoCoordinate o = *point_before;
+			const GeoCoordinate v = *point_after - *point_before;
+			
+			return ( ((p - o) * v) / (v * v) );
+			
+			
+		} else
+		{
+			return path_entry._position;
+		}*/
+		
+		
+		
+		
 		GeoCoordinate entry_coordinate =
 			_tile_cache->get(path_entry._node_id.first)->
 			nodes()[path_entry._node_id.second].second;
@@ -274,13 +388,13 @@ namespace mapgeneration
 			distance = entry_coordinate.distance(path_coordinate);
 			if (distance < previous_distance)
 			{
-				distance = entry_coordinate.distance(path_coordinate);
+//				distance = entry_coordinate.distance(path_coordinate);
 				best_position = position;
 			}
 		}
 		
 		previous_distance = distance + 1.0;
-		while (distance < previous_distance)
+		while ( (distance < previous_distance) && (position >= 1.0) )
 		{
 			previous_distance = distance;
 			position -= 1.0;
@@ -288,7 +402,7 @@ namespace mapgeneration
 			distance = entry_coordinate.distance(path_coordinate);
 			if (distance < previous_distance)
 			{
-				distance = entry_coordinate.distance(path_coordinate);
+//				distance = entry_coordinate.distance(path_coordinate);
 				best_position = position;
 			}
 		}
@@ -502,6 +616,9 @@ namespace mapgeneration
 //		_filtered_trace.filter(); this is done in the TraceFilter!!!
 		_filtered_trace.calculate_directions();
 		//_filtered_trace.calculate_times();
+		
+		_filtered_trace.actualize_length_meters();
+		_filtered_trace.actualize_fast_access();
 				
 		double trace_length_m = _filtered_trace.length_meters();
 		double position_on_trace_m = 0;

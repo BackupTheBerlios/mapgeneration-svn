@@ -21,10 +21,8 @@ namespace mapgeneration
 
 	FilteredTrace::FilteredTrace(pubsub::ServiceList* service_list)
 	: _fast_access(),
-		_fast_access_is_valid(false),
 		_gps_points_have_valid_altitudes(true),
 		_length_meters(-1.0),
-		_length_meters_is_valid(false),
 		_needed_tile_ids(),
 		_points_from_previous_start(),
 		_service_list(service_list)
@@ -35,10 +33,8 @@ namespace mapgeneration
 	FilteredTrace::FilteredTrace(const FilteredTrace& filtered_trace)
 	: std::list<GPSPoint>::list(filtered_trace),
 		_fast_access(filtered_trace._fast_access),
-		_fast_access_is_valid(filtered_trace._fast_access_is_valid),
 		_gps_points_have_valid_altitudes(filtered_trace._gps_points_have_valid_altitudes),
 		_length_meters(filtered_trace._length_meters),
-		_length_meters_is_valid(filtered_trace._length_meters_is_valid),
 		_needed_tile_ids(filtered_trace._needed_tile_ids),
 		_points_from_previous_start(filtered_trace._points_from_previous_start),
 		_service_list(filtered_trace._service_list)
@@ -48,24 +44,13 @@ namespace mapgeneration
 	
 	
 	void
-	FilteredTrace::build_fast_access()
+	FilteredTrace::actualize_fast_access()
 	{
-		// need	std::vector<FilteredTrace::const_iterator&> _fast_access
-		// need	dynamic parameter for size of _fast_access
-		// useless	meters_per_entry, max_entries, ...
+		std::cout << std::endl << "Actualizing fast_access...";
 		
-		std::cout << std::endl << "Building fast_access...";
-		
-		if (_fast_access_is_valid)
-		{
-			std::cout << "ready (fast_access was still valid)" << std::endl;
-			return;
-		}
-
 		if (size() <= 0)
 		{
 			_fast_access.clear();
-			_fast_access_is_valid = true;
 			std::cout << "ready (size <= 0)" << std::endl;
 			return;
 		}
@@ -87,7 +72,6 @@ namespace mapgeneration
 
 		if (iter == iter_end)
 		{
-			_fast_access_is_valid = true;
 			return;
 		}
 
@@ -113,8 +97,14 @@ namespace mapgeneration
 			}
 		}
 
-		_fast_access_is_valid = true;
 		std::cout << std::endl;
+	}
+	
+	
+	void
+	FilteredTrace::actualize_length_meters()
+	{
+		_length_meters = length_meters(begin(), --(end()));
 	}
 
 
@@ -249,7 +239,7 @@ namespace mapgeneration
 		double point_before_meters;
 //		double point_after_meters;
 		
-		if (last_gps_point_before(meters, &point_before, &point_after,
+		if (gps_points_before_and_after(meters, &point_before, &point_after,
 				&point_before_meters))
 		{
 			double left_distance = meters - point_before_meters;
@@ -267,16 +257,13 @@ namespace mapgeneration
 	
 	
 	bool
-	FilteredTrace::last_gps_point_before(
+	FilteredTrace::gps_points_before_and_after(
 		double input_meters,
 		FilteredTrace::const_iterator* output_before_iter,
 		FilteredTrace::const_iterator* output_after_iter,
 		double* output_before_iter_meters,
 		double* output_after_iter_meters)
 	{
-		if ( !_fast_access_is_valid )
-			build_fast_access();
-
 		if (size() <= 0)
 		{
 			if (output_before_iter != 0)
@@ -553,11 +540,11 @@ namespace mapgeneration
 	}
 	
 	
-	double
+/*	double
 	FilteredTrace::get_last_time()
 	{
 		return back().get_time();
-	}
+	}*/
 	
 	
 	std::vector<unsigned int>
@@ -567,7 +554,7 @@ namespace mapgeneration
 	}
 	
 	
-	double
+/*	double
 	FilteredTrace::get_time_from_previous_start()
 	{
 		if (_points_from_previous_start.empty())
@@ -582,7 +569,7 @@ namespace mapgeneration
 		++iter;
 		
 		/* adds all times from the previous starting point until the actual
-		 * starting point */
+		 * starting point *
 		double time_from_previous_start = 0.0;
 		for(; iter != iter_end; ++iter, ++previous_iter)
 		{
@@ -591,10 +578,10 @@ namespace mapgeneration
 		time_from_previous_start += (front().get_time() - previous_iter->get_time());
 		
 		return time_from_previous_start;
-	}
+	}*/
 
 
-	void
+/*	void
 	FilteredTrace::move_start_point(GeoCoordinate& new_start_point)
 	{
 		iterator iter_begin = begin();
@@ -611,7 +598,7 @@ namespace mapgeneration
 		--iter_begin;
 		if (iter_second != iter_end)
 		{
-			/* adjusts the new attributs of the moved starting point */
+			/* adjusts the new attributs of the moved starting point *
 			double old_distance = iter_begin->distance(*iter_second);
 			double new_distance = new_start_point.distance(*iter_second);
 			double old_time_difference = iter_second->get_time() - iter_begin->get_time();
@@ -624,10 +611,10 @@ namespace mapgeneration
 		iter_begin->set_latitude(new_start_point.get_latitude());
 		iter_begin->set_longitude(new_start_point.get_longitude());
 		iter_begin->set_altitude(new_start_point.get_altitude());
-	}
+	}*/
 	
 	
-	FilteredTrace::iterator
+/*	FilteredTrace::iterator
 	FilteredTrace::new_gps_point_at(double meter)
 	{
 		iterator iter = begin();
@@ -654,7 +641,7 @@ namespace mapgeneration
 				--iter;
 				new_point.set_direction(iter->get_direction());
 				++iter;
-				/* inserts the new calculated Point into  the list */
+				/* inserts the new calculated Point into  the list *
 				return insert(iter, new_point);
 			} else 
 			{
@@ -664,10 +651,10 @@ namespace mapgeneration
 		}
 		
 		return 0;
-	}
+	}*/
    	
    	
-	FilteredTrace::iterator
+/*	FilteredTrace::iterator
 	FilteredTrace::new_start(FilteredTrace::iterator new_start_point,
 		int* const removed_gps_points)
 	{
@@ -677,13 +664,13 @@ namespace mapgeneration
 			_points_from_previous_start.push_back(*iter);
 		}
 		
-		erase(begin(), new_start_point); 	/* clearing unsused points */
+		erase(begin(), new_start_point); 	/* clearing unsused points *
 		
 		if (removed_gps_points != 0)
 			*removed_gps_points = _points_from_previous_start.size();
 		
 		return begin();
-	}
+	}*/
    	
   	
 	void

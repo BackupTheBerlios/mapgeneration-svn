@@ -65,6 +65,10 @@ namespace mapgeneration
 			GeoCoordinate(double latitude, double longitude, double altitude = 0);
 			
 			
+			double
+			abs() const;
+
+
 			/**
 			 * @brief Calculates the direction of the GeoCoordinate.
 			 */
@@ -183,7 +187,7 @@ namespace mapgeneration
 			static GeoCoordinate
 			interpolate(const GeoCoordinate& gc_1, const GeoCoordinate& gc_2, const double weight_on_first);
 			
-
+			
 			/**
 			 * @brief Assignment operator.
 			 * 
@@ -205,6 +209,19 @@ namespace mapgeneration
 			bool
 			operator==(const GeoCoordinate& geo_coordinate) const;
 
+
+			GeoCoordinate&
+			operator+(const GeoCoordinate& geo_coordinate);
+			
+			
+			GeoCoordinate&
+			operator-(const GeoCoordinate& geo_coordinate);
+			
+			
+			/* scalar product!!! */
+			double
+			operator*(const GeoCoordinate& geo_coordinate);
+	
 
 			/**
 			 * @brief Merges the northing part and the easting part to one
@@ -308,6 +325,29 @@ namespace mapgeneration
 
 	};
 	
+	
+	GeoCoordinate
+	operator+(const GeoCoordinate& geo_coordinate_1,
+		const GeoCoordinate& geo_coordinate_2);
+	
+	
+	GeoCoordinate
+	operator-(const GeoCoordinate& geo_coordinate_1,
+		const GeoCoordinate& geo_coordinate_2);
+	
+	
+	/* scalar product!!! */
+	double
+	operator*(const GeoCoordinate& geo_coordinate_1,
+		const GeoCoordinate& geo_coordinate_2);
+
+
+	GeoCoordinate
+	operator*(const GeoCoordinate& geo_coordinate, const double scalar);
+
+
+	GeoCoordinate
+	operator*(const double scalar, const GeoCoordinate& geo_coordinate);
 	
 	
 	inline void
