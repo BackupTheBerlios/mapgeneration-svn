@@ -20,9 +20,8 @@ namespace mapgeneration_gui
 	
 	MapDrawer::MapDrawer
 		(wxScrolledWindow* map_scrolled_window, GPSDraw* gps_draw, 
-		EdgeCache* edge_cache, TileCache* tile_cache)
-	: 	_edge_prefetch_caller(0, this, &MapDrawer::edge_prefetched),		
-		_edge_cache(edge_cache), 
+		TileCache* tile_cache)		
+	: 	_current_draw_id(1),
 		_gps_draw(gps_draw),
 		_last_paint_seconds(0),
 		_map_scrolled_window(map_scrolled_window),
@@ -32,8 +31,7 @@ namespace mapgeneration_gui
 		_used_tile_blocks_50(), 
 		_use_prefetch(true)
 	{		
-		_tile_prefetch_proxy.register_subscriber(&_tile_prefetch_caller);
-		_edge_prefetch_proxy.register_subscriber(&_edge_prefetch_caller);
+		_tile_prefetch_proxy.register_subscriber(&_tile_prefetch_caller);		
 		
 		std::bitset<3600> empty_bitset_5;
 		empty_bitset_5.reset();		
@@ -51,12 +49,93 @@ namespace mapgeneration_gui
 	
 	
 	void
-	MapDrawer::edge_prefetched(unsigned int id)
+	MapDrawer::draw_tile(unsigned int tile_id,
+		unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
+		unsigned int max_tile_id_northing, unsigned int max_tile_id_easting)
 	{
-		if (time(0) > _last_paint_seconds)
+		TileCache::Pointer current_tile = _tile_cache->get(tile_id);
+		if (current_tile != 0)
 		{
-			_use_prefetch = false;
-			_map_scrolled_window->Refresh();
+			FixpointVector<Node>::iterator node_iter =
+				current_tile.write().nodes().begin();
+			FixpointVector<Node>::iterator node_iter_end =
+				current_tile.write().nodes().end();
+			for (; node_iter != node_iter_end; ++node_iter)
+			{
+				std::vector<Node::Id>::const_iterator next_node_id_iter = 
+					node_iter->second.next_node_ids().begin();
+				std::vector<Node::Id>::const_iterator next_node_id_iter_end =
+					node_iter->second.next_node_ids().end();
+				for (; next_node_id_iter != next_node_id_iter_end; ++next_node_id_iter)
+				{
+					int nnorthing;
+					int neasting;
+					GeoCoordinate::split_tile_id(next_node_id_iter->first, 
+						nnorthing, neasting);
+					if (nnorthing>=min_tile_id_northing &&
+						nnorthing<=max_tile_id_northing &&
+						neasting>=min_tile_id_easting &&
+						neasting<=max_tile_id_easting)
+					{
+						TileCache::Pointer op = _tile_cache->get(next_node_id_iter->first);
+						if (op != 0)
+						{
+							GeoCoordinate nnode=op->nodes()[next_node_id_iter->second].second;
+							MapGenerationDraw::arrow(_gps_draw, node_iter->second, nnode);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	
+	void
+	MapDrawer::draw_tiles(
+		unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
+		unsigned int max_tile_id_northing, unsigned int max_tile_id_easting)
+	{
+		for (int northing = min_tile_id_northing; northing <= max_tile_id_northing; ++northing)
+		{
+			for (int easting = min_tile_id_easting; easting <= max_tile_id_easting; ++easting)
+			{
+				unsigned int tile_id = 
+					GeoCoordinate::merge_tile_id_parts(northing, easting);
+				TileCache::Pointer current_tile = _tile_cache->get(tile_id);
+				if (current_tile != 0)
+				{
+					FixpointVector<Node>::iterator node_iter =
+						current_tile.write().nodes().begin();
+					FixpointVector<Node>::iterator node_iter_end =
+						current_tile.write().nodes().end();
+					for (; node_iter != node_iter_end; ++node_iter)
+					{
+						std::vector<Node::Id>::const_iterator next_node_id_iter = 
+							node_iter->second.next_node_ids().begin();
+						std::vector<Node::Id>::const_iterator next_node_id_iter_end =
+							node_iter->second.next_node_ids().end();
+						for (; next_node_id_iter != next_node_id_iter_end; ++next_node_id_iter)
+						{
+							int nnorthing;
+							int neasting;
+							GeoCoordinate::split_tile_id(next_node_id_iter->first, 
+								nnorthing, neasting);
+							if (nnorthing>=min_tile_id_northing &&
+								nnorthing<=max_tile_id_northing &&
+								neasting>=min_tile_id_easting &&
+								neasting<=max_tile_id_easting)
+							{
+								TileCache::Pointer op = _tile_cache->get(next_node_id_iter->first);
+								if (op != 0)
+								{
+									GeoCoordinate nnode=op->nodes()[next_node_id_iter->second].second;
+									MapGenerationDraw::arrow(_gps_draw, node_iter->second, nnode);
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -67,9 +146,7 @@ namespace mapgeneration_gui
 		if (_tile_cache == 0) return;
 		
 		_last_paint_seconds = time(0);
-		long tiles_to_display = 0;
-		
-		std::set<unsigned int> edge_ids_to_display;
+		long tiles_to_display;
 		
 		int pixels_per_unit_x, pixels_per_unit_y;
 		_map_scrolled_window->GetScrollPixelsPerUnit(&pixels_per_unit_x, &pixels_per_unit_y);
@@ -131,9 +208,9 @@ namespace mapgeneration_gui
 			
 			/*std::cout << "ID Min: " << min_tile_id_northing << ", " << min_tile_id_easting << "\n ID Max:"
 				<< max_tile_id_northing << ", " << max_tile_id_easting << "\n";*/
-	
 
-			tiles_to_display +=
+				
+			tiles_to_display = 
 				((long)(max_tile_id_northing - min_tile_id_northing)) * 
 				((long)(max_tile_id_easting - min_tile_id_easting));
 	
@@ -159,11 +236,9 @@ namespace mapgeneration_gui
 								if (tile_pointer != 0)
 								{
 									MapGenerationDraw::tile_border(_gps_draw, tile_id);
-									if (tiles_to_display <= 324000L)
-									{
-										std::vector<unsigned int> edge_ids_on_tile = tile_pointer->get_edge_ids();
-										edge_ids_to_display.insert(edge_ids_on_tile.begin(), edge_ids_on_tile.end());
-									}
+									draw_tile(tile_id, 
+										min_tile_id_northing, min_tile_id_easting, 
+										max_tile_id_northing, max_tile_id_easting);
 								}
 							} else
 							{
@@ -209,43 +284,10 @@ namespace mapgeneration_gui
 			}
 			
 		}
-		
-		
-		if (_edge_cache == 0) return;
-		
-		double detail = 0.01;
-		if (tiles_to_display <= 500L) detail = 1.0;
-		else if (tiles_to_display <= 2000L) detail = 0.8;
-		else if (tiles_to_display <= 8000L) detail = 0.4;
-		else if (tiles_to_display <= 32000L) detail = 0.2;
-		else if (tiles_to_display <= 128000L) detail = 0.1;
-
-		dc.SetPen(*wxThePenList->FindOrCreatePen(wxColour(0, 0, 0), 1, wxSOLID));
-		std::set <unsigned int>::iterator edge_ids_iter = edge_ids_to_display.begin();
-		std::set <unsigned int>::iterator edge_ids_iter_end = edge_ids_to_display.end();
-		for (; edge_ids_iter != edge_ids_iter_end; ++edge_ids_iter)
-		{
-			EdgeCache::Pointer edge_pointer;
-			if (_use_prefetch)
-				edge_pointer = _edge_cache->get_or_prefetch(*edge_ids_iter,
-														&_edge_prefetch_proxy);
-			else
-				edge_pointer = _edge_cache->get(*edge_ids_iter);
-			if (edge_pointer != 0)
-				MapGenerationDraw::edge(_gps_draw, 
-					construct_edge_vector(*edge_pointer), detail);
-		}
 
 		_use_prefetch = true;
 	}
-	
-	
-	void
-	MapDrawer::set_edge_cache(EdgeCache* edge_cache)
-	{
-		_edge_cache = edge_cache;
-	}
-	
+
 	
 	void
 	MapDrawer::set_tile_cache(TileCache* tile_cache)
@@ -258,7 +300,7 @@ namespace mapgeneration_gui
 	void
 	MapDrawer::tile_prefetched(unsigned int id)
 	{
-		TileCache::Pointer tile_pointer=_tile_cache->get(id);
+/*		TileCache::Pointer tile_pointer=_tile_cache->get(id);
 		if (tile_pointer != 0)
 		{
 			std::vector<unsigned int> edge_ids_on_tile = tile_pointer->get_edge_ids();
@@ -274,30 +316,7 @@ namespace mapgeneration_gui
 		{
 			_use_prefetch = false;
 			_map_scrolled_window->Refresh();
-		}
-	}
-	
-
-	std::vector< Node >
-	MapDrawer::construct_edge_vector(const Edge& edge)
-	{	
-		std::vector< Node > nodes;
-		
-		if (_tile_cache == 0) return nodes;
-		
-		std::list< std::pair<unsigned int, unsigned int> >::const_iterator
-			node_ids_iter = edge.node_ids().begin();
-		std::list< std::pair<unsigned int, unsigned int> >::const_iterator
-			node_ids_iter_end = edge.node_ids().end();
-		
-		for (; node_ids_iter != node_ids_iter_end; ++node_ids_iter)
-		{
-			TileCache::Pointer tile_pointer = _tile_cache->get(node_ids_iter->first);
-			if (tile_pointer != 0)
-				nodes.push_back(tile_pointer->nodes()[node_ids_iter->second].second);
-		}
-		
-		return nodes;
+		}*/
 	}
 	
 	

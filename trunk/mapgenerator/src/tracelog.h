@@ -13,7 +13,6 @@
 #include <map>
 #include <sstream>
 
-#include "edgecache.h"
 #include "tilecache.h"
 #include "util/serializer.h"
 
@@ -33,11 +32,7 @@ namespace mapgeneration
 			static const int _CHANGED_TRACE = 2;
 			static const int _END_OF_TRACELOG = 9;
 			static const int _NEW_NODE = 10;
-			static const int _NEW_EDGE = 11;
 			static const int _MERGE_NODE = 12;
-			static const int _EXTEND_EDGE = 13;
-			static const int _SPLIT_EDGE = 14;
-			static const int _CONNECT_EDGES = 15;
 			
 
 			/**
@@ -48,10 +43,6 @@ namespace mapgeneration
 			
 			void
 			do_current_command();
-			
-			
-			inline EdgeCache*
-			edge_cache();
 			
 			
 			inline int
@@ -88,18 +79,9 @@ namespace mapgeneration
 			
 			int _current_position;
 			
-			EdgeCache _edge_cache;
-			
 			TileCache _tile_cache;
 
 	};
-	
-	
-	inline EdgeCache*
-	TraceLog::edge_cache()
-	{
-		return &_edge_cache;
-	}
 	
 	
 	inline int

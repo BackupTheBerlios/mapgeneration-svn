@@ -22,8 +22,6 @@ namespace mapgeneration
 		_command_stream(std::stringstream::in | std::stringstream::out |
 			std::stringstream::binary),
 		_current_position(-1),
-		_edge_cache(0, EdgeCache::_FIFO, 
-			EdgeCache::_NON_PERSISTENT | EdgeCache::_NO_MEMORY_LIMIT),
 		_tile_cache(0, TileCache::_FIFO,
 			TileCache::_NON_PERSISTENT | TileCache::_NO_MEMORY_LIMIT)
 	{
@@ -66,20 +64,8 @@ namespace mapgeneration
 			case _NEW_NODE:
 				std::cout << "new_node\n";
 			break;
-			case _NEW_EDGE:
-				std::cout << "new_edge\n";
-			break;
 			case _MERGE_NODE:
 				std::cout << "merge_node\n";
-			break;
-			case _EXTEND_EDGE:
-				std::cout << "extend_edge\n";
-			break;
-			case _SPLIT_EDGE:
-				std::cout << "split_edge\n";
-			break;
-			case _CONNECT_EDGES:
-				std::cout << "connect_edges\n";
 			break;
 			default:
 				std::cout << "unknown command\n";
@@ -106,18 +92,7 @@ namespace mapgeneration
 		{
 			Tile* tile = new Tile(Serializer::deserialize<Tile>(i_stream));
 			_tile_cache.insert(tile->get_id(), tile);
-		}
-		
-		int edge_number = Serializer::deserialize<int>(i_stream);		
-		mlog(MLog::debug, "TraceLog::load") << "Reading "
-			<< edge_number << " edges.\n";
-
-		for (int i = 0; i<edge_number; ++i)
-		{
-			Edge* edge = new Edge(Serializer::deserialize<Edge>(i_stream));
-			_edge_cache.insert(edge->get_id(), edge);
-		}
-		
+		}		
 		
 		// *** Commands	***
 		// Read data

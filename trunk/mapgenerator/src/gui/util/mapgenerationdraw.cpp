@@ -13,41 +13,22 @@
 
 namespace mapgeneration_gui
 {
+	
+	void
+	MapGenerationDraw::arrow(GPSDraw* gps_draw, const GeoCoordinate& p1,
+		const GeoCoordinate& p2)
+	{
+		gps_draw->arrow(p1.get_latitude(), p1.get_longitude(), 
+			p2.get_latitude(), p2.get_longitude(), 5.0);
+	}
+	
 		
 	void
-	MapGenerationDraw::edge(GPSDraw* gps_draw, 
-		const std::vector< Node >& edge_nodes, const double detail)
+	MapGenerationDraw::edge(GPSDraw* gps_draw, const GeoCoordinate& p1,
+		const GeoCoordinate& p2)
 	{
-		int jump_size = (int)(1.0/detail);
-				
-		std::vector< Node >::const_iterator 
-			nodes_iter = edge_nodes.begin();
-		std::vector< Node >::const_iterator 
-			nodes_iter_end = edge_nodes.end();
-		
-		std::vector< Node >::const_iterator
-			previous_node = nodes_iter;
-		
-		if (nodes_iter != nodes_iter_end)
-		{
-			++nodes_iter;
-		}
-		
-		bool last_run = false;
-		while (nodes_iter != nodes_iter_end)
-		{
-			gps_draw->line(previous_node->get_latitude(), previous_node->get_longitude(), 
-				nodes_iter->get_latitude(), nodes_iter->get_longitude());
-			
-			previous_node = nodes_iter;
-			
-			for (int i=0; i<=jump_size && nodes_iter != nodes_iter_end; ++i, ++nodes_iter);
-			if (nodes_iter == nodes_iter_end && !last_run)
-			{
-				--nodes_iter;
-				last_run = true;
-			}
-		}
+		gps_draw->line(p1.get_latitude(), p1.get_longitude(), 
+			p2.get_latitude(), p2.get_longitude());
 	}
 
 

@@ -25,15 +25,11 @@ namespace mapgeneration_gui
 		_db_connection = new DBConnection();
 		_db_connection->init();
 		_db_connection->connect("MapGeneration", "mapgeneration", "mg");
-		
-		EdgeCache* edge_cache = new EdgeCache(_db_connection, EdgeCache::_FIFO, 
-			EdgeCache::_NO_WRITEBACK, 20000000,	18000000);
-		edge_cache->start();
+
 		TileCache* tile_cache = new TileCache(_db_connection, TileCache::_FIFO,
 			TileCache::_NO_WRITEBACK, 20000000,	18000000);
 		tile_cache->start();
-		
-		set_edge_cache(edge_cache);
+
 		set_tile_cache(tile_cache);
 		
 		mlog(MLog::info, "MapPanelLogic")
@@ -43,8 +39,6 @@ namespace mapgeneration_gui
 	
 	MapPanelLogic::~MapPanelLogic()
 	{
-		delete _edge_cache;
-		
 		delete _tile_cache;
 		
 		_db_connection->disconnect();

@@ -56,7 +56,7 @@ namespace mapgeneration
 			 * FilteredTrace.
 			 */
 			void
-			calculate_needed_tile_ids();
+			calculate_needed_tile_ids(double radius);
 
 			
 			/**
@@ -125,6 +125,15 @@ namespace mapgeneration
 			
 			
 			/**
+			 * @brief Returns the interpolated GPSPoint at the given position.
+			 * 
+			 * @param meters The position to interpolate.
+			 */
+			GPSPoint
+			gps_point_at(double meters);
+			
+			
+			/**
 			 * @brief Returns corresponding member attribute.
 			 * 
 			 * @return true, if the GPSPoints in this list has valid altitude
@@ -132,6 +141,20 @@ namespace mapgeneration
 			 */
 			inline bool
 			gps_points_have_valid_altitudes();
+			
+			
+			/**
+			 * @brief Returns the length of the trace.
+			 * 
+			 * At the moment this method calculates the length each time it is
+			 * called. Should we name it calculate_length therefore, or just
+			 * hope that we find a better way?
+			 * 
+			 * @return Length of the trace in meters.
+			 */
+			double
+			length_meters();
+			
 			
 			
 			/**

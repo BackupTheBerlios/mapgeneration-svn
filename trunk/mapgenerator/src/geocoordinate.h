@@ -63,6 +63,13 @@ namespace mapgeneration
 			 * @param altitude a value for the altitude (default: 0)
 			 */
 			GeoCoordinate(double latitude, double longitude, double altitude = 0);
+			
+			
+			/**
+			 * @brief Calculates the direction of the GeoCoordinate.
+			 */
+			double
+			calculate_direction(const GeoCoordinate& geo_coordinate) const;
 		
 		
 			/**

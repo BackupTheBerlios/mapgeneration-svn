@@ -18,9 +18,8 @@ namespace mapgeneration
 {
 
 	TileManager::TileManager(pubsub::ServiceList* service_list, 
-		EdgeCache* edge_cache, TileCache* tile_cache)
-	: _edge_cache(edge_cache), _tile_cache(tile_cache)
-		, _service_list(service_list)
+		TileCache* tile_cache)
+	: _tile_cache(tile_cache), _service_list(service_list)
 	{
 		_finished_trace_processor_ids;
 		_locked_tiles;
@@ -35,7 +34,7 @@ namespace mapgeneration
 	}
 	
 	
-	unsigned int
+/*	unsigned int
 	TileManager::create_new_edge(std::pair<unsigned int, unsigned int> first_node_id, 
 		std::pair<unsigned int, unsigned int> second_node_id, double time)
 	{
@@ -52,10 +51,10 @@ namespace mapgeneration
 			.write().nodes()[second_node_id.second].second.edge_ids().push_back(this_edge_id);			
 		
 		return this_edge_id;
-	}
+	}*/
 	
 	
-	std::vector<Node>
+/*	std::vector<Node>
 	TileManager::get_edge_nodes(unsigned int edge_id)
 	{
 		std::vector<Node> result;
@@ -70,7 +69,7 @@ namespace mapgeneration
 		std::list< std::pair<unsigned int, unsigned int> >::const_iterator iter = edge->node_ids().begin();
 		std::list< std::pair<unsigned int, unsigned int> >::const_iterator iter_end = edge->node_ids().end();
 		
-		/* With an invalid value for tile_id we could skip this extra init.. */
+		// With an invalid value for tile_id we could skip this extra init..
 		TileCache::Pointer tile;
 		unsigned int tile_id;
 		if (iter != iter_end)
@@ -101,10 +100,10 @@ namespace mapgeneration
 		}
 		
 		return result;
-	}
+	}*/
 	
 	
-	std::vector< std::vector<Node> >
+/*	std::vector< std::vector<Node> >
 	TileManager::get_tile_edges_nodes(const unsigned int tile_id)
 	{
 		std::vector< std::vector<Node> > edges_nodes;
@@ -120,18 +119,22 @@ namespace mapgeneration
 		}
 
 		return edges_nodes;
-	}
+	}*/
 
 
 	void
 	TileManager::new_trace(FilteredTrace& filtered_trace)
 	{
-		filtered_trace.calculate_needed_tile_ids();
+		double search_radius_m;
+		_service_list->get_service_value(
+			"traceprocessor.search_radius_m", search_radius_m
+		);
+		filtered_trace.calculate_needed_tile_ids(search_radius_m * 2.5);
 		_trace_queue.push_back(filtered_trace);
 	}
 	
 	
-	unsigned int
+/*	unsigned int
 	TileManager::request_edge_connect(unsigned int from_last_of_this_edge_id, unsigned int to_first_of_that_edge_id)
 	{
 //		std::cout << "TileManager::request_edge_connect; ";
@@ -143,7 +146,7 @@ namespace mapgeneration
 		std::list< std::pair<unsigned int, unsigned int> >::iterator iter_end = 
 			second_edge.write().node_ids().end();
 		
-		/* With an invalid value for tile_id we could skip this extra init.. */
+		// With an invalid value for tile_id we could skip this extra init.. 
 		TileCache::Pointer tile;
 		unsigned int tile_id;
 		if (iter != iter_end)
@@ -172,14 +175,14 @@ namespace mapgeneration
 		}
 		
 		first_edge.write().node_ids().insert(first_edge.write().node_ids().end(), second_edge.write().node_ids().begin(), second_edge.write().node_ids().end());
-		/** @todo Perhaps we need a possibility to delete an edge!
-		 * Here: second_edge is obsolent! */
+		// @todo Perhaps we need a possibility to delete an edge!
+		// Here: second_edge is obsolent!
 		
 		return (first_edge->get_id());
-	}
+	}*/
 	
 	
-	void
+/*	void
 	TileManager::request_edge_extend(unsigned int edge_id, std::pair<unsigned int, unsigned int> next_to_node_id, 
 		std::pair<unsigned int, unsigned int> new_node_id, double time)
 	{
@@ -206,7 +209,7 @@ namespace mapgeneration
 	)
 	{
 //		std::cout << "TileManager:request_edge_split; ";
-//		lock_edge_tiles(edge_id); /** @todo think about that! */
+//		lock_edge_tiles(edge_id); // @todo think about that! 
 		
 		EdgeCache::Pointer edge = _edge_cache->get(edge_id);
 		if (edge == 0)
@@ -216,7 +219,7 @@ namespace mapgeneration
 			return false;
 		}
 		
-		/* no split needed when condition becomes true! */
+		// no split needed when condition becomes true!
 		if (edge->node_is_at_start(to_node_id) || edge->node_is_at_end(to_node_id))
 			return false;
 
@@ -224,16 +227,16 @@ namespace mapgeneration
 				std::find(edge.write().node_ids().begin(), edge.write().node_ids().end(), to_node_id);
 		if (find_iter != edge.write().node_ids().end())
 		{
-			/* create new edge (but do not use so-called method!) */
+			// create new edge (but do not use so-called method!) 
 			unsigned int new_edge_id;
 			_edge_cache->insert(&new_edge_id, new Edge());
 			EdgeCache::Pointer new_edge = _edge_cache->get(new_edge_id);
 			new_edge.write().set_id(new_edge_id);
 			
-			/* move all nodes until to_node_id (exclusively) to the new edge
-			 *
-			 * a variante tres chic:
-			 * std::transform(edge->node_ids().begin(), find_iter, new_edge->node_ids().end(), FUNCTION); */
+			// move all nodes until to_node_id (exclusively) to the new edge
+			//
+			// a variante tres chic:
+			// std::transform(edge->node_ids().begin(), find_iter, new_edge->node_ids().end(), FUNCTION); 
 			std::list< std::pair<unsigned int, unsigned int> >::iterator loop_iter = edge.write().node_ids().begin();
 			for (; loop_iter != find_iter; ++loop_iter)
 			{
@@ -243,16 +246,16 @@ namespace mapgeneration
 			new_edge.write().node_ids().splice(new_edge.write().node_ids().begin(), edge.write().node_ids(),
 					edge.write().node_ids().begin(), find_iter);
 			
-			/* copy to_node_id into new_edge */
+			// copy to_node_id into new_edge 
 			Node& node = _tile_cache->get(find_iter->first).write().nodes()[find_iter->second].second;
 			node.edge_ids().push_back(new_edge->get_id());
 			new_edge.write().node_ids().push_back(*find_iter);
 			
-			/* move times
-			 *
-			 * would be nice, but list::iterator does not support operator+()!
-			 * new_edge->times().splice(new_edge->times().begin(), edge->times(),
-			 *		edge->times().begin(), edge->times().begin() + new_edge->node_ids().size() - 1); */
+			// move times
+			//
+			 // would be nice, but list::iterator does not support operator+()!
+			// new_edge->times().splice(new_edge->times().begin(), edge->times(),
+			//		edge->times().begin(), edge->times().begin() + new_edge->node_ids().size() - 1); 
 			std::list<double>::iterator edge_times_iter = edge.write().times().begin();
 			int size = static_cast<int>(new_edge->node_ids().size());
 			for (int count = 0; count < size - 2; ++count)
@@ -274,7 +277,7 @@ namespace mapgeneration
 		}
 		
 //		unlock_edge_tiles(edge_id);
-	}
+	}*/
 
 
 	void
@@ -361,10 +364,10 @@ namespace mapgeneration
 	}
 	
 	
-	void
+/*	void
 	TileManager::lock_edge_tiles(unsigned int edge_id)
 	{
-	}
+	}*/
 
 
 	unsigned int
@@ -408,8 +411,10 @@ namespace mapgeneration
 		
 		/** @todo A mutex is needed here (EdgeSplit between push_back and run).*/
 		/* Create a new TraceProcessor */
-		TraceProcessor* new_trace_processor = new TraceProcessor(this_trace_processor_id,
-			this, filtered_trace);
+		TraceProcessor* new_trace_processor = new TraceProcessor(
+			this_trace_processor_id,
+			this, _service_list, filtered_trace
+		);
 				
 		/* Create the entry for the map of TraceProcessors and insert it */
 		std::pair<unsigned int, TraceProcessor*> trace_entry;
@@ -424,10 +429,10 @@ namespace mapgeneration
 	}
 
 
-	void
+/*	void
 	TileManager::unlock_edge_tiles(unsigned int edge_id)
 	{
-	}
+	}*/
 
 } // namespace mapgeneration
 

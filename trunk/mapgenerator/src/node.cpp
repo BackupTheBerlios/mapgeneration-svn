@@ -17,37 +17,39 @@ namespace mapgeneration
 {
 
 	Node::Node()
-	: Direction(), GeoCoordinate(), _edge_ids(), _weight(1)
+	: Direction(), GeoCoordinate(), _weight(1)
 	{
 	}
 	
 	
 	Node::Node(const Node& node)
-	: Direction(node), GeoCoordinate(node), _edge_ids(node._edge_ids), 
+	: Direction(node), GeoCoordinate(node), _next_node_ids(node._next_node_ids), 
 		_weight(node._weight)
 	{
 	}
 	
 			
 	Node::Node(const GPSPoint& gps_point)
-	: Direction(gps_point), GeoCoordinate(gps_point), _edge_ids(), _weight(1)
+	: Direction(gps_point), GeoCoordinate(gps_point), _weight(1)
 	{
 	}
 	
 	
-	bool
-	Node::is_on_edge_id(unsigned int edge_id) const
+	void
+	Node::add_next_node_id(std::pair<unsigned int, unsigned int> next_node_id)
 	{
-		std::vector<unsigned int>::const_iterator iter = _edge_ids.begin();
-		std::vector<unsigned int>::const_iterator iter_end = _edge_ids.end();
+		std::vector< std::pair<unsigned int, unsigned int> >::iterator iter=
+			_next_node_ids.begin();
+		for (; iter != _next_node_ids.end() && 
+			(iter->first!=next_node_id.first || 
+				iter->second!=next_node_id.second);
+			iter++)
+		{}
 		
-		for (; iter != iter_end; ++iter)
-		{
-			if (*iter == edge_id)
-				return true;
-		}
-		
-		return false;
+		Node::Id new_node_id = std::make_pair(next_node_id.first, next_node_id.second);
+		if (iter == _next_node_ids.end())
+			_next_node_ids.push_back(new_node_id);
+		std::cout << "_next_node_ids.size(): " << _next_node_ids.size() << "\n";
 	}
 	
 	
@@ -80,31 +82,34 @@ namespace mapgeneration
 	}
 	
 	
+	bool
+	Node::is_reachable(Id node_id) const
+	{
+		std::vector< std::pair<unsigned int, unsigned int> >::const_iterator 
+			iter=_next_node_ids.begin();
+		for (; iter != _next_node_ids.end() && 
+			(iter->first!=node_id.first || 
+				iter->second!=node_id.second);
+			iter++)
+		{}
+		
+		if (iter == _next_node_ids.end())
+			return false;
+			
+		return true;
+	}
+	
+	
 	Node&
 	Node::operator=(const Node& node)
 	{
 		GeoCoordinate::operator=(node);
 		Direction::operator=(node);
-
-		_edge_ids = node._edge_ids;
-
+		_next_node_ids = node._next_node_ids;
 		_weight = node._weight;
 		
 		return *this;
 	}
 
-
-	void
-	Node::renumber(unsigned int from_id, unsigned int to_id)
-	{
-		std::vector<unsigned int>::iterator iter = std::find(_edge_ids.begin(), _edge_ids.end(), from_id);
-		if (iter == _edge_ids.end())
-		{
-			mlog(MLog::error, "Node::renumber") << "Cannot find edge from_id!\n!";
-		} else
-		{
-			*iter = to_id;
-		}
-	}
 
 }

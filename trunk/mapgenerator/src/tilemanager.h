@@ -18,8 +18,6 @@ namespace mapgeneration
 #include <list>
 #include <map>
 
-#include "edge.h"
-#include "edgecache.h"
 #include "filteredtrace.h"
 #include "tile.h"
 #include "tilecache.h"
@@ -57,48 +55,14 @@ namespace mapgeneration
 			 * @param edge_cache pointer to the edge cache
 			 * @param tile_cache pointer to the tile cache
 			 */
-			TileManager(pubsub::ServiceList* service_list, 
-				EdgeCache* edge_cache, TileCache* tile_cache);
+			TileManager(pubsub::ServiceList* service_list, TileCache* tile_cache);
 
 
 			/**
 			 * @brief Destructor.
 			 */
 			~TileManager();
-			
-			
-			/**
-			 * @brief Creates a new edge.
-			 * 
-			 * This edge only contains the specified nodes and returns
-			 * the id of the new edge.
-			 * 
-			 * @param first_node_id id of first node
-			 * @param second_node_id id of second node
-			 * @param time time between the given nodes
-			 * @return id of the newly created edge
-			 */
-			unsigned int
-			create_new_edge(std::pair<unsigned int, unsigned int> first_node_id, 
-				std::pair<unsigned int, unsigned int> second_node_id, double time);
-			
-			
-			/**
-			 * @return pointer to the edge cache
-			 */
-			inline EdgeCache*
-			get_edge_cache();
-			
-			
-			/**
-			 * @brief Returns the nodes of the specified edge.
-			 * 
-			 * @param edge_id the edge id
-			 * @return vector of nodes
-			 */
-			std::vector<Node>
-			get_edge_nodes(unsigned int edge_id);
-			
+						
 			
 			/**
 			 * @return pointer to the tile cache
@@ -106,16 +70,6 @@ namespace mapgeneration
 			inline TileCache*
 			get_tile_cache();
 			
-			
-			/**
-			 * @brief Calculate every node from every edge used in specified tile.
-			 * 
-			 * @param  tile_id the tile id
-			 * @return vector of nodes
-			 */
-			std::vector< std::vector<Node> >
-			get_tile_edges_nodes(const unsigned int tile_id);
-
 
 			/**
 			 * @brief This methods has to be called when a new trace is inserted
@@ -128,63 +82,6 @@ namespace mapgeneration
 			 */
 			void
 			new_trace(FilteredTrace& filtered_trace);
-
-
-			/**
-			 * @brief When an "edge connect" is requested by a Traceprocessor, this
-			 * method will be invoked.
-			 * 
-			 * Connects the last node of from_last_of_this_edge_id to the first
-			 * node of to_first_of_that_edge_id. It has to guarantee a convenient,
-			 * correct working.
-			 * 
-			 * @param from_last_of_this_edge_id id of first edge
-			 * @param to_first_of_that_edge_id id of second edge
-			 * @return id of newly created edge
-			 */
-			unsigned int
-			request_edge_connect(unsigned int from_last_of_this_edge_id, unsigned int to_first_of_that_edge_id);
-
-
-			/**
-			 * @brief When an "edge extend" is requested by a Traceprocessor, this
-			 * method will be invoked.
-			 * 
-			 * Extends the edge "edge_id" by the node "new_node_id". This method
-			 * searches for the node "next_to_node_id" and then performs there 
-			 * the extension. It has to guarantee a convenient, correct working.
-			 * 
-			 * @param edge_id the edge id
-			 * @param next_to_node_id the node which marks the right end of the edge
-			 * @param new_node_id the id of the new node
-			 * @param time time between next_to_node_id and new_node_id
-			 */
-			void
-			request_edge_extend(unsigned int edge_id, std::pair<unsigned int, unsigned int> next_to_node_id, 
-				std::pair<unsigned int, unsigned int> new_node_id, double time);
-			
-			
-			/**
-			 * @brief When an "edge split" is requested by a Traceprocessor, this
-			 * method will be invoked.
-			 * 
-			 * Splits the edge "edge_id" at the node "to_node_id" and creates
-			 * a new edge from one part. It has to guarantee a convenient,
-			 * correct working.
-			 * 
-			 * @param edge_id the edge id
-			 * @param to_node_id the node where the split takes place
-			 * @param new_edge_1_id contains the first new edge ID after a successful
-			 * invokation
-			 * @param new_edge_2_id contains the second new edge ID after a successful
-			 * invokation
-			 * 
-			 * @return true, if split was successful
-			 */
-			bool
-			request_edge_split(unsigned int edge_id,
-				std::pair<unsigned int, unsigned int> to_node_id,
-				unsigned int* new_edge_1_id = 0, unsigned int* new_edge_2_id = 0);
 			
 			
 			/**
@@ -211,7 +108,7 @@ namespace mapgeneration
 			/**
 			 * @brief Pointer to the edge cache.
 			 */		
-			EdgeCache* _edge_cache;
+//			EdgeCache* _edge_cache;
 			
 			
 			/**
@@ -268,29 +165,6 @@ namespace mapgeneration
 			 */
 			void
 			delete_trace_processor(unsigned int id);
-
-
-			/**
-			 * @brief Returns a vector of tileIDs which are traversed by the edge.
-			 * 
-			 * @param edge_id the edge id
-			 * @return vector of tileIDs
-			 */
-			std::vector<unsigned int>
-			get_edge_tiles(unsigned int edge_id);
-			
-
-			/**
-			 * @brief Locks tiles which are used when modifying the edge.
-			 * 
-			 * It has to notify the concerned TraceProcessors
-			 * 
-			 * @param edge_id the edge id
-			 * 
-			 * @see unlock_edge_tiles
-			 */
-			void
-			lock_edge_tiles(unsigned int edge_id);
 			
 			
 			/**
@@ -302,29 +176,8 @@ namespace mapgeneration
 			unsigned int
 			process_trace(FilteredTrace& filteredTrace);
 
-
-			/**
-			 * @brief Unlocks tiles which were previously locked by the corresponding
-			 * method.
-			 * 
-			 * It unlocks the tiles which were used when modifying the edge. It
-			 * has to notify the concerned Traceprocessors.
-			 * 
-			 * @param edge_id the edge id
-			 * 
-			 * @see lock_edge_tiles
-			 */
-			void
-			unlock_edge_tiles(unsigned int edge_id);
-
 	};
 
-
-	inline EdgeCache*
-	TileManager::get_edge_cache()
-	{
-		return _edge_cache;
-	}
 	
 	
 	inline TileCache*

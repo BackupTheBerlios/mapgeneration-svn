@@ -40,8 +40,10 @@ namespace mapgeneration
 			if ((distance <= search_radius) && (angle_difference <= search_angle))
 			{
 				cluster_nodes.push_back(std::make_pair(get_id(), iter.position_number()));
-			}			
+			}
 		}
+		
+		std::cout << "Cluster nodes search returns " << cluster_nodes.size() << " nodes.\n";
 		
 		return cluster_nodes;
 	}
@@ -53,33 +55,6 @@ namespace mapgeneration
 		Serializer::deserialize(i_stream, _id);
 		Serializer::deserialize(i_stream, _nodes);
 	}
-	
-	
-	std::vector<unsigned int>
-	Tile::get_edge_ids() const
-	{
-		std::vector<unsigned int> edge_ids;
-		
-		FixpointVector<Node>::const_iterator nodes_iter = _nodes.begin();
-		FixpointVector<Node>::const_iterator nodes_iter_end = _nodes.end();
-		for (; nodes_iter != nodes_iter_end; ++nodes_iter)
-		{
-			std::vector<unsigned int>::const_iterator node_edge_ids_iter
-				= nodes_iter->second.edge_ids().begin();
-			std::vector<unsigned int>::const_iterator node_edge_ids_iter_end
-				= nodes_iter->second.edge_ids().end();
-			for (; node_edge_ids_iter != node_edge_ids_iter_end; ++node_edge_ids_iter)
-			{
-				if (std::find(edge_ids.begin(), edge_ids.end(), 
-						*node_edge_ids_iter) == edge_ids.end())
-				{
-					edge_ids.push_back(*node_edge_ids_iter);
-				}
-			}
-		}		
-		
-		return edge_ids;
-	}	
 	
 	
 	

@@ -12,7 +12,6 @@
 #include <cc++/thread.h>
 
 #include "defaultconfiguration.h"
-#include "edgecache.h"
 #include "tilecache.h"
 #include "tilemanager.h"
 #include "tracefilter.h"
@@ -61,14 +60,6 @@ class ExecutionManager {
 		 * @see DBConnection
 		 */
 		DBConnection* _db_connection;
-	
-	
-		/**
-		 * @brief Pointer to the EdgeCache.
-		 * 
-		 * @see EdgeCache
-		 */
-		EdgeCache* _edge_cache;
 		
 		
 		/**

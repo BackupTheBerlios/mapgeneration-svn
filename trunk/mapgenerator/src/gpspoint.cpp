@@ -328,23 +328,15 @@ namespace mapgeneration
 	}
 	
 	
-	void
+	double
 	GPSPoint::calculate_direction(GeoCoordinate& geo_coordinate)
-	{		
-		double latitude_difference = geo_coordinate.get_latitude() - get_latitude();
-		double longitude_difference = geo_coordinate.get_longitude() - get_longitude();
-		
-		/* calculation of the direction with the following formula */
-		double direction = atan(longitude_difference / latitude_difference);
-		
-		if (latitude_difference >= 0)
-			;
-		else
-			direction += PI;
-			
-		if (direction < 0) direction += 2 * PI;
-
+	{
+		double direction = GeoCoordinate::calculate_direction(geo_coordinate);
 		set_direction(direction);
+		
+		std::cout << "WARNING, USING OLD METHOD!!!";
+
+		return direction;
 	}
 	
 	

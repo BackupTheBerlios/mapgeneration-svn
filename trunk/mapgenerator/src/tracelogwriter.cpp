@@ -18,7 +18,6 @@ namespace mapgeneration
 		const std::string file_name, const FilteredTrace& filtered_trace)
 	: _log_stream(0)
 	{
-		_edge_cache = tile_manager->get_edge_cache();
 		_tile_cache = tile_manager->get_tile_cache();
 		
 		_log_stream = new std::ofstream(file_name.c_str(), 
@@ -74,16 +73,6 @@ namespace mapgeneration
 	
 	
 	void
-	TraceLogWriter::new_edge(const Edge& edge)
-	{
-		std::stringstream command_stream;
-		Serializer::serialize(command_stream, TraceLog::_NEW_EDGE);
-		Serializer::serialize(command_stream, edge);
-		write_command(command_stream.str());
-	}
-	
-	
-	void
 	TraceLogWriter::merge_node(const std::pair<unsigned int, unsigned int>& node_id, 
 		const GPSPoint& gps_point, const Node& new_node)
 	{
@@ -94,38 +83,9 @@ namespace mapgeneration
 		Serializer::serialize(command_stream, new_node);
 		write_command(command_stream.str());
 	}
-
-	
-	void
-	TraceLogWriter::extend_edge(const unsigned int edge_id,
-		const std::pair<unsigned int, unsigned int>& next_to_node_id,
-		const std::pair<unsigned int, unsigned int>& node_id,
-		const double time_to_node)
-	{
-		std::stringstream command_stream;
-		Serializer::serialize(command_stream, TraceLog::_EXTEND_EDGE);
-		Serializer::serialize(command_stream, edge_id);
-		Serializer::serialize(command_stream, next_to_node_id);		
-		Serializer::serialize(command_stream, node_id);
-		Serializer::serialize(command_stream, time_to_node);
-		write_command(command_stream.str());
-	}
 	
 	
-	void
-	TraceLogWriter::split_edge(const unsigned int  edge_id, 
-		const Edge& new_edge_1, const Edge& new_edge_2)
-	{
-		std::stringstream command_stream;
-		Serializer::serialize(command_stream, TraceLog::_SPLIT_EDGE);
-		Serializer::serialize(command_stream, edge_id);
-		Serializer::serialize(command_stream, new_edge_1);
-		Serializer::serialize(command_stream, new_edge_2);
-		write_command(command_stream.str());
-	}
-	
-	
-	void
+/*	void
 	TraceLogWriter::connect_edges(
 		const unsigned int  edge_id_1, 
 		const unsigned int edge_id_2,  const Edge& new_edge)
@@ -136,7 +96,7 @@ namespace mapgeneration
 		Serializer::serialize(command_stream, edge_id_2);
 		Serializer::serialize(command_stream, new_edge);
 		write_command(command_stream.str());
-	}
+	}*/
 
 
 
@@ -189,31 +149,6 @@ namespace mapgeneration
 //				_tile_cache->insert(*tile_ids_iter, new Tile(*tile_ids_iter));
 //				tile_pointer = _tile_cache->get(*tile_ids_iter);
 				throw(std::string("Arg"));
-			}
-			
-			std::vector<unsigned int> needed_edges_in_this = 
-				tile_pointer->get_edge_ids();
-			needed_edges.insert(needed_edges_in_this.begin(), 
-				needed_edges_in_this.end());
-		}
-		
-		// Edges
-		mlog(MLog::debug, "TraceLogWriter::write_header") << "Writing "
-			<< needed_edges.size() << " edges.\n";
-		Serializer::serialize(*_log_stream, (int)needed_edges.size());		
-		std::set<unsigned int>::iterator edge_ids_iter =
-			needed_edges.begin();
-		std::set<unsigned int>::iterator edge_ids_iter_end =
-			needed_edges.end();
-		for (; edge_ids_iter != edge_ids_iter_end; ++edge_ids_iter)
-		{
-			EdgeCache::Pointer edge_pointer = _edge_cache->get(*edge_ids_iter);
-			if (edge_pointer != 0)
-			{
-				Serializer::serialize(*_log_stream, *edge_pointer);
-			} else
-			{
-				throw (new std::string("Arg 2."));
 			}
 		}
 				

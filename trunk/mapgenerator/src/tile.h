@@ -64,15 +64,6 @@ namespace mapgeneration
 			 */
 			void
 			deserialize(std::istream& i_stream);
-			
-			
-			/**
-			 * @brief Calculates the edges which are used in the attribute "_nodes".
-			 * 
-			 * @return vector of edges
-			 */
-			std::vector<unsigned int>
-			get_edge_ids() const;
 
 			
 			/**

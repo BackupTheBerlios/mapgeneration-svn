@@ -53,19 +53,7 @@ namespace mapgeneration
 			void
 			changed_trace(const GPSPoint& new_start, const int removed_gps_points);
 			
-			
-			void
-			connect_edges(const unsigned int  edge_id_1, 
-				const unsigned  int edge_id_2,  const Edge& new_edge);
-			
 
-			void
-			extend_edge(const unsigned int edge_id,
-				const std::pair<unsigned int, unsigned int>& next_to_node_id,
-				const std::pair<unsigned int, unsigned int>& node_id,
-				const double time_to_node);
-			
-			
 			void
 			merge_node(const std::pair<unsigned int, unsigned int>& node_id, 
 				const GPSPoint& gps_point, const Node& new_node);
@@ -74,27 +62,15 @@ namespace mapgeneration
 			void
 			new_node(const std::pair<unsigned int, unsigned int>& node_id, 
 				const Node& node);
-			
-			
-			void
-			new_edge(const Edge& edge);
-			
+				
 			
 			void
 			next_step();
 			
 			
-			void
-			split_edge(const unsigned int  edge_id, const Edge& new_edge_1, 
-				const Edge& new_edge_2);
-			
-			
 		private:
 
 			std::ofstream* _log_stream;
-			
-
-			EdgeCache* _edge_cache;
 
 
 			TileCache* _tile_cache;

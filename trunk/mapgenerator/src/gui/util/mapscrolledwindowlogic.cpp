@@ -22,9 +22,8 @@ namespace mapgeneration_gui
 	MapScrolledWindowLogic::MapScrolledWindowLogic
 		(wxScrolledWindow* map_scrolled_window)
 	: _dragging(false), 
-		_edge_cache(0),
 		_gps_draw(),
-		_map_drawer(map_scrolled_window, &_gps_draw, 0, 0),
+		_map_drawer(map_scrolled_window, &_gps_draw, 0),
 		_map_scrolled_window(map_scrolled_window),
 		_offset_x(0), 
 		_offset_y(0), 
@@ -153,14 +152,6 @@ namespace mapgeneration_gui
 		int view_start_x = wx_point.x - client_size_x / 2;
 		int view_start_y = wx_point.y - client_size_y / 2;
 		_map_scrolled_window->Scroll(view_start_x, view_start_y);
-	}
-	
-	
-	void
-	MapScrolledWindowLogic::set_edge_cache(EdgeCache* edge_cache)
-	{
-		_edge_cache = edge_cache;
-		_map_drawer.set_edge_cache(_edge_cache);
 	}
 	
 	

@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "geocoordinate.h"
 #include "node.h"
 
 
@@ -27,8 +28,12 @@ namespace mapgeneration_gui
 		public:
 		
 			static void
-			edge(GPSDraw* gps_draw, const std::vector< Node >& edge_nodes,
-				const double detail = 1.0);
+			arrow(GPSDraw* gps_draw, const GeoCoordinate& p1,
+				const GeoCoordinate& p2);
+		
+			static void
+			edge(GPSDraw* gps_draw, const GeoCoordinate& p1,
+				const GeoCoordinate& p2);
 
 			
 			static void

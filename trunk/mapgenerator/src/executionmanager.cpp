@@ -49,12 +49,6 @@ namespace mapgeneration
 		_db_connection->init();
 		_db_connection->connect("MapGeneration", "mapgeneration", "mg", true);
 		mlog(MLog::info, "ExecutionManager") << "DBConnection initialized.\n";
-
-		mlog(MLog::info, "ExecutionManager") << "Starting EdgeCache.\n";
-		_edge_cache = new EdgeCache(_db_connection, 
-			EdgeCache::_FIFO, EdgeCache::_STANDARD_CACHE, 12000000, 10000000);
-		_edge_cache->controlled_start();
-		mlog(MLog::info, "ExecutionManager") << "EdgeCache started.\n";
 		
 		mlog(MLog::info, "ExecutionManager") << "Starting TileCache.\n";
 		_tile_cache = new TileCache(_db_connection, 
@@ -63,7 +57,7 @@ namespace mapgeneration
 		mlog(MLog::info, "ExecutionManager") << "TileCache started.\n";
 
 		mlog(MLog::info, "ExecutionManager") << "Starting TileManager.\n";
-		_tile_manager = new TileManager(_service_list, _edge_cache, _tile_cache);
+		_tile_manager = new TileManager(_service_list, _tile_cache);
 		_tile_manager->controlled_start();
 		mlog(MLog::info, "ExecutionManager") << "TileManager started.\n";
 		
@@ -114,11 +108,6 @@ namespace mapgeneration
 		_tile_cache->controlled_stop();
 		delete _tile_cache;
 		mlog(MLog::info, "ExecutionManager") << "TileCache stopped.\n";
-
-		mlog(MLog::info, "ExecutionManager") << "Stopping EdgeCache...\n";
-		_edge_cache->controlled_stop();
-		delete _edge_cache;
-		mlog(MLog::info, "ExecutionManager") << "EdgeCache stopped.\n";
 		
 		#ifdef DEBUG
 			if (delete_db == true)

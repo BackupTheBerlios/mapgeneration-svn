@@ -29,10 +29,14 @@ namespace mapgeneration
 			DefaultConfiguration()
 			{						
 				v.push_back(Parameter("traceserver.port", "int", "9000"));
-				v.push_back(Parameter("tracefilter.max_acc", "double", "15"));
+				
+				v.push_back(Parameter("traceprocessor.search_step_size_m", "double", "10"));
+				v.push_back(Parameter("traceprocessor.search_radius_m", "double", "24"));
+				v.push_back(Parameter("traceprocessor.search_max_angle_difference_pi", "double", "0.25"));
+				/*v.push_back(Parameter("tracefilter.max_acc", "double", "15"));
 				v.push_back(Parameter("tracefilter.max_delta_time","double","120"));
 				v.push_back(Parameter("tracefilter.max_outlier_count","int","10"));
-				v.push_back(Parameter("tracefilter.max_distance","int","15"));
+				v.push_back(Parameter("tracefilter.max_distance","int","15"));*/
 			};
 
 		

@@ -61,14 +61,14 @@ namespace mapgeneration
 
 
 	void
-	FilteredTrace::calculate_needed_tile_ids()
+	FilteredTrace::calculate_needed_tile_ids(double radius)
 	{
 		std::set<unsigned int> temp_set;
 		
 		if (size() == 1)
 		{
 			std::vector<unsigned int> temp_vector
-				= front().get_needed_tile_ids(TraceProcessor::_SEARCH_RADIUS * 2.5);
+				= front().get_needed_tile_ids(radius);
 			temp_set.insert(temp_vector.begin(), temp_vector.end());
 			
 			_needed_tile_ids.clear();
@@ -90,7 +90,7 @@ namespace mapgeneration
 			 * threshold "30" and puts values into the vector needed_tile_ids */
 			std::vector<unsigned int> temp_vector
 				= GeoCoordinate::get_needed_tile_ids(*previous_iter, *iter,
-					TraceProcessor::_SEARCH_RADIUS * 2.5);
+					radius);
 			temp_set.insert(temp_vector.begin(), temp_vector.end());
 		}
 		
@@ -148,6 +148,67 @@ namespace mapgeneration
 			point_1->set(new_latitude, new_longitude, new_altitude);
 			point_1->set_time(new_time);
 		}
+	}
+	
+	
+	GPSPoint
+	FilteredTrace::gps_point_at(double meters)
+	{
+		iterator iter = begin();
+		iterator iter_end = end();
+			
+		if (iter == iter_end)
+		{
+			mlog(MLog::error, "FilteredTrace") << "Empty FilteredTrace: Cannot calculate new gps point at " << meters << " m!\n";
+			GPSPoint gps_point;
+			return gps_point;
+		}
+
+		std::list<GPSPoint>::iterator previous_point = iter;
+		++iter;
+
+		double left_distance = meters;
+		double distance_from_previous_point;
+		for(; iter != iter_end; ++iter)
+		{
+			distance_from_previous_point = previous_point->distance(*iter); // calculating the distance from the previous point
+			if(left_distance < distance_from_previous_point)
+			{
+				double weight = 1.0 - left_distance / previous_point->distance(*iter);
+				GPSPoint new_point = iter->interpolate(*previous_point , *iter, weight);
+				--iter;
+				new_point.set_direction(iter->get_direction());
+				++iter;
+				return new_point;
+			} else 
+			{
+				left_distance -= distance_from_previous_point;
+				previous_point = iter;
+			}
+		}
+	}
+	
+	
+	double
+	FilteredTrace::length_meters()
+	{
+		/*FilteredTrace::*/iterator iter = begin();		
+		FilteredTrace::iterator iter_end = end();
+		
+		FilteredTrace::iterator previous_iter = begin();
+		
+		if (iter != iter_end)
+			++iter;
+
+		double length_meters = 0;
+		while (iter != iter_end)
+		{
+			length_meters += iter->distance(*previous_iter);
+			previous_iter = iter;
+			iter++;
+		}
+
+		return length_meters;
 	}
 	
 		

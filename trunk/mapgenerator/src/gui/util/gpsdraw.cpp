@@ -56,6 +56,29 @@ namespace mapgeneration_gui
 	
 	
 	void
+	GPSDraw::arrow(double latitude1, double longitude1,
+		double latitude2, double longitude2, double arrow_length)
+	{
+		const double PI = 3.141592;
+		double x1, y1, x2, y2;
+		gps_project(latitude1, longitude1, x1, y1);
+		gps_project(latitude2, longitude2, x2, y2);
+		
+		double slopy , cosy , siny;
+		slopy = atan2( y1-y2, x1-x2 );
+		cosy = cos( slopy );
+		siny = sin( slopy ); //need math.h for these functions
+ 
+		_dc->DrawLine(zox(x1), -zoy(y1), zox(x2), -zoy(y2));
+	
+		_dc->DrawLine(zox(x2), -zoy(y2), zox(x2 + arrow_length * cosy - ( arrow_length / 2.0 * siny )),
+			-zoy(y2 + arrow_length * siny + ( arrow_length / 2.0 * cosy )));
+		_dc->DrawLine(zox(x2), -zoy(y2), zox(x2 + arrow_length * cosy + arrow_length / 2.0 * siny ),
+			-zoy(y2 - (arrow_length / 2.0 * cosy - arrow_length * siny )));
+	}
+	
+	
+	void
 	GPSDraw::circle(double latitude, double longitude, double radius)
 	{
 		const double PI = 3.141592;

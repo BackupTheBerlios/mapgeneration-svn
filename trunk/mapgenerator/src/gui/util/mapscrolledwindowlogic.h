@@ -18,7 +18,6 @@
 #include "mapdrawer.h"
 #include "geocoordinate.h"
 #include "dbconnection.h"
-#include "edgecache.h"
 #include "tilecache.h"
 #include "util/pubsub/asynchronousproxy.h"
 #include "util/pubsub/classcallsubscriber.h"
@@ -41,10 +40,6 @@ namespace mapgeneration_gui
 					
 			void
 			draw_map(wxPaintEvent& wx_paint_event, wxDC& dc);
-					
-					
-			void
-			edge_prefetched(unsigned int id);
 			
 			
 			wxPoint
@@ -72,10 +67,6 @@ namespace mapgeneration_gui
 			
 			
 			void
-			set_edge_cache(EdgeCache* edge_cache);
-			
-			
-			void
 			set_tile_cache(TileCache* tile_cache);
 			
 			
@@ -92,9 +83,6 @@ namespace mapgeneration_gui
 			
 
 		protected:
-						
-			
-			EdgeCache* _edge_cache;			
 
 			GPSDraw _gps_draw;
 			

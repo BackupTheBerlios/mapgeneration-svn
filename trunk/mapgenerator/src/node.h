@@ -41,6 +41,10 @@ namespace mapgeneration
 	class Node : public Direction, public GeoCoordinate {
 
 		public:
+		
+		
+			typedef std::pair<unsigned int, unsigned int> Id;
+		
 
 			/**
 			 * @brief Empty constructor.
@@ -64,29 +68,23 @@ namespace mapgeneration
 			Node(const GPSPoint& gps_point);
 			
 			
+			void
+			add_next_node_id(
+				std::pair<unsigned int, unsigned int> next_node_id);
+			
+			
 			/**
 			 * @see mapgeneration_util::Serializer
 			 */
 			inline void
-			deserialize(std::istream& i_stream);
+			deserialize(std::istream& i_stream);			
 			
 			
 			/**
-			 * @brief Returns a reference to edge_ids.
-			 * 
-			 * @return edge_ids
+			 * @see multi_purpose_integer
 			 */
-			inline std::vector<unsigned int>&
-			edge_ids();
-			
-			
-			/**
-			 * @brief Returns a const reference to edge_ids.
-			 * 
-			 * @return const edge_ids
-			 */
-			inline const std::vector<unsigned int>&
-			edge_ids() const;
+			inline int
+			get_mpi() const;
 			
 			
 			/**
@@ -97,14 +95,13 @@ namespace mapgeneration
 			
 			
 			/**
-			 * @brief Checks if this node is on specified edge.
+			 * @brief Return true if the node id is reachable from this node.
 			 * 
-			 * @param edge_id the edge which is tested
-			 * @return true, if check passed successfully
+			 * @return True if node id is reachable, false otherwise.
 			 */
 			bool
-			is_on_edge_id(unsigned int edge_id) const;
-
+			is_reachable(Id node_id) const;
+			
 
 			/**
 			 * @brief Merges two gpspoints.
@@ -120,6 +117,25 @@ namespace mapgeneration
 			
 			
 			/**
+			 * @brief Returns a reference to the vector of next node ids.
+			 * 
+			 * @return Reference to vector of next node ids.
+			 */
+			inline std::vector< std::pair<unsigned int, unsigned int> >&
+			next_node_ids();
+			
+			
+			/**
+			 * @brief Returns a constant 
+			 * reference to the vector of next node ids.
+			 * 
+			 * @return Constant reference to vector of next node ids.
+			 */
+			inline const std::vector< std::pair<unsigned int, unsigned int> >&
+			next_node_ids() const;
+			
+			
+			/**
 			 * @brief Assignment operator.
 			 * 
 			 * Assigns a Node to this.
@@ -129,16 +145,6 @@ namespace mapgeneration
 			 */
 			Node&
 			operator=(const Node& node);
-
-
-			/**
-			 * @brief Renumbers items in edge_ids from form_id to to_id.
-			 * 
-			 * @param from_id the old value
-			 * @param to_id the new value
-			 */
-			void
-			renumber(unsigned int from_id, unsigned int to_id);
 			
 			
 			/**
@@ -148,19 +154,39 @@ namespace mapgeneration
 			serialize (std::ostream& o_stream) const;
 			
 			
-		private:
-	
 			/**
-			 * @brief vector of edge ids.
-			 * 
-			 * This node belongs the every edge whose id is in this vector.
+			 * @see multi_purpose_integer
 			 */
-			std::vector<unsigned int> _edge_ids;
+			inline void
+			set_mpi(int mpi);
 			
+			
+		private:
+		
 			/**
-			 * @brief a value for the weight of a node
+			 * @brief This is used for different temporary storage operations
+			 * in some parts of the program. This value is not serialized
+			 * and may behave oddly. It is accessible via get_mpi and set_mpi.
+			 * Just don't use it!
+			 * 
+			 * @see get_mpi
+			 * @see set_mpi
 			 */
-			int _weight;
+			int
+			_multi_purpose_integer;
+
+			/**
+			 * @brief A vector of node ids that reachable from this node.
+			 */
+			std::vector< std::pair<unsigned int, unsigned int> >
+			_next_node_ids;
+
+
+			/**
+			 * @brief A value for the weight of a node.
+			 */
+			int
+			_weight;
 
 	};
 
@@ -170,25 +196,17 @@ namespace mapgeneration
 	{
 		Direction::deserialize(i_stream);
 		GeoCoordinate::deserialize(i_stream);
-		Serializer::deserialize(i_stream, _edge_ids);
+		Serializer::deserialize(i_stream, _next_node_ids);
 		Serializer::deserialize(i_stream, _weight);
 	}
 	
 	
-	inline std::vector<unsigned int>&
-	Node::edge_ids()
+	inline int
+	Node::get_mpi() const
 	{
-		return _edge_ids;
+		return _multi_purpose_integer;
 	}
-	
-	
-	inline const std::vector<unsigned int>&
-	Node::edge_ids() const
-	{
-		return _edge_ids;
-	}
-	
-	
+
 	
 	inline int
 	Node::get_weight()
@@ -197,13 +215,34 @@ namespace mapgeneration
 	}
 	
 	
+	inline std::vector< std::pair<unsigned int, unsigned int> >&
+	Node::next_node_ids()
+	{
+		return _next_node_ids;
+	}
+			
+			
+	inline const std::vector< std::pair<unsigned int, unsigned int> >&
+	Node::next_node_ids() const
+	{
+		return _next_node_ids;
+	}
+	
+	
 	inline void
 	Node::serialize(std::ostream& o_stream) const
 	{
 		Direction::serialize(o_stream);
 		GeoCoordinate::serialize(o_stream);
-		Serializer::serialize(o_stream, _edge_ids);
+		Serializer::serialize(o_stream, _next_node_ids);
 		Serializer::serialize(o_stream, _weight);
+	}
+	
+	
+	inline void
+	Node::set_mpi(int mpi)
+	{
+		_multi_purpose_integer = mpi;
 	}
 	
 } // namespace mapgeneration

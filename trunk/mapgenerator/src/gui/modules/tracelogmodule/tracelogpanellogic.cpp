@@ -55,7 +55,6 @@ namespace mapgeneration_gui
 		if (_file_stream.good())
 		{
 			_trace_log.load(_file_stream);
-			set_edge_cache(_trace_log.edge_cache());
 			set_tile_cache(_trace_log.tile_cache());
 			_map_scrolled_window->Refresh();
 		} else

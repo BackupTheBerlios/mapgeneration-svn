@@ -31,6 +31,26 @@ namespace mapgeneration
   }
   
   
+  	double
+	GeoCoordinate::calculate_direction(const GeoCoordinate& geo_coordinate) const
+	{		
+		double latitude_difference = geo_coordinate.get_latitude() - get_latitude();
+		double longitude_difference = geo_coordinate.get_longitude() - get_longitude();
+		
+		/* calculation of the direction with the following formula */
+		double direction = atan(longitude_difference / latitude_difference);
+		
+		if (latitude_difference >= 0)
+			;
+		else
+			direction += PI;
+			
+		if (direction < 0) direction += 2 * PI;
+
+		return direction;
+	}
+  
+  
   double
   GeoCoordinate::distance(GeoCoordinate geo_coordinate) const
 	{

@@ -26,9 +26,9 @@ objects := extendedgenericvalidator.o dialoglogic.o \
 	modules/tracelogmodule/tracelogpanellogic.o
 mainobjects := util/configuration.o util/pubsub/servicelist.o \
 	util/pubsub/genericservice.o \
-	util/mlog.o util/controlledthread.o edge.o tile.o node.o \
+	util/mlog.o util/controlledthread.o tile.o node.o \
 	geocoordinate.o tracelog.o \
-	dbconnection.o edgecache.o tilecache.o
+	dbconnection.o tilecache.o
 
 # Directory definitions
 bindir := @top_builddir@bin

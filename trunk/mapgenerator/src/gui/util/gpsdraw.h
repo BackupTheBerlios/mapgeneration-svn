@@ -27,6 +27,11 @@ namespace mapgeneration_gui
 			
 			void
 			arrow(double latitude, double longitude, double direction, double length);
+			
+			
+			void
+			arrow(double latitude1, double longitude1, 
+				double latitude2, double longitude2, double arrow_length);
 
 
 			void

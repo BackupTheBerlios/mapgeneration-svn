@@ -18,7 +18,6 @@
 #include "gpsdraw.h"
 #include "geocoordinate.h"
 #include "dbconnection.h"
-#include "edgecache.h"
 #include "tilecache.h"
 #include "util/pubsub/asynchronousproxy.h"
 #include "util/pubsub/classcallsubscriber.h"
@@ -37,19 +36,11 @@ namespace mapgeneration_gui
 		
 			MapDrawer
 				(wxScrolledWindow* map_scrolled_window, GPSDraw* gps_draw,
-					EdgeCache* edge_cache, TileCache* tile_cache);
-					
-
-			void
-			edge_prefetched(unsigned int id);
+					TileCache* tile_cache);
 
 
 			void
 			on_paint(wxPaintEvent& wx_paint_event, wxDC& dc);
-			
-			
-			void
-			set_edge_cache(EdgeCache* edge_cache);
 			
 			
 			void
@@ -60,21 +51,13 @@ namespace mapgeneration_gui
 			tile_prefetched(unsigned int id);
 			
 
-		private:
-					
-			EdgeCache*
-			_edge_cache;
-			
-			
-			pubsub::ClassCallSubscriber<MapDrawer, unsigned int> 
-			_edge_prefetch_caller;
-			
-			
-			pubsub::AsynchronousProxy<unsigned int>
-			_edge_prefetch_proxy;
-			
+		private:			
 			
 			GPSDraw* _gps_draw;
+			
+			
+			int
+			_current_draw_id;
 						
 
 			time_t
@@ -108,9 +91,17 @@ namespace mapgeneration_gui
 			bool
 			_use_prefetch;
 			
-
-			std::vector< Node >
-			construct_edge_vector(const Edge& edge);
+			
+			void
+			draw_tile(unsigned int tile_id,
+				unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
+				unsigned int max_tile_id_northing, unsigned int max_tile_id_easting);
+			
+			
+			void
+			draw_tiles(
+				unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
+				unsigned int max_tile_id_northing, unsigned int max_tile_id_easting);
 			
 						
 			void
