@@ -50,6 +50,7 @@ AC_ARG_ENABLE(optimization,
 		, enable_optimization=$optimization_default)
 
 if test "x$enable_optimization" = "xyes"; then
+		CXXFLAGS="$CXXFLAGS -O3"
 		AC_MSG_RESULT(yes)
 else
 		CXXFLAGS="$CXXFLAGS -O0"
