@@ -514,7 +514,8 @@ namespace mapgeneration
 			if (path_iter != path_iter_end)
 			{
 				double points = build_connections(path, path_iter, only_connected);
-				//points += 5.0;
+				// If we set this to 1000 the programm need lots of memory!!!!! ????
+				points += 10.0;
 				points -= distance_from_to(current_entry->_node_id, path_iter->_node_id) / 10;
 				points -= angle_difference(current_entry->_node_id, path_iter->_node_id);
 								
@@ -540,7 +541,7 @@ namespace mapgeneration
 				if (!connected)
 				{
 					double points = build_connections(path, path_iter, only_connected);
-					//points -= 1000.0;
+					points -= 1000.0;
 					points -= distance_from_to(current_entry->_node_id, path_iter->_node_id);
 					points -= angle_difference(current_entry->_node_id, path_iter->_node_id) * 10;
 
@@ -600,18 +601,20 @@ namespace mapgeneration
 			{
 				double points = build_connections(path, path_iter, true);
 				
-		//		std::cout << points << " points.";
+//				std::cout << points << " points.";
 				
 				if (points > best_points)
 				{
-		//			std::cout << " NEW BEST!";
+//					std::cout << " NEW BEST!";
 					best_points = points;
 					best_start_entry = &(*path_iter);
 				}
 				
-		//		std::cout << "\n";
+//				std::cout << "\n";
 				
 				++path_iter;
+				
+				// We might need a special "seek a connection"-mode here.
 			}
 		}
 		
@@ -642,16 +645,16 @@ namespace mapgeneration
 				{
 					double points = build_connections(path, path_iter, false);
 					
-		//			std::cout << points << " points.";
+//					std::cout << points << " points.";
 					
 					if (points > best_points)
 					{
-		//				std::cout << " NEW BEST!";						
+//						std::cout << " NEW BEST!";						
 						best_points = points;
 						best_start_entry = &(*path_iter);
 					}
 					
-		//			std::cout << "\n";
+	//				std::cout << "\n";
 					
 					++path_iter;
 				}
@@ -796,7 +799,7 @@ namespace mapgeneration
 					else
 						distinct_position_m = position_on_trace_m;
 					
-					if (path.back()._position < position_on_trace_m-30.0)
+					if (!path.empty() && (path.back()._position < position_on_trace_m-30.0))
 						path.clear();
 				}
 			}
