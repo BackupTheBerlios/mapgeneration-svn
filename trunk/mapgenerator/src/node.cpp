@@ -53,6 +53,13 @@ namespace mapgeneration
 	}
 	
 	
+	int
+	Node::connected_nodes() const
+	{
+		return _next_node_ids.size();
+	}
+	
+	
 	void
 	Node::merge(GPSPoint& gps_point)
 	{

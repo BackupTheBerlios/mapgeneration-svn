@@ -43,8 +43,6 @@ namespace mapgeneration
 			}
 		}
 		
-		std::cout << "Cluster nodes search returns " << cluster_nodes.size() << " nodes.\n";
-		
 		return cluster_nodes;
 	}
 	

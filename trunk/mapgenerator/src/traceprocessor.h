@@ -260,16 +260,6 @@ namespace mapgeneration
 			 * @brief Pointer to an older unused GPSPoint if it was not used.
 			 */
 			GPSPoint* _unused_gps_point;
-
-
-			/**
-			 * @brief Calculates the best cluster node.
-			 * 
-			 * After invokation _best_cluster_node and _best_cluster_node_id
-			 * contains reasonable values.
-			 */
-/*			void
-			calculate_best_cluster_node();*/
 			
 			
 			/**
@@ -286,6 +276,10 @@ namespace mapgeneration
 
 			void
 			connect_nodes(Node::Id first_node_id, Node::Id second_node_id);
+			
+			
+			bool
+			connection_from_to(Node::Id node_id_1, Node::Id node_id_2);
 			
 			
 			/**

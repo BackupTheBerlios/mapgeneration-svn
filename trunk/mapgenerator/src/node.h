@@ -71,6 +71,10 @@ namespace mapgeneration
 			void
 			add_next_node_id(
 				std::pair<unsigned int, unsigned int> next_node_id);
+				
+				
+			int
+			connected_nodes() const;
 			
 			
 			/**

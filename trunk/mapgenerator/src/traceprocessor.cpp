@@ -42,13 +42,13 @@ namespace mapgeneration
 			"traceprocessor.search_radius_m", _search_radius_m
 		);
 		
-		_search_radius_m = 8.0;
+		_search_radius_m = 15.0;
 	
 		_service_list->get_service_value(
 			"traceprocessor.search_max_angle_difference_pi", _search_max_angle_difference_pi
 		);
 		
-		_search_max_angle_difference_pi = 0.5;
+		_search_max_angle_difference_pi = 0.3;
 		
 		mlog(MLog::debug, "TraceProcessor") << "Initialised (" << _id << ").\n";		
 	}
@@ -105,6 +105,19 @@ namespace mapgeneration
 		std::cout << "Connected nodes " << first_node_id.first << ", "
 			<< first_node_id.second << " and " << second_node_id.first << ", "
 			<< second_node_id.second << "  Direction is " << direction << "\n";
+	}
+	
+	
+	bool
+	TraceProcessor::connection_from_to(Node::Id node_id_1, Node::Id node_id_2)
+	{
+		TileCache::Pointer tile_1_pointer = _tile_cache->get(node_id_1.first);
+		if (tile_1_pointer->nodes()[node_id_1.second].first &&
+			tile_1_pointer->nodes()[node_id_1.second].second.
+			is_reachable(node_id_2))
+			return true;
+		else
+			return false;
 	}
 	
 	
@@ -287,6 +300,18 @@ namespace mapgeneration
 	void
 	TraceProcessor::simplify_path(std::list<PathEntry>& path)
 	{
+		/*
+		 * Very short pathes are simplified by clearing:
+		 * we don't want that short connections.
+		 */
+		if ((path.back()._position - path.front()._position) < 50.0)
+		{
+			std::cout << "Simplifying by clearing, path has a total length of just "
+				<< path.front()._position - path.back()._position << "\n";				
+			path.clear();
+			return;
+		}
+		
 		std::list< std::list< std::list<PathEntry>::iterator > > possible_paths;
 		
 		std::list<PathEntry>::iterator init_iter = path.begin();
@@ -320,12 +345,15 @@ namespace mapgeneration
 			{
 				bool created_longer_path = false;
 				
+				std::vector<int> used_path_ids;
 				std::list<PathEntry>::iterator pos_iter = ppath_iter->back();
 				int last_path_id = ppath_iter->back()->_path_id;
 				++pos_iter;
-				while (pos_iter != path.end() && pos_iter->_path_id!=last_path_id)
+				while (pos_iter!=path.end() && pos_iter->_path_id!=last_path_id &&
+					std::find(used_path_ids.begin(), used_path_ids.end(), pos_iter->_path_id)==used_path_ids.end())
 				{
 					created_longer_path = true;
+					used_path_ids.push_back(pos_iter->_path_id);
 					std::list< std::list<PathEntry>::iterator > new_possible_path(*ppath_iter);
 					new_possible_path.push_back(pos_iter);
 					new_possible_paths.push_back(new_possible_path);
@@ -419,8 +447,38 @@ namespace mapgeneration
 			n_path.push_back(**bp_iter);
 		}
 		
+		std::cout << "Checking new path for too short connections.\n";
+		std::list<PathEntry>::iterator n_path_iter = n_path.begin();
+		std::list<PathEntry>::iterator previous_n_path_iter = n_path.begin();
+		std::list<PathEntry>::iterator switched_at_iter = n_path.begin();
+		int connection_length = 0;
+		while (n_path_iter != n_path.end())
+		{
+			if ((previous_n_path_iter != n_path_iter) &&
+				(!(_tile_cache->get(previous_n_path_iter->_node_id.first)->
+				nodes()[previous_n_path_iter->_node_id.second].second.
+				is_reachable(n_path_iter->_node_id))))
+			{
+				if (connection_length < 5)
+				{										
+					while (switched_at_iter != n_path_iter)
+						switched_at_iter = n_path.erase(switched_at_iter);
+					std::cout << "Kicked to short connection of length " << connection_length << "\n";
+				}
+				
+				switched_at_iter = n_path_iter; // See while loop above!
+				connection_length = 0;
+			}
+			
+			++connection_length;
+			previous_n_path_iter = n_path_iter;
+			++n_path_iter;
+		}
+		
 		path.clear();
-		path.insert(path.end(), n_path.begin(), n_path.end());
+		
+		if (n_path.size() > 4)
+			path.insert(path.end(), n_path.begin(), n_path.end());
 		
 		std::cout << "New path has " << path.size() << " path entries\n";
 		
@@ -450,9 +508,11 @@ namespace mapgeneration
 		double distinct_position_m = 0;
 		double complete_position_m = 0;
 		double finished_position_m = 0;
+		int previous_path_id = 0;
+		bool used_different_path_ids = false;
 		int next_path_id = 1;
 		Node::Id previous_node_id = std::make_pair(0, 0);
-		std::list<PathEntry> path;
+		std::list<PathEntry> path;				
 		while (position_on_trace_m < trace_length_m)
 		{
 			std::list<Node::Id> cluster_nodes;
@@ -483,16 +543,22 @@ namespace mapgeneration
 						insert = false;
 						new_node_iter = cluster_nodes.erase(new_node_iter);
 						
-					} else if (_tile_cache->get(path_iter->_node_id.first)->nodes()[path_iter->_node_id.second].second.is_reachable(new_entry._node_id))
+					} else if (_tile_cache->get(path_iter->_node_id.first)->nodes()[path_iter->_node_id.second].second.connected_nodes()==1 &&
+						_tile_cache->get(path_iter->_node_id.first)->nodes()[path_iter->_node_id.second].second.is_reachable(new_entry._node_id))
 					{
 						new_entry._path_id = path_iter->_path_id;
 					}
 				}
 				
 				if (insert)
-				{
+				{										
 					std::cout << "Inserting new node into path: " <<
 						new_entry._node_id.first << ", " << new_entry._node_id.second << "  ID: " << new_entry._path_id << "\n";
+						
+					if (previous_path_id!=0 && new_entry._path_id!=previous_path_id)
+						used_different_path_ids = true;						
+					
+					previous_path_id = new_entry._path_id;
 					
 					std::cout << "  Optimizing position starting with " << position_on_trace_m << "\n";				
 					double optimal_position = optimal_node_position(new_entry);
@@ -509,15 +575,18 @@ namespace mapgeneration
 			}
 
 
-			if (!cluster_nodes.size() && !path.size())
+			if (!used_different_path_ids || (!cluster_nodes.size() && !path.size()))
 			{
 				distinct_position_m = position_on_trace_m;
 				std::cout << "Set distinct_position_m to " << distinct_position_m << "\n";
 			}
 
 
-			if (path.size())
+			if ((path.size() && used_different_path_ids) ||
+				(path.size() && (path.back()._position < position_on_trace_m-20.0)))
 			{
+				used_different_path_ids = false;
+				
 				std::list<PathEntry>::iterator path_iter = path.end();
 				--path_iter;
 				int path_id = path_iter->_path_id;
@@ -540,8 +609,9 @@ namespace mapgeneration
 			}
 
 
-			std::list<PathEntry>::iterator path_iter = path.begin();
-			while(complete_position_m < distinct_position_m-20)
+//			std::list<PathEntry>::iterator path_iter = path.begin();
+			bool end = false;
+			while(complete_position_m < distinct_position_m-20 && !end)
 			{
 				if ((path.size() && complete_position_m<(path.front()._position-20.0))
 					|| (!path.size() && complete_position_m<(distinct_position_m-20.0)))
@@ -555,16 +625,48 @@ namespace mapgeneration
 						connect_nodes(previous_node_id, new_node_id);
 					previous_node_id.first = new_node_id.first;
 					previous_node_id.second = new_node_id.second;
-				} else if (path.size() && complete_position_m>=(path.front()._position-20.0))
+				} else if (path.size() /*&& complete_position_m>=(path.front()._position-20.0)*/)
 				{
-					complete_position_m = path.front()._position;
-					std::cout << "Using node at path position " << complete_position_m << "\n";
-					if (previous_node_id.first != 0)
-						connect_nodes(previous_node_id, path.front()._node_id);
-					previous_node_id.first = path.front()._node_id.first;
-					previous_node_id.second = path.front()._node_id.second;
-					path.pop_front();
-				}
+					bool connect = true;
+					if (previous_node_id.first!=0 && 
+						!connection_from_to(previous_node_id, path.front()._node_id))
+					{
+						int connection_length = 0;
+						std::list<PathEntry>::iterator path_iter = path.begin();
+						std::list<PathEntry>::iterator 
+							previous_path_iter = path_iter;
+						++path_iter;
+						while (path_iter!=path.end() && 
+							connection_from_to(previous_path_iter->_node_id,
+							path_iter->_node_id))
+						{
+							++connection_length;
+							previous_path_iter = path_iter;
+							++path_iter;
+						}	
+						std::cout << "Connection length is " << connection_length << "\n";
+						if (connection_length < 3)
+						{							
+							if (path_iter!=path.end() || path.back()._position<position_on_trace_m-20.0)
+							{								
+								std::cout << "Not using node at path position " << path.front()._position << "\n";								
+								path.pop_front();
+							}
+							end = true;
+							connect = false;
+						} 
+					}
+					if (connect)
+					{
+						std::cout << "Using node at path position " << complete_position_m << "\n";
+						complete_position_m = path.front()._position;
+						if (previous_node_id.first != 0)
+							connect_nodes(previous_node_id, path.front()._node_id);
+						previous_node_id.first = path.front()._node_id.first;
+						previous_node_id.second = path.front()._node_id.second;
+						path.pop_front();
+					}
+			}
 			}
 
 			position_on_trace_m += 10.0;
