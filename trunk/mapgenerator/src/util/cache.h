@@ -239,7 +239,7 @@ namespace mapgeneration_util
 			 * @return Sorted list of used ids.
 			 */
 			std::vector<T_ID>
-			Cache<T_ID, T_Elem>::get_used_ids();
+			get_used_ids();
 
 
 			/**
