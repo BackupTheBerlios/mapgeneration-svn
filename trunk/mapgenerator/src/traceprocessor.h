@@ -46,7 +46,6 @@ namespace mapgeneration
 				public:
 					double _position;
 					Node::Id _node_id;
-					int _path_id;
 					int _time_stamp;
 					
 					double _points;
@@ -65,12 +64,12 @@ namespace mapgeneration
 					
 					
 					PathEntry()
-					: _position(0), _path_id(0), _node_id(0), _connection(0), _time_stamp(0)
+					: _position(0), _node_id(0), _connection(0), _time_stamp(0)
 					{
 					}
 					
 					PathEntry(const double position, const int path_id, const Node::Id node_id)
-					: _position(position), _path_id(path_id), _node_id(node_id), _connection(0), _time_stamp(0)
+					: _position(position), _node_id(node_id), _connection(0), _time_stamp(0)
 					{
 					}
 			};

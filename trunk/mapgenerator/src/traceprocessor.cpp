@@ -657,10 +657,9 @@ namespace mapgeneration
 		double complete_position_m = 0;
 		double finished_position_m = 0;
 		int previous_path_id = 0;
-		bool used_different_path_ids = false;
 		int next_path_id = 1;
 		Node::Id previous_node_id = 0;
-		std::list<PathEntry> path;				
+		std::list<PathEntry> path;
 		while (position_on_trace_m < trace_length_m)
 		{
 			std::list<Node::Id> cluster_nodes;
@@ -668,9 +667,8 @@ namespace mapgeneration
 				_filtered_trace.gps_point_at(position_on_trace_m),
 				cluster_nodes
 			);
-			
-			
-			std::cout << "Found " << cluster_nodes.size() << " cluster nodes\n";
+						
+			//std::cout << "Found " << cluster_nodes.size() << " cluster nodes\n";
 			std::list<Node::Id>::iterator new_node_iter = cluster_nodes.begin();
 			while (new_node_iter != cluster_nodes.end())
 			{
@@ -683,19 +681,9 @@ namespace mapgeneration
 				{
 					if (*path_iter == new_entry)
 					{
-						/*std::cout << "Catched double entry: " << 
-							Node::tile_id(new_entry._node_id) << ", " << 
-							Node::local_id(new_entry._node_id) << "\n";*/
-					
 						insert = false;
 						new_node_iter = cluster_nodes.erase(new_node_iter);
 						
-					} else if (_tile_cache->get(Node::tile_id(path_iter->_node_id))->
-						nodes()[Node::local_id(path_iter->_node_id)].second.connected_nodes()==1 &&
-						_tile_cache->get(Node::tile_id(path_iter->_node_id))->
-						nodes()[Node::local_id(path_iter->_node_id)].second.is_reachable(new_entry._node_id))
-					{
-						new_entry._path_id = path_iter->_path_id;
 					}
 				}
 				
@@ -703,13 +691,7 @@ namespace mapgeneration
 				{										
 					std::cout << "Inserting new node into path: " <<
 						Node::tile_id(new_entry._node_id) << ", " << 
-						Node::local_id(new_entry._node_id) << "  ID: " << 
-						new_entry._path_id << "\n";
-						
-					if (previous_path_id!=0 && new_entry._path_id!=previous_path_id)
-						used_different_path_ids = true;						
-					
-					previous_path_id = new_entry._path_id;
+						Node::local_id(new_entry._node_id) << "\n.";
 					
 					//std::cout << "  Optimizing position starting with " << position_on_trace_m << "\n";
 					double optimal_position = optimal_node_position(new_entry);
@@ -737,24 +719,29 @@ namespace mapgeneration
 				(path.size() && (path.back()._position < position_on_trace_m-20.0)))*/
 			if (path.size() > 5 ||
 				(path.size() && (path.back()._position < position_on_trace_m-20.0)))
-			{
-				used_different_path_ids = false;
+			{				
+				int connected_nodes = 0;
 				
-				std::list<PathEntry>::iterator path_iter = path.end();
-				--path_iter;
-				int path_id = path_iter->_path_id;
-				int ident_path_ids = 0;
-				while (path_iter != path.begin())
+				if (path.size() > 5)
 				{
-					if (path_iter->_path_id == path_id)
-						++ident_path_ids;
+					std::list<PathEntry>::iterator path_iter = path.end();
 					--path_iter;
+															
+					Node::Id next_node_id = path_iter->_node_id;
+					--path_iter;
+					while ((path_iter != path.begin()) && (connected_nodes < 3))
+					{
+						if (connection_from_to(path_iter->_node_id, next_node_id))
+							++connected_nodes;
+						
+						next_node_id = path_iter->_node_id;
+						--path_iter;
+					}
 				}
-				if (path_iter->_path_id == path_id)
-					++ident_path_ids;
-				if ((ident_path_ids > 5) || (path.back()._position < position_on_trace_m-20.0))
+				
+				if ((connected_nodes > 2) || (path.back()._position < position_on_trace_m-20.0))
 				{
-					std::cout << "Last " << ident_path_ids << " path ids are identically " << path_id << " simplifying path.\n";
+					std::cout << "Last " << connected_nodes << " nodes are connected.\n";
 					simplify_path(previous_node_id, path);
 					distinct_position_m = position_on_trace_m;
 					std::cout << "Done, set distinct position_m to " << distinct_position_m << "\n";
