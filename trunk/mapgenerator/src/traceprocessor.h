@@ -68,7 +68,7 @@ namespace mapgeneration
 					{
 					}
 					
-					PathEntry(const double position, const int path_id, const Node::Id node_id)
+					PathEntry(const double position,const Node::Id node_id)
 					: _position(position), _node_id(node_id), _connection(0), _time_stamp(0)
 					{
 					}
@@ -257,12 +257,15 @@ namespace mapgeneration
 			
 			
 			void
-			TraceProcessor::rebuild_path(std::list<PathEntry>& path,
+			TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,
+				std::list< std::list<PathEntry> >& finished_segments,
 				PathEntry* start_entry);
 			
 			
 			void
-			simplify_path(Node::Id previous_node_id, std::list<PathEntry>& path);
+			simplify_path(Node::Id previous_node_id, 
+				std::list<PathEntry>& path,
+				std::list< std::list<PathEntry> >& finished_segments);
 			
 			
 			/**
@@ -273,6 +276,11 @@ namespace mapgeneration
 			 */
 			TileCache::Pointer
 			tile(Node::Id node_id);
+			
+			
+			void
+			use_segments(std::list< std::list<PathEntry> >& finished_segments, 
+				double& complete_position_m, Node::Id& previous_node_id);
 			
 			
 			int _time;
