@@ -85,7 +85,7 @@ namespace mapgeneration
 					i = _trace_connections.erase(i);
 					
 					mlog(MLog::debug, "TraceServer") << "Parsing input...\n";
-					FilteredTrace filtered_trace;
+					FilteredTrace filtered_trace(_service_list);
 					if (filtered_trace.parse_nmea_string(input_string))
 					{
 						mlog(MLog::debug, "TraceServer") << "" << filtered_trace.size() << " Points\n";

@@ -499,7 +499,7 @@ namespace mapgeneration
 			tracelog_filename.str(), _filtered_trace);
 
 		/* Filter the trace. */
-		_filtered_trace.filter();
+//		_filtered_trace.filter(); this is done in the TraceFilter!!!
 		_filtered_trace.calculate_directions();
 		//_filtered_trace.calculate_times();
 				

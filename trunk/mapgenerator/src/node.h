@@ -117,7 +117,7 @@ namespace mapgeneration
 			 * @param gps_point the point which will be merged with this node
 			 */
 			void
-			merge(GPSPoint& gps_point);
+			merge(const GPSPoint& gps_point);
 			
 			
 			/**

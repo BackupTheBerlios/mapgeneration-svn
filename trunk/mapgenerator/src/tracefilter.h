@@ -59,6 +59,10 @@ namespace mapgeneration
 			
 			void
 			apply_acceleration_filter(FilteredTrace& filtered_trace);
+			
+			
+			void
+			apply_anti_cumulation_filter(FilteredTrace& filtered_trace);
 
 
 			void

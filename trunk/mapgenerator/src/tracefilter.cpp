@@ -6,7 +6,6 @@
 *******************************************************************************/
 
 
-
 #include "tracefilter.h"
 
 #include "util/mlog.h"
@@ -54,6 +53,10 @@ namespace mapgeneration
 				_queue.pop();
 				
 				/*show_state("Inital state");*/
+				
+				/* apply anti-cumulation filter */
+				apply_anti_cumulation_filter(_working_queue.front());
+				/*show_state("Applied anti-cumulation filter");*/
 				
 				int available_traces;
 				int ready_traces;
@@ -171,11 +174,11 @@ namespace mapgeneration
 		}
 		
 		/* Init the iterator for point testing */
-		std::list<GPSPoint>::iterator first_test_point_iter
+		FilteredTrace::iterator first_test_point_iter
 			= filtered_trace.begin();
-		std::list<GPSPoint>::iterator second_test_point_iter
+		FilteredTrace::iterator second_test_point_iter
 			= ++(filtered_trace.begin());
-		std::list<GPSPoint>::iterator third_test_point_iter
+		FilteredTrace::iterator third_test_point_iter
 			= ++(++(filtered_trace.begin()));
 		
 		int counter = 1;
@@ -211,7 +214,7 @@ namespace mapgeneration
 					<< counter << ".\n";
 				
 				/* Cut off first part of the trace */
-				FilteredTrace cutoff_part;
+				FilteredTrace cutoff_part(_service_list);
 				cutoff_part.splice(cutoff_part.begin(), filtered_trace,
 					filtered_trace.begin(), second_test_point_iter);
 				_working_queue.push(cutoff_part);
@@ -239,6 +242,50 @@ namespace mapgeneration
 	
 	
 	void
+	TraceFilter::apply_anti_cumulation_filter(FilteredTrace& filtered_trace)
+	{
+		FilteredTrace::iterator iter = filtered_trace.begin();
+		
+		while(iter != filtered_trace.end())
+		/* ++iter is done inside loop by ++iter and erase! */
+		{
+			GPSPoint old_point = *iter;			
+			FilteredTrace::iterator point_1 = iter;
+			double merged_points = 1;
+			++iter;
+			
+			double new_latitude = point_1->get_latitude();
+			double new_longitude = point_1->get_longitude();
+			double new_altitude = point_1->get_altitude();
+			double new_time = point_1->get_time();
+			
+			/* while the  distance  between  points  is less 4.0 
+			 * they are  all  merged into 1 point */
+			while((iter != filtered_trace.end()) && (old_point.distance(*iter) < 4.0))
+			{
+				new_latitude += iter->get_latitude();
+				new_longitude += iter->get_longitude();
+				new_altitude += iter->get_altitude();
+				new_time += iter->get_time();				
+				merged_points += 1;
+				
+				iter = filtered_trace.erase(iter);
+			}
+			
+			/*calculates  the new  merged time, longitude, latitude  and altitude */
+			new_latitude /= merged_points;
+			new_longitude /= merged_points;
+			new_altitude /= merged_points;
+			new_time /= merged_points;
+			
+			/* setting the attributes */
+			point_1->set(new_latitude, new_longitude, new_altitude);
+			point_1->set_time(new_time);
+		}
+	}
+
+
+	void
 	TraceFilter::apply_location_filter(FilteredTrace& filtered_trace)
 	{
 		if (filtered_trace.size() < 2)
@@ -254,9 +301,9 @@ namespace mapgeneration
 		 * the invalid flag is set, the point is deleted. */
 
 		/* Init the iterator for point testing */
-		std::list<GPSPoint>::iterator first_test_point_iter
+		FilteredTrace::iterator first_test_point_iter
 			= filtered_trace.begin();
-		std::list<GPSPoint>::iterator second_test_point_iter
+		FilteredTrace::iterator second_test_point_iter
 			= ++(filtered_trace.begin());
 			
 		int counter = 1;
@@ -323,9 +370,9 @@ namespace mapgeneration
 		}
 		
 		/* Init the iterator for point testing */
-		std::list<GPSPoint>::iterator first_test_point_iter
+		FilteredTrace::iterator first_test_point_iter
 			= filtered_trace.begin();
-		std::list<GPSPoint>::iterator second_test_point_iter
+		FilteredTrace::iterator second_test_point_iter
 			= ++(filtered_trace.begin());
 			
 		int counter = 1;
@@ -349,7 +396,7 @@ namespace mapgeneration
 					<< counter << ".\n";
 				
 				/* Cut off first part of the trace */
-				FilteredTrace cutoff_part;
+				FilteredTrace cutoff_part(_service_list);
 				cutoff_part.splice(cutoff_part.begin(), filtered_trace,
 					filtered_trace.begin(), second_test_point_iter);
 				_working_queue.push(cutoff_part);
@@ -387,9 +434,9 @@ namespace mapgeneration
 		/* Now we know: the filtered_trace has a size of 2 at least! */
 			
 		/* Init the iterator for point testing */
-		std::list<GPSPoint>::iterator first_test_point_iter
+		FilteredTrace::iterator first_test_point_iter
 			= filtered_trace.begin();
-		std::list<GPSPoint>::iterator second_test_point_iter
+		FilteredTrace::iterator second_test_point_iter
 			= ++(filtered_trace.begin());
 			
 		int counter = 1;
@@ -404,7 +451,7 @@ namespace mapgeneration
 				<< "around point " << counter << ".\n";
 				
 				/* Cut off first part of the trace */
-				FilteredTrace cutoff_part;
+				FilteredTrace cutoff_part(_service_list);
 				cutoff_part.splice(cutoff_part.begin(), filtered_trace,
 					filtered_trace.begin(), second_test_point_iter);
 				_working_queue.push(cutoff_part);

@@ -62,7 +62,7 @@ namespace mapgeneration_util
 			 * @return the direction
 			 */
 			inline double
-			get_direction();
+			get_direction() const;
 			
 			
 			/**
@@ -134,7 +134,7 @@ namespace mapgeneration_util
 				
 	
 	inline double
-	Direction::get_direction()
+	Direction::get_direction() const
 	{
 		return _direction;
 	}

@@ -13,6 +13,7 @@
 #include <set>
 #include <string>
 #include "gpspoint.h"
+#include "util/pubsub/servicelist.h"
 
 namespace mapgeneration
 {
@@ -26,14 +27,124 @@ namespace mapgeneration
 	 * @see TraceProcessor
 	 * @see TraceProcessor::run() the cluster algorithm
 	 */
-	class FilteredTrace : public std::list<GPSPoint> {
+	class FilteredTrace : protected std::list<GPSPoint> {
+
+		/* Proxy methods from std::list<GPSPoint> 
+		 * 
+		 * start.proxy */
+		public:
+		
+			typedef std::list<GPSPoint>::const_iterator const_iterator;
+			typedef std::list<GPSPoint>::iterator iterator;
+			typedef std::list<GPSPoint>::size_type size_type;
+			
+			
+			iterator
+			begin()
+			{
+				_fast_access_is_valid = false;
+				_length_meters_is_valid = false;
+				
+				std::cout << "********************************" << std::endl;
+				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
+				std::cout << "********************************" << std::endl;
+				
+				return std::list<GPSPoint>::begin();
+			}
+
+
+			const_iterator
+			begin() const
+			{
+				return std::list<GPSPoint>::begin();
+			}
+
+
+			iterator
+			end()
+			{
+				_fast_access_is_valid = false;
+				_length_meters_is_valid = false;
+				
+				std::cout << "********************************" << std::endl;
+				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
+				std::cout << "********************************" << std::endl;
+				
+				return std::list<GPSPoint>::end();
+			}
+
+
+			const_iterator
+			end() const
+			{
+				return std::list<GPSPoint>::end();
+			}
+			
+
+			iterator
+			erase(iterator item)
+			{
+				_fast_access_is_valid = false;
+				_length_meters_is_valid = false;
+				
+				std::cout << "********************************" << std::endl;
+				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
+				std::cout << "********************************" << std::endl;
+				
+				return std::list<GPSPoint>::erase(item);
+			}
+
+
+			iterator
+			erase(iterator from, iterator to)
+			{
+				_fast_access_is_valid = false;
+				_length_meters_is_valid = false;
+				
+				std::cout << "********************************" << std::endl;
+				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
+				std::cout << "********************************" << std::endl;
+				
+				return std::list<GPSPoint>::erase(from, to);
+			}
+
+
+			const GPSPoint&
+			front() const
+			{
+				return std::list<GPSPoint>::front();
+			}
+			
+			size_type
+			size() const
+			{
+				return std::list<GPSPoint>::size();
+			}
+			
+			
+			void
+			splice(iterator insert_at,	FilteredTrace& from_list,
+				iterator begin_incl, iterator end_excl)
+			{
+				_fast_access_is_valid = false;
+				_length_meters_is_valid = false;
+				
+				std::cout << "********************************" << std::endl;
+				std::cout << "* INVALID FAST ACCESS & LENGTH *" << std::endl;
+				std::cout << "********************************" << std::endl;
+				
+				return std::list<GPSPoint>::splice(insert_at, from_list,
+					begin_incl, end_excl);
+			}
+		/* end.proxy */
+
 
 		public:
 
 			/**
 			 * @brief Default Constructor.
 			 */
-			FilteredTrace() ;
+			FilteredTrace(pubsub::ServiceList* service_list);
 			
 			
 			/**
@@ -74,28 +185,10 @@ namespace mapgeneration
 			 * 
 			 * @todo x should be defined elsewhere
 			 */
-			void
-			filter();
+//			void
+//			filter();
 
 
-			/**
-			 * @brief Parses a NMEA string and fill the FilteredTrace with
-			 * GPSPoints.
-			 * 
-			 * Initializes objects from type GPSPoint and evokes the method
-			 * parse_nmea_string from the GPSPoint class, and parses the NMEA
-			 * string into a string which contains the substrings "GGA" in the
-			 * first line and "RMC" in the second line.
-			 * The initialized objects are put into the list FilteredTrace.
-			 * 
-			 * @param nmea_string the NMEA string
-			 * 
-			 * @return true, if parsing was successful and no error occured
-			 */
-			bool
-			parse_nmea_string (const std::string& nmea_string);
-			
-			
 			/**
 			 * @brief Returns a vector containing the tiles which this FilteredTrace
 			 * travers.
@@ -143,6 +236,15 @@ namespace mapgeneration
 			gps_points_have_valid_altitudes();
 			
 			
+			bool
+			last_gps_point_before(
+				double input_meters,
+				FilteredTrace::const_iterator* output_before_iter = 0,
+				FilteredTrace::const_iterator* output_after_iter = 0,
+				double* output_before_iter_meters = 0,
+				double* output_after_iter_meters = 0);
+			
+			
 			/**
 			 * @brief Returns the length of the trace.
 			 * 
@@ -152,7 +254,7 @@ namespace mapgeneration
 			 * 
 			 * @return Length of the trace in meters.
 			 */
-			double
+			inline double
 			length_meters();
 			
 			
@@ -204,6 +306,24 @@ namespace mapgeneration
 
 
 			/**
+			 * @brief Parses a NMEA string and fill the FilteredTrace with
+			 * GPSPoints.
+			 * 
+			 * Initializes objects from type GPSPoint and evokes the method
+			 * parse_nmea_string from the GPSPoint class, and parses the NMEA
+			 * string into a string which contains the substrings "GGA" in the
+			 * first line and "RMC" in the second line.
+			 * The initialized objects are put into the list FilteredTrace.
+			 * 
+			 * @param nmea_string the NMEA string
+			 * 
+			 * @return true, if parsing was successful and no error occured
+			 */
+			bool
+			parse_nmea_string (const std::string& nmea_string);
+			
+			
+			/**
 			 * @see mapgeneration_util::Serailizer
 			 */
 			void
@@ -221,11 +341,24 @@ namespace mapgeneration
 			
 			
 		private:
+		
 
+			std::vector<const_iterator> _fast_access;
+			
+			
+			bool _fast_access_is_valid;
+			
+			
 			/**
 			 * @brief Flag indicating that the GPSPoints has valid altitudes.
 			 */
 			bool _gps_points_have_valid_altitudes;
+			
+			
+			double _length_meters;
+			
+			
+			bool _length_meters_is_valid;
 			
 			
 			/**
@@ -239,7 +372,18 @@ namespace mapgeneration
 			 * point until the actual starting point exclusive.
 			 */
 			std::vector<GPSPoint> _points_from_previous_start;
+			
+			
+			pubsub::ServiceList* _service_list;
+			
+			
+			void
+			build_fast_access();
 
+
+			double
+			length_meters(const const_iterator& begin_incl,
+				const const_iterator& end_incl) const;
 	};
 
 	
@@ -247,6 +391,19 @@ namespace mapgeneration
 	FilteredTrace::gps_points_have_valid_altitudes()
 	{
 		return _gps_points_have_valid_altitudes;
+	}
+	
+	
+	inline double
+	FilteredTrace::length_meters()
+	{
+		if ( !_length_meters_is_valid )
+		{
+			_length_meters = length_meters(begin(), --(end()));
+			_length_meters_is_valid = true;
+		}
+		
+		return _length_meters;
 	}
 	
 	

@@ -61,7 +61,7 @@ namespace mapgeneration
 	
 	
 	void
-	Node::merge(GPSPoint& gps_point)
+	Node::merge(const GPSPoint& gps_point)
 	{
 		set_latitude((get_latitude() * (double)_weight + gps_point.get_latitude()) / (_weight +1));
 		set_longitude((get_longitude() * (double)_weight + gps_point.get_longitude()) / (_weight +1));
