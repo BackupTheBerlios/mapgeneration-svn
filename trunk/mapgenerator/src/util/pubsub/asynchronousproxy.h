@@ -28,6 +28,9 @@ namespace pubsub
 		public Subscriber<T_Value>//, public mapgeneration_util::ControlledThread
 	{
 		
+		using Publisher<T_Value>::_subscriber;
+		using Subscriber<T_Value>::_publisher;
+		
 		public:
 		
 			AsynchronousProxy(Publisher<T_Value>* publisher = 0,

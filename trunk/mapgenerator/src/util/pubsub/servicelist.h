@@ -22,7 +22,7 @@ namespace pubsub
 #include <map>
 #include <string>
 #include "genericservice.h"
-#include "service.h"
+//#include "service.h"
 
 
 namespace pubsub
