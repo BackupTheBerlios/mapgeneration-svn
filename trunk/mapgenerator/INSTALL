@@ -1,0 +1,94 @@
+/*******************************************************************************
+* MapGeneration Project - Creating a road map for the world.                   *
+*                                                                              *
+* Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+* Licensed under the Academic Free License version 2.1                         *
+*******************************************************************************/
+
+
+This program is not intended for the end users and therefore installation 
+_may be_ a bit tricky.
+
+
+
+Requirements
+############
+
+_General_
+
+- commoncpp2: Most versions work. :-)
+- wxWindows/wxWidgets: xrc-support is needed, this alway compiled in version 2.5
+	 and optionally available in 2.4
+
+
+_Linux_
+
+- unixODBC
+
+
+_Cygwin_
+
+- ODBC: I'm not sure in the moment, if you have to install something. :-/
+
+
+
+Compilation
+###########
+
+At first you have to generate the configure script by starting autoconf in
+the program directory. After that you can give configure a try, just run
+
+# ./configure
+
+if it complains about missing libraries, have a look at the configure options
+
+# ./configure --help
+
+Especially --with-wx-config-path, --with-ccgnu2-config-path and --with-odbc-dir
+are interesting. On cygwin you will always need to supply the complete name,
+including the path, to odbc32.dll with --with-odbc32-dll.
+
+After configure finished, run
+
+# ./make all
+
+to compile everything.
+
+
+
+Installation
+############
+
+...is not yet supported.
+
+
+
+Running
+#######
+
+To run the programs you need to configure a database for use with odbc.
+Something like this in your .odbc.ini will do the trick:
+
+[MapGeneration]
+Description = MapGeneration Database
+Trace = Off
+TraceFile = stderr
+Driver = ???
+SERVER = ???
+USER = mapgeneration
+PASSWORD = mg
+PORT = ???
+DATABASE = mapgeneration
+SOCKET = ???
+
+The database name and password are not configurabe at the moment. The 
+database layout is fixed automatically if the needed tables are not 
+found.At the moment only MySQL-support is tested.
+
+After the database is started type
+
+# bin/main	to run the main program
+
+# cd bin/gui
+# ./mgg		to run the gui
+

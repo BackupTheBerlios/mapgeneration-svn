@@ -1,0 +1,1630 @@
+/*******************************************************************************
+* MapGeneration Project - Creating a road map for the world.                   *
+*                                                                              *
+* Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+* Licensed under the Academic Free License version 2.1                         *
+*******************************************************************************/
+
+
+#include "dbconnection.h"
+
+#include <iostream>
+#include <sstream>
+#include <sqlext.h>
+
+namespace mapgeneration
+{
+	
+	DBConnection::DBConnection() 
+	{
+		_connected =false;
+		_inited = false;
+		
+		#ifdef DEBUG
+			log(MLog::debug, "DBConnection", "DBConnection constructed.");
+		#endif
+	}
+	
+	
+	DBConnection::~DBConnection()
+	{
+		try 
+		{
+			SQLRETURN sql_return;
+			string stored_error_messages = "";
+			
+			if (_connected)
+			{
+				try 
+				{
+					disconnect(true);
+				} catch(string level2_error_message)
+				{
+					if (stored_error_messages != "")
+					{
+						stored_error_messages.append(" ");
+					}
+					stored_error_messages.append(level2_error_message);
+				} // level 2 try-catch
+			}
+		
+		
+			if (_inited)
+			{
+				try 
+				{
+					destroy(true);
+				} catch(string level2_error_message)
+				{
+					if (stored_error_messages != "")
+					{
+						stored_error_messages.append(" ");
+					}
+					stored_error_messages.append(level2_error_message);
+				} // level 2 try-catch
+			}
+			
+
+			if (stored_error_messages != "") 
+			{
+				throw (stored_error_messages);
+			}
+		} catch (string error_message)
+		{
+			throw_error_message("~DBConnection", error_message);
+		} // level 1 try-catch
+
+		#ifdef DEBUG
+			log(MLog::debug, "~DBConnection", "DBConnection destructed.");
+		#endif
+	}
+
+
+	void
+	DBConnection::connect(string dns, string user, string password, bool correct_structure)
+	{
+		//exits when not inited!
+		if(_inited == false) return;
+		
+		//exits when already connected!
+		if (_connected == true) return;
+		
+		
+		string stored_error_messages = "";
+
+		try 
+		{
+			SQLRETURN sql_return;
+			SQLCHAR* sql_dns = (SQLCHAR*)dns.c_str();
+			SQLCHAR* sql_user = (SQLCHAR*)user.c_str();
+			SQLCHAR* sql_password = (SQLCHAR*)password.c_str();
+		
+			sql_return = SQLConnect(_connection,
+														sql_dns, SQL_NTS,
+														sql_user, SQL_NTS,
+														sql_password, SQL_NTS);
+													
+			evaluate_sql_return(sql_return, "connect", "Error connecting to DB \"" + dns + "\"!");
+
+
+			log(MLog::info, "connect", "Connected to DB \"" + dns + "\" with user \"" + user + "\" and password \"*****\"");
+			_connected = true;
+
+			
+			// connected! Now check DB structure...		
+			if (check_db_structure() == false) 
+			{
+				if (correct_structure == true)
+				{
+					log(MLog::warning, "connect", "Wrong DB structure! Try to correct...");
+					correct_db_structure();
+					if (check_db_structure() == false)
+					{
+						log(MLog::error, "connect", "Wrong DB structure!");
+						throw ("Wrong DB structure!");
+					}
+				
+				} else
+				{
+					log(MLog::error, "connect", "Wrong DB structure!");
+					throw ("Wrong DB structure!");
+				}
+			}
+
+			// successfully checked! Now prepare statements...
+			prepare_statements();
+		} catch (string error_message)
+		{
+			if (_connected ==true)
+			{
+				try
+				{
+					disconnect(true);
+				} catch (string level2_error_message)
+				{
+					if (stored_error_messages != "")
+					{
+						stored_error_messages.append("  ");
+					}
+					stored_error_messages.append(level2_error_message);
+				}
+			}
+
+			if (stored_error_messages != "")
+			{
+				stored_error_messages.append("  ");
+			}
+			stored_error_messages.append(error_message);
+			throw_error_message("connect", stored_error_messages);
+		}
+	}
+	
+	
+	void
+	DBConnection::destroy()
+	{
+		destroy(false);
+	}
+	
+	
+	void
+	DBConnection::disconnect()
+	{
+		disconnect(false);
+	}
+
+	
+	#ifdef DEBUG
+		void
+		DBConnection::dropTables()
+		{
+			SQLRETURN sql_return;
+			SQLHSTMT sql_statement;
+			SQLCHAR* sql_text;
+		
+			sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection, &sql_statement);
+			evaluate_sql_return(sql_return, "destroy", "Error allocating SQL statement handle!");
+		
+			sql_text = (SQLCHAR*)"DROP TABLE tiles;";
+			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
+			evaluate_sql_return(sql_return, "destroy", "Error executing \"DROP TABLE\" statement! (1)");
+
+			sql_text = (SQLCHAR*)"DROP TABLE edges;";
+			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
+			evaluate_sql_return(sql_return, "destroy", "Error executing \"DROP TABLE\" statement! (2)");
+
+//			sql_text = (SQLCHAR*)"DROP TABLE filteredtraces;";
+//			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
+//			evaluate_sql_return(sql_return, "destroy", "Error executing \"DROP TABLE\" statement! (3)");
+
+			log(MLog::debug, "dropTables", "Tables destroyed!");
+		}
+	#endif
+
+
+	std::vector<unsigned int>
+	DBConnection::get_all_used_edge_ids()
+	{
+		return get_all_used_ids(_EDGES);
+	}
+	
+	
+	std::vector<unsigned int>
+	DBConnection::get_all_used_tile_ids()
+	{
+		return get_all_used_ids(_TILES);
+	}
+	
+	
+	std::vector<unsigned int>
+	DBConnection::get_free_edge_ids()
+	{
+		return get_free_ids(_EDGES);
+	}
+	
+	
+	std::vector<unsigned int>
+	DBConnection::get_free_tile_ids()
+	{
+		return get_free_ids(_TILES);
+	}
+	
+	
+	void
+	DBConnection::init()
+	{
+		// exits when already inited!
+		if (_inited == true) return;
+		
+		
+		try
+		{
+			#ifdef DEBUG
+				log(MLog::debug, "DBConnection", "Starting...");
+			#endif
+		
+			SQLRETURN sql_return;
+
+			#ifdef DEBUG
+				log(MLog::debug, "DBConnection", "Allocate environment handle...");
+			#endif
+			sql_return = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &_environment);
+			evaluate_sql_return(sql_return, "DBConnection", "Error allocating SQL environment handle!");
+
+			try
+			{
+				#ifdef DEBUG		
+					log(MLog::debug, "DBConnection", "Set ODBC version...");
+				#endif
+				sql_return = SQLSetEnvAttr(_environment, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
+				evaluate_sql_return(sql_return, "DBConnection", "Error setting ODBC version!");
+		
+				#ifdef DEBUG		
+					log(MLog::debug, "DBConnection", "Allocating connection handle...");
+				#endif
+				sql_return = SQLAllocHandle(SQL_HANDLE_DBC, _environment, &_connection);
+				evaluate_sql_return(sql_return, "DBConnection", "Error allocating SQL connection!");
+
+			} catch (string level2_error_message)
+			{
+				try
+				{
+					sql_return = SQLFreeHandle(SQL_HANDLE_ENV, _environment);
+					evaluate_sql_return(sql_return,
+											"DBConnection",
+											"Error freeing SQL environment handle!");
+				} catch (string level3_error_message)
+				{
+					throw (level2_error_message + " " + level3_error_message);
+				} // level 3 try-catch
+											
+				throw (level2_error_message);
+			} // level 2 try-catch
+		} catch(string error_message)
+		{
+			throw_error_message("DBConnection", error_message);
+		} // level 1 try-catch
+
+
+		_inited =true;
+		log(MLog::notice, "init", "Init DBConnection... successful finished.");
+	}
+	
+	
+	string*
+	DBConnection::load_edge(unsigned int id)
+	{
+		
+		if (_inited ==true && _connected == true)
+		{
+			try
+			{
+				return load_blob(_EDGES, id);
+			} catch (string error_message)
+			{
+				throw_error_message("load_edge", error_message);
+			}
+		} else
+		{
+			throw_error_message("load_edge", "Not inited and/or connected!");
+		}
+	}
+
+
+	/**
+	 * Methode okay.
+	 * Save-Methode fehlt noch. Siehe dortiger Kommentar!
+	 */
+/*	vector<string>*
+	DBConnection::load_filteredtrace(unsigned int id)
+	{
+		try
+		{
+			vector<string>* datas = new vector<string>();
+
+			SQLRETURN sql_return;
+			SQLHSTMT sql_statement = _prepared_statements[select_filteredtrace];
+		
+			/** @TODO: Dynamisch machen!!!!  Oder dr???ber nachdenken! */
+		
+/*			SQLINTEGER sql_id = (SQLINTEGER)id;
+			SQLCHAR sql_chars[10000];
+			SQLINTEGER sql_chars_length = (SQLINTEGER)(10000);
+			SQLLEN sql_chars_len;
+		
+			sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
+													SQL_C_SLONG, SQL_INTEGER, 10,
+													0, &sql_id, 0, 0);
+			evaluate_sql_return(sql_return, "load_blob", "Error binding variable to SQL parameter!");
+	
+			sql_return = SQLExecute(sql_statement);
+			evaluate_sql_return(sql_return, "load_blob", "Error executing prepared SQL command!");
+
+			sql_return = SQLBindCol(sql_statement, 1, SQL_C_BINARY, sql_chars,
+											sql_chars_length, &sql_chars_len);
+			evaluate_sql_return(sql_return, "load_blob", "Error binding variable to SQL column!");
+
+			sql_return = SQLFetch(sql_statement);
+			evaluate_sql_return(sql_return, "load_blob", "Error fetching data from result set!");
+		
+			while (sql_return != SQL_NO_DATA)
+			{
+				datas->push_back(string((char*)sql_chars));
+			}
+		
+			#ifdef DEBUG
+				log(MLog::debug, "load_blob", "Data successfully loaded");
+			#endif
+
+			sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+			evaluate_sql_return(sql_return, "load_blob", "Error resetting SQL statement parameters");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+			evaluate_sql_return(sql_return, "load_blob", "Error unbinding SQL statement columns");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+			evaluate_sql_return(sql_return, "load_blob", "Error closing SQL statement cursor");
+		
+			return datas;
+
+		} catch (string error_message)
+		{
+			throw_error_message("load_filteredtrace", error_message);
+		}
+	}*/
+
+
+	string* 
+	DBConnection::load_tile(unsigned int id)
+	{
+		if (_inited == true && _connected == true)
+		{
+			try
+			{
+				return load_blob(_TILES, id);
+			} catch (string error_message)
+			{
+				throw_error_message("load_tile", error_message);
+			}
+		} else
+		{
+			throw_error_message("load_tile", "Not inited and/or connected!");
+		}
+	}
+	
+	
+	void
+	DBConnection::delete_edge(unsigned int id)
+	{
+		if (_inited == true && _connected == true)
+		{
+			try
+			{
+				delete_entry(_EDGES, id);
+			} catch (string error_message)
+			{
+				throw_error_message("delete_edge", error_message);
+			}
+		} else
+		{
+			throw_error_message("delete_edge", "Not inited and/or connected!");
+		}
+	}
+
+
+	void
+	DBConnection::delete_tile(unsigned int id)
+	{
+		if (_inited == true && _connected == true)
+		{
+			try
+			{
+				delete_entry(_TILES, id);
+			} catch (string error_message)
+			{
+				throw_error_message("delete_tile", error_message);
+			}
+		} else
+		{
+			throw_error_message("delete_tile", "Not inited and/or connected!");
+		}
+	}
+
+
+	void 
+	DBConnection::save_edge(unsigned int id, string& data_representation)
+	{
+		if (_inited == true && _connected == true)
+		{
+			try
+			{
+				save_blob(_EDGES, id, data_representation);
+			} catch (string error_message)
+			{
+				throw_error_message("save_edge", error_message);
+			}
+		} else
+		{
+			throw_error_message("save_edge", "Not inited and/or connected!");
+		}
+	}
+	
+
+	/**
+	 * Spaeter mal drueber nachdenken.
+	 * Stichwort: Gleiche Traces (also absolut gleich!) duerfen nicht rein!
+	 */
+/*	void 
+	DBConnection::save_filteredtrace(unsigned int id, string& data_representation)
+	{
+	}*/
+
+
+	void 
+	DBConnection::save_tile(unsigned int id, string& data_representation)
+	{
+		if (_inited == true && _connected  == true)
+		{
+			try
+			{
+				save_blob(_TILES, id, data_representation);
+			} catch (string error_message)
+			{
+				throw_error_message("save_tile", error_message);
+			}
+		} else
+		{
+			throw_error_message("save_tile", "Not inited and/or connected!");
+		}
+	}
+	
+	
+	bool
+	DBConnection::check_db_structure()
+	{
+		
+		// Defines two vector:
+		// First contains the table names which SHOULD exist.
+		// Second will contain the table names which DO exist.
+		// When these vectors are equal, this method returns true.
+
+		vector<string> search_tables;	// SHOULD-exist-table-names
+		vector<string> found_tables;	// DO-exist-table-names
+
+		vector<string>::iterator search_iterator;
+		vector<string>::iterator found_iterator;
+
+		// definition of SHOULD-exist-table-names
+		search_tables.push_back("tiles");
+		search_tables.push_back("edges");
+//		search_tables.push_back("filteredtraces");
+		
+		SQLHSTMT statement;
+		SQLRETURN sql_return;
+
+		SQLCHAR* sql_search_table_name;
+		SQLCHAR sql_search_table_type[] = "TABLE";
+		
+		sql_return =  SQLAllocHandle(SQL_HANDLE_STMT, _connection, &statement);
+		evaluate_sql_return(sql_return, "check_db_structure", "Error allocating statement handle!");
+
+		// every item of SHOULD-exist-table-name vector is searched in database
+		for (search_iterator = search_tables.begin(); search_iterator != search_tables.end(); ++search_iterator)
+		{
+			try 
+			{
+				sql_search_table_name = (SQLCHAR*)((*search_iterator).c_str());
+				sql_return = SQLTables(statement,
+														 NULL, 0,
+														 NULL, 0,
+														 sql_search_table_name, SQL_NTS,
+														 sql_search_table_type, SQL_NTS
+														);
+				evaluate_sql_return(sql_return, "check_db_structure", "Error retrieving table information!");
+	
+				// got table information. Bind variables to columns...
+				SQLCHAR sql_found_table_name[MAX_SQL_CHAR_LENGTH + 1];
+				SQLCHAR sql_found_table_type[MAX_SQL_CHAR_LENGTH + 1];
+				SQLINTEGER sql_table_name_pointer;
+				SQLINTEGER sql_table_type_pointer;
+	
+				sql_return = SQLBindCol(statement, 3, SQL_C_CHAR, sql_found_table_name,
+									 MAX_SQL_CHAR_LENGTH, &sql_table_name_pointer);
+				evaluate_sql_return(sql_return, "check_db_structure", "Error binding column to variable!");
+			
+				sql_return = SQLBindCol(statement, 4, SQL_C_CHAR, sql_found_table_type,
+									 MAX_SQL_CHAR_LENGTH, &sql_table_type_pointer);
+				evaluate_sql_return(sql_return, "check_db_structure", "Error binding column to variable!");
+			
+		
+				// look in every column and compare it to SHOULD-exist-table-names...
+				sql_return = SQLFetch(statement);
+				evaluate_sql_return(sql_return, "check_db_structure", "Error fetching data from result set!");
+				while (sql_return != SQL_NO_DATA)
+				{
+					found_iterator = find(search_tables.begin(), search_tables.end(), (char*)sql_found_table_name);
+					if (found_iterator != search_tables.end()) 
+					{
+						found_tables.push_back(*found_iterator);
+					}
+					sql_return = SQLFetch(statement);
+					evaluate_sql_return(sql_return, "check_db_structure", "Error fetching data from result set!");
+				} // end while
+			} catch (string error_message)
+			{
+				try
+				{
+					sql_return = SQLFreeHandle(SQL_HANDLE_STMT, statement);
+					evaluate_sql_return(sql_return, "check_db_structure", "Error freeing SQL statement handle");
+				} catch (string level2_error_message)
+				{
+					throw (error_message + " " + level2_error_message);
+				} // level 2 try-catch
+					
+				throw (error_message);
+			} // level 1 try-catch
+			
+			sql_return = SQLFreeStmt(statement, SQL_RESET_PARAMS);
+			evaluate_sql_return(sql_return, "check_db_structure", "Error resetting SQL statement parameters");
+			
+			sql_return = SQLFreeStmt(statement, SQL_UNBIND);
+			evaluate_sql_return(sql_return, "check_db_structure", "Error unbinding SQL statement columns");
+			
+			sql_return = SQLFreeStmt(statement, SQL_CLOSE);
+			evaluate_sql_return(sql_return, "check_db_structure", "Error closing SQL statement cursor");
+		} // end for
+
+		sql_return = SQLFreeHandle(SQL_HANDLE_STMT, statement);
+		evaluate_sql_return(sql_return, "check_db_structure", "Error freeing SQL statement handle");
+	
+		
+		if (search_tables != found_tables)
+		{
+			#ifdef DEBUG
+				log(MLog::debug, "check_db_structure", "failed!");
+			#endif
+			
+			return false;
+		}
+		
+		#ifdef DEBUG
+			log(MLog::debug, "check_db_structure", "okay.");
+		#endif
+		
+		return true;
+	}
+
+	
+	void
+	DBConnection::correct_db_structure()
+	{
+		// Simple tries to create the necessary tables.
+
+		SQLRETURN sql_return;
+		SQLHSTMT sql_statement;
+		SQLCHAR* sql_text;
+		
+		sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection, &sql_statement);
+		evaluate_sql_return(sql_return, "correct_db_structure", "Error allocating statement handle!");
+		
+		try
+		{
+			// creates tiles table...
+			sql_text = (SQLCHAR*)"CREATE TABLE tiles (id INTEGER NOT NULL PRIMARY KEY, data LONG VARBINARY);";
+			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
+			evaluate_sql_return(sql_return, "correct_DB_structure", "Error executing \"CREATE TABLE\" - statement! (1)");
+
+			sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error resetting SQL statement parameters");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error unbinding SQL statement columns");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error closing SQL statement cursor");
+		
+			// creates edges table...
+			sql_text = (SQLCHAR*)"CREATE TABLE edges (id INTEGER NOT NULL PRIMARY KEY, data LONG VARBINARY);";
+			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
+			evaluate_sql_return(sql_return, "correct_DB_structure", "Error executing \"CREATE TABLE\" - statement! (2)");
+
+			sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error resetting SQL statement parameters");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error unbinding SQL statement columns");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error closing SQL statement cursor");
+
+			// creates filteredtraces table...
+/*			sql_text = (SQLCHAR*)"CREATE TABLE filteredtraces (id INTEGER NOT NULL PRIMARY KEY, data BLOB);";
+			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
+			evaluate_sql_return(sql_return, "correct_DB_structure", "Error executing \"CREATE TABLE\" - statement! (3)");
+		
+			sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error resetting SQL statement parameters");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error unbinding SQL statement columns");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+			evaluate_sql_return(sql_return, "correct_db_structure", "Error closing SQL statement cursor");
+*/
+
+			log(MLog::info, "correct_db_structure", "Correcting tables... successful!");
+		} catch (string error_message)
+		{
+			try
+			{
+				sql_return = SQLFreeHandle(SQL_HANDLE_STMT, sql_statement);
+				evaluate_sql_return(sql_return,
+										"correct_db_structure",
+										"Error freeing SQL statement handle!");
+			} catch (string level2_error_message)
+			{
+				throw (error_message + " " + level2_error_message);
+			}// level 2 try-catch
+			
+			throw (error_message);
+		} // level 1 try-catch
+	
+		sql_return = SQLFreeHandle(SQL_HANDLE_STMT, sql_statement);
+		evaluate_sql_return(sql_return, "correct_db_structure",
+										"Error freeing SQL statement handle!");
+										
+		#ifdef DEBUG
+			log(MLog::debug, "correct_db_structure", "DB Structure corrected successfully.");
+		#endif
+	}
+	
+	
+	void
+	DBConnection::delete_entry(Table from_table, unsigned int id)
+	{
+		std::string really_temp;
+		save_blob(from_table, id, really_temp);
+		
+/*		std::ostringstream stream;
+		stream << "UPDATE ";
+		
+		switch (from_table)
+		{
+			case _TILES:
+				stream << "tiles";
+				break;
+			
+			case _EDGES:
+				stream << "edges";
+				break;
+				
+			default:
+				throw ("Unknown table used!");
+				break;
+		}
+		
+		stream << " SET (data) = ("") WHERE id = ";
+		stream << id;
+		stream << ";";
+		stream.flush();
+		
+		string sql_command = stream.str();		
+
+		SQLRETURN sql_return;
+		SQLHSTMT sql_statement;
+		SQLINTEGER sql_id = (SQLINTEGER)id;
+		SQLINTEGER sql_indicator;
+		string stored_error_messages = "";
+		
+		sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection, &sql_statement);
+		evaluate_sql_return(sql_return, "delete_entry", "Error allocating SQL statement handle!");
+		
+		try
+		{
+			sql_return = SQLExecDirect(sql_statement, (SQLCHAR*)(sql_command.c_str()), SQL_NTS);
+			evaluate_sql_return(sql_return, "delete_entry", "Error executing SQL command!");
+		} catch (string error_message)
+		{
+			if (stored_error_messages != "")
+			{
+				stored_error_messages.append(" ");
+			}
+			stored_error_messages.append(error_message);
+		}
+		
+		try
+		{
+			sql_return = SQLFreeHandle(SQL_HANDLE_STMT, sql_statement);
+			evaluate_sql_return(sql_return, "delete_entry", "Error freeing SQL statement handle!");
+		} catch (string error_message)
+		{
+			if (stored_error_messages != "")
+			{
+				stored_error_messages.append(" ");
+			}
+			stored_error_messages.append(error_message);
+		}
+		
+		if (stored_error_messages != "")
+		{
+			throw (stored_error_messages);
+		}*/
+	}
+	
+	
+	void
+	DBConnection::destroy(bool internal_call)
+	{
+		//exits when not inited!
+		if (_inited == false) return;
+		
+		
+		string stored_error_messages = "";
+
+		if (_connected == true)
+		{
+			try 
+			{
+				disconnect(true);
+			} catch (string error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(error_message);
+			}
+		}
+		
+		
+		SQLRETURN sql_return;
+		
+		try
+		{
+			try
+			{		
+				sql_return = SQLFreeHandle(SQL_HANDLE_DBC, _connection);
+				evaluate_sql_return(sql_return, 
+									"destroy",
+									"Error freeing SQL connection handle!");
+			} catch(string level2_error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(level2_error_message);
+			} // level 2 try-catch
+			
+			try
+			{
+				sql_return = SQLFreeHandle(SQL_HANDLE_ENV, _environment);
+				evaluate_sql_return(sql_return,
+										"destroy", 
+										"Error freeing SQL environment handle!");
+			} catch (string level2_error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(level2_error_message);
+			} // level 2 try-catch
+			
+			if (stored_error_messages != "") 
+			{
+				throw (stored_error_messages);
+			}
+		} catch (string error_message)
+		{
+			if (internal_call)
+			{
+				throw (error_message);
+			} else
+			{
+				throw_error_message("destroy", error_message);
+			}
+		} // level 1 try-catch
+
+		_inited = false;
+		log(MLog::notice, "destroy", "Destroy DBConnection... successful finished.");
+	}
+	
+
+	void
+	DBConnection::disconnect(bool internal_call)
+	{
+		//exits when not connected
+		if (_connected == false) return;
+		
+		
+		try
+		{
+			SQLRETURN sql_return;
+			string stored_error_messages = "";
+			
+			try
+			{
+				free_prepare_statements();
+			} catch(string level2_error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(level2_error_message);
+			}
+		
+			try 
+			{
+				sql_return = SQLDisconnect(_connection);
+				evaluate_sql_return(sql_return, "disconnect", "Error disconnecting from database!");
+			} catch (string level2_error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(level2_error_message);
+			}
+			
+			if (stored_error_messages != "")
+			{
+				throw (stored_error_messages);
+			}
+		} catch (string error_message)
+		{
+			if (internal_call)
+			{
+				throw (error_message);
+			} else
+			{
+				throw_error_message("disconnect", error_message);
+			}
+		}
+
+		_connected = false;
+		log(MLog::info, "disconnect", "Disconnected from DB.");
+	}
+
+
+	std::vector<unsigned int>
+	DBConnection::get_all_used_ids(Table table)
+	{
+		SQLRETURN sql_return;
+		SQLHSTMT sql_statement;
+		SQLINTEGER sql_indicator;
+		
+		unsigned int col_value;
+		std::vector<unsigned int> ids;
+
+		switch (table)
+		{
+			case _TILES:
+				sql_statement = _prepared_statements[select_tile_ids];
+				break;
+			
+			case _EDGES:
+				sql_statement = _prepared_statements[select_edge_ids];
+				break;
+				
+			default:
+				throw ("Unknown table used!");
+				break;
+		}
+		
+		sql_return = SQLExecute(sql_statement);
+		evaluate_sql_return(sql_return, "get_all_used_ids", "Error executing prepared SQL command!");
+
+		sql_return = SQLBindCol(sql_statement, 1, SQL_C_ULONG, &col_value,
+														0, &sql_indicator);
+		evaluate_sql_return(sql_return, "get_all_used_ids", "Error binding variable to SQL column!");
+
+		while ((sql_return = SQLFetch(sql_statement)) != SQL_NO_DATA)
+		{
+			evaluate_sql_return(sql_return, "get_all_used_ids", "Error fetching SQL rowset!");
+			ids.push_back(col_value);
+		}
+
+		sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+		evaluate_sql_return(sql_return, "get_all_used_ids", "Error resetting SQL statement parameters");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+		evaluate_sql_return(sql_return, "get_all_used_ids", "Error unbinding SQL statement columns");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+		evaluate_sql_return(sql_return, "get_all_used_ids", "Error closing SQL statement cursor");
+		
+		#ifdef DEBUG
+			log(MLog::debug, "get_all_used_ids", "Data successfully loaded");
+		#endif
+		
+/*		#ifdef DEBUG
+			for(vector<unsigned int>::iterator ids_iter = ids.begin(); ids_iter != ids.end(); ++ids_iter)
+				std::cout << *ids_iter << ", ";
+		#endif*/
+		
+		return ids;
+	}
+
+
+	std::vector<unsigned int>
+	DBConnection::get_free_ids(Table table)
+	{
+		SQLRETURN sql_return;
+		SQLHSTMT sql_statement;
+		SQLINTEGER sql_indicator;
+		
+		unsigned int col_value;
+		std::vector<unsigned int> ids;
+
+		switch (table)
+		{
+			case _TILES:
+				sql_statement = _prepared_statements[select_free_tile_ids];
+				break;
+			
+			case _EDGES:
+				sql_statement = _prepared_statements[select_free_edge_ids];
+				break;
+				
+			default:
+				throw ("Unknown table used!");
+				break;
+		}
+		
+		sql_return = SQLExecute(sql_statement);
+		evaluate_sql_return(sql_return, "get_free_ids", "Error executing prepared SQL command!");
+
+		sql_return = SQLBindCol(sql_statement, 1, SQL_C_ULONG, &col_value,
+														0, &sql_indicator);
+		evaluate_sql_return(sql_return, "get_free_ids", "Error binding variable to SQL column!");
+
+		while ((sql_return = SQLFetch(sql_statement)) != SQL_NO_DATA)
+		{
+			evaluate_sql_return(sql_return, "get_free_ids", "Error fetching SQL rowset!");
+			ids.push_back(col_value);
+		}
+
+		sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+		evaluate_sql_return(sql_return, "get_free_ids", "Error resetting SQL statement parameters");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+		evaluate_sql_return(sql_return, "get_free_ids", "Error unbinding SQL statement columns");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+		evaluate_sql_return(sql_return, "get_free_ids", "Error closing SQL statement cursor");
+		
+		#ifdef DEBUG
+			log(MLog::debug, "get_free_ids", "Data successfully loaded");
+		#endif
+		
+				ids.push_back(get_next_to_max_id(table));
+		
+//		#ifdef DEBUG
+			for(vector<unsigned int>::iterator ids_iter = ids.begin(); ids_iter != ids.end(); ++ids_iter)
+				std::cout << *ids_iter << ", ";
+//		#endif
+		
+		/* now add next to max id... */
+		
+		return ids;
+	}
+	
+	
+	unsigned int
+	DBConnection::get_next_to_max_id(Table table)
+	{
+		SQLRETURN sql_return;
+		SQLHSTMT sql_statement;
+		SQLINTEGER sql_indicator;
+		
+		unsigned int col_value = 0;
+
+		switch (table)
+		{
+			case _TILES:
+				sql_statement = _prepared_statements[select_max_tile_id];
+				break;
+			
+			case _EDGES:
+				sql_statement = _prepared_statements[select_max_edge_id];
+				break;
+				
+			default:
+				throw ("Unknown table used!");
+				break;
+		}
+		
+		sql_return = SQLExecute(sql_statement);
+		evaluate_sql_return(sql_return, "get_next_to_max_id", "Error executing prepared SQL command!");
+
+		sql_return = SQLBindCol(sql_statement, 1, SQL_C_ULONG, &col_value,
+														0, &sql_indicator);
+		evaluate_sql_return(sql_return, "get_next_to_max_id", "Error binding variable to SQL column!");
+
+		if ((sql_return = SQLFetch(sql_statement)) != SQL_NO_DATA)
+		{
+			evaluate_sql_return(sql_return, "get_next_to_max_id", "Error fetching SQL rowset!");
+			++col_value;
+		} else
+		{
+			mlog(MLog::debug, "DBConnection") << "no data\n";
+		}
+
+		sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+		evaluate_sql_return(sql_return, "get_next_to_max_id", "Error resetting SQL statement parameters");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+		evaluate_sql_return(sql_return, "get_next_to_max_id", "Error unbinding SQL statement columns");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+		evaluate_sql_return(sql_return, "get_next_to_max_id", "Error closing SQL statement cursor");
+		
+		#ifdef DEBUG
+			log(MLog::debug, "get_next_to_max_id", "Data successfully loaded");
+		#endif
+		
+		std::cout << "XX:" << col_value << "\n";
+		
+		return col_value;
+		
+	}
+
+	void
+	DBConnection::free_prepare_statements()
+	{
+		SQLRETURN sql_return;
+		string stored_error_messages = "";
+		bool error_occured = false;
+		unsigned int i;
+		
+		for (i = 0; i < NUM_OF_PREPARED_STATEMENTS; ++i)
+		{
+			try
+			{
+				sql_return = SQLFreeHandle(SQL_HANDLE_STMT,
+													&_prepared_statements[i]);
+				evaluate_sql_return(sql_return, "free_prepare_statements",
+												"Error freeing SQL statement handle!");
+			} catch (string error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(error_message);
+				error_occured = true;
+			}	
+		}
+
+		
+		if (error_occured == true)
+		{
+			throw (stored_error_messages);
+		}
+		
+		#ifdef DEBUG
+			log(MLog::debug, "free_prepared_statements", "Prepared statements freed.");
+		#endif
+	}
+	
+	
+	string*
+	DBConnection::load_blob(Table table, unsigned int id)
+	{
+		SQLRETURN sql_return;
+		SQLHSTMT sql_statement;
+		
+		switch (table)
+		{
+			case _TILES:
+				sql_statement = _prepared_statements[select_tile];
+				break;
+			
+			case _EDGES:
+				sql_statement = _prepared_statements[select_edge];
+				break;
+				
+			default:
+				throw ("Unknown table used!");
+				break;
+		}
+		
+		SQLINTEGER sql_id = (SQLINTEGER)id;
+		SQLCHAR sql_buffer[SQL_BINARY_BUFFER];
+		SQLINTEGER sql_buffer_length = (SQLINTEGER)(SQL_BINARY_BUFFER);
+		SQLINTEGER sql_indicator;
+		
+		sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
+												SQL_C_SLONG, SQL_INTEGER, 10,
+												0, &sql_id, 0, 0);
+		evaluate_sql_return(sql_return, "load_blob", "Error binding variable to SQL parameter!");
+	
+		sql_return = SQLExecute(sql_statement);
+		evaluate_sql_return(sql_return, "load_blob", "Error executing prepared SQL command!");
+
+		sql_return = SQLFetch(sql_statement);
+		evaluate_sql_return(sql_return, "load_blob", "Error fetching data from result set!");
+		if (sql_return == SQL_NO_DATA)
+		{
+/*			#ifdef DEBUG
+				mlog(MLog::debug, "DBConnection") << "::load_blob : "
+							<< "No data for this id (" << id <<"). "
+							<< "Return NULL.\n";
+			#endif*/
+			
+			return NULL;
+		}
+		
+
+		sql_return = SQLGetData(sql_statement, 1, SQL_C_BINARY, sql_buffer,
+										sql_buffer_length, &sql_indicator);
+		evaluate_sql_return(sql_return, "load_blob", "Error executing SQLGetData!");
+		if (sql_return == SQL_NO_DATA)
+		{
+/*			#ifdef DEBUG
+				mlog(MLog::debug, "DBConnection") << "::load_blob : "
+							<< "No data for this id (" << id <<"). "
+							<< "Return NULL.\n";
+			#endif*/
+			
+			return NULL;
+		}
+
+		string* data_representation = new string();
+		if (sql_indicator == SQL_NO_TOTAL || sql_indicator >= SQL_BINARY_BUFFER)
+		{
+			data_representation->append((char*)sql_buffer, SQL_BINARY_BUFFER);
+		} else
+		{
+			if (sql_indicator > 0)
+			{
+				data_representation->append((char*)sql_buffer, sql_indicator);
+			}
+		}					
+		
+		while (SQL_NO_DATA != 
+					(sql_return = SQLGetData(sql_statement, 1, SQL_C_BINARY,
+														sql_buffer,	sql_buffer_length,
+														&sql_indicator)))
+		{
+			evaluate_sql_return(sql_return, "load_blob", "Error executing SQLGetData!");
+
+			if (sql_indicator == SQL_NO_TOTAL || sql_indicator >= SQL_BINARY_BUFFER)
+			{
+				data_representation->append((char*)sql_buffer, SQL_BINARY_BUFFER);
+			} else
+			{
+				if (sql_indicator > 0)
+				{
+					data_representation->append((char*)sql_buffer, sql_indicator);
+				}
+			}					
+		}
+
+
+		sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+		evaluate_sql_return(sql_return, "load_blob", "Error resetting SQL statement parameters");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+		evaluate_sql_return(sql_return, "load_blob", "Error unbinding SQL statement columns");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+		evaluate_sql_return(sql_return, "load_blob", "Error closing SQL statement cursor");
+		
+/*		#ifdef DEBUG
+			std::stringstream ss;
+			ss << id;
+			ss.flush();
+			log(MLog::debug, "load_blob", "Data successfully loaded (id=" + ss.str() + ")");
+		#endif */
+		
+		if (*data_representation == "")
+			return 0;
+		else
+			return data_representation;
+	}
+	
+	
+	void 
+	DBConnection::prepare_statements()
+	{
+		// first allocate the statements...
+		SQLRETURN sql_return;
+		string stored_error_messages = "";
+		
+		bool handle_loaded[NUM_OF_PREPARED_STATEMENTS];
+		bool error_occured = false;
+		unsigned int i;
+		
+		// inits handle_loaded to false...
+		for (i = 0; i < NUM_OF_PREPARED_STATEMENTS; ++i)
+		{
+			handle_loaded[i] = false;
+		}
+		
+		i = 0;
+		while ((error_occured == false) && (i < NUM_OF_PREPARED_STATEMENTS))
+		{
+			try
+			{
+				// allocate _prepared_load_tiles_statement...		
+				sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection,
+														&_prepared_statements[i]);
+				evaluate_sql_return(sql_return, "prepare_statements",
+												"Error allocating SQL statement handle!");
+										
+				handle_loaded[i] = true;
+				++i;				
+			} catch (string error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(error_message);
+				error_occured = true;
+			}
+		}
+		
+		// error occured! try to free statement handles!
+		if (error_occured == true)
+		{
+			for (i = 0; i < NUM_OF_PREPARED_STATEMENTS; ++i)
+			{
+				if (handle_loaded[i] == true)
+				{
+					try
+					{
+						sql_return = SQLFreeHandle(SQL_HANDLE_STMT,
+															&_prepared_statements[i]);
+						evaluate_sql_return(sql_return, "prepare_statements",
+														"Error freeing SQL statement handle!");
+					} catch (string error_message)
+					{
+						if (stored_error_messages != "")
+						{
+							stored_error_messages.append(" ");
+						}
+						stored_error_messages.append(error_message);
+					}	
+				}
+			}
+			
+			throw(stored_error_messages);
+		}
+		
+		
+		#ifdef DEBUG
+			log(MLog::debug, "prepare_statements", "Prepared statesments successfully allocated.");
+		#endif
+		// prepared statement handles allocated.
+		
+		// now "prepare" prepared_statements...
+		string sql_commands[NUM_OF_PREPARED_STATEMENTS];
+		
+		sql_commands[select_tile] = "SELECT data FROM tiles WHERE id = ?;";
+		sql_commands[update_tile] = "UPDATE tiles SET data = ? WHERE id = ?;";
+		sql_commands[insert_tile] = "INSERT INTO tiles (data, id) VALUES (?, ?);";
+		sql_commands[select_edge] = "SELECT data FROM edges WHERE id = ?;";
+		sql_commands[update_edge] = "UPDATE edges SET data = ? WHERE id = ?;";
+		sql_commands[insert_edge] = "INSERT INTO edges (data, id) VALUES (?, ?);";
+		sql_commands[select_filteredtrace] = "SELECT data FROM filteredtraces WHERE id = ?;";
+		sql_commands[update_filteredtrace] = "UPDATE filteredtraces SET data = ? WHERE id = ?;";
+		sql_commands[insert_filteredtrace] = "INSERT INTO filteredtraces (data, id) VALUES (?, ?);";
+		sql_commands[select_edge_ids] = "SELECT id FROM edges ORDER BY id ASC;";
+		sql_commands[select_tile_ids] = "SELECT id FROM tiles ORDER BY id ASC;";
+		sql_commands[select_free_edge_ids] = "SELECT id FROM edges WHERE data = \"\" ORDER BY id ASC;";
+		sql_commands[select_free_tile_ids] = "SELECT id FROM tiles WHERE data = \"\" ORDER BY id ASC;";
+		sql_commands[select_max_edge_id] = "SELECT MAX(id) FROM edges;";
+		sql_commands[select_max_tile_id] = "SELECT MAX(id) FROM tiles;";
+		
+		try
+		{
+			for (i = 0; i < NUM_OF_PREPARED_STATEMENTS; ++i)
+			{
+				sql_return = SQLPrepare(_prepared_statements[i],
+												(SQLCHAR*)(sql_commands[i].c_str()),
+												SQL_NTS);
+				evaluate_sql_return(sql_return, "prepare_statements",
+										"Error preparing SQL statement!");
+			}
+		} catch (string error_message)
+		{
+			try
+			{
+				free_prepare_statements();
+			} catch (string level2_error_message)
+			{
+				throw (error_message + " " + level2_error_message);
+			}  // level 2 try-catch
+			
+			throw (error_message);
+		} // level 1 try-catch
+
+		#ifdef DEBUG
+			log(MLog::debug, "prepare_statements", "Everything successfully done.");
+		#endif
+	}
+	
+
+	void
+	DBConnection::save_blob(Table table, unsigned int id, string& data_representation)
+	{
+		SQLRETURN sql_return;
+		SQLHSTMT sql_statement;
+
+		switch (table)
+		{
+			case _TILES:
+				sql_statement = _prepared_statements[update_tile];
+				break;
+			
+			case _EDGES:
+				sql_statement = _prepared_statements[update_edge];
+				break;
+				
+//			case filteredtraces:
+//				sql_statement = _prepared_statements[insert_filteredtrace];
+//				break;
+			
+			default:
+				throw ("Unknown table used!");
+				break;
+		}
+				
+		SQLCHAR* sql_data = (SQLCHAR*)((const char*)data_representation.c_str());
+		SQLINTEGER sql_data_length = data_representation.size();
+			
+		SQLINTEGER sql_id = (SQLINTEGER)id;
+		SQLPOINTER sql_parameter_indicator = (SQLPOINTER)1; 
+		SQLINTEGER sql_execution_indicator;
+		
+/*		SQLCHAR sql_answer[5];
+		SQLSMALLINT sql_indicator;
+		sql_return = SQLGetInfo(_connection, SQL_NEED_LONG_DATA_LEN, sql_answer,
+								4, &sql_indicator);
+		evaluate_sql_return(MLog::error, "save_blob", "Error getting info!");
+		if (strcmp((char*)sql_answer, "J") == 0)
+		{
+			sql_execution_indicator = SQL_LEN_DATA_AT_EXEC(data_length);
+		} else
+		{
+			sql_execution_indicator = SQL_LEN_DATA_AT_EXEC(0);
+		}*/
+		
+		sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
+										SQL_C_BINARY, SQL_LONGVARBINARY,
+										sql_data_length, 0, sql_data,
+										sql_data_length, &sql_data_length);
+
+/*		sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
+												SQL_C_BINARY, SQL_LONGVARBINARY,
+												0, 0, sql_parameter_indicator,
+												0, &sql_execution_indicator);*/
+		evaluate_sql_return(sql_return, "save_blob", "Error binding variable to SQL parameter!");
+		
+		sql_return = SQLBindParameter(sql_statement, 2, SQL_PARAM_INPUT,
+												SQL_C_SLONG, SQL_INTEGER, 10,
+												0, &sql_id, 0, 0);
+		evaluate_sql_return(sql_return, "save_blob", "Error binding variable to SQL parameter!");
+	
+		sql_return = SQLExecute(sql_statement);
+		evaluate_sql_return(sql_return, "save_blob", "Error executing prepared SQL command (1)!");
+/*		if (sql_return == SQL_NEED_DATA)
+		{
+			sql_return = SQLParamData(sql_statement, &sql_parameter_indicator);
+			evaluate_sql_return(sql_return, "save_blob", "Error executing SQLParamData!");
+			if (sql_return != SQL_NEED_DATA)
+			{
+				throw ("Something strange happend. SQL command don't need data!");
+			}
+			
+			int left_data_length = data_length;
+			int buffer_length = 0;
+			SQLCHAR* buffer;
+			
+			while (left_data_length > 0)
+			{
+				if (left_data_length >= SQL_BINARY_BUFFER)
+				{
+					buffer_length = SQL_BINARY_BUFFER;
+					left_data_length = left_data_length - SQL_BINARY_BUFFER;
+				} else
+				{
+					buffer_length = left_data_length;
+					left_data_length = 0;
+				}
+				
+				// building the correct substring...
+				string substring = data_representation.substr(
+										data_length - left_data_length,
+										buffer_length);
+				const char* char_substring = substring.c_str();
+				buffer = (SQLCHAR*)(char_substring);
+				// and convert it to SQLCHAR*. Done!
+				
+				sql_return = SQLPutData(sql_statement, buffer, buffer_length);
+				evaluate_sql_return(sql_return, "save_blob", "Error putting data! (1)");
+			}
+
+			sql_return = SQLParamData(sql_statement, &sql_parameter_indicator);
+			show_error(SQL_HANDLE_STMT, sql_statement);
+			evaluate_sql_return(sql_return, "save_blob", "Error executing SQLParamData! (1)");
+			if (sql_return == SQL_NEED_DATA)
+			{
+				throw ("Something strange happend. SQL command needs too much data!");
+			}
+		}*/
+
+		// checking, how many rows were affected.
+		// if 0 then try INSERT...
+		SQLINTEGER row_count = (SQLINTEGER)-1;
+		sql_return = SQLRowCount(sql_statement, &row_count);
+		evaluate_sql_return(sql_return, "save_blob", "Error executing SQLRowCount command!");
+		
+		sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+		evaluate_sql_return(sql_return, "save_blob", "Error resetting SQL statement parameters");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+		evaluate_sql_return(sql_return, "save_blob", "Error unbinding SQL statement columns");
+			
+		sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+		evaluate_sql_return(sql_return, "save_blob", "Error closing SQL statement cursor");
+		
+		
+		if (row_count == 0)
+		{
+			#ifdef DEBUG
+				log(MLog::debug, "save_blob", "UPDATE failed. Will try INSERT...");
+			#endif
+
+			switch (table)
+			{
+				case _TILES:
+					sql_statement = _prepared_statements[insert_tile];
+					break;
+			
+				case _EDGES:
+					sql_statement = _prepared_statements[insert_edge];
+					break;
+				
+//				case filteredtraces:
+//					sql_statement = _prepared_statements[update_filteredtrace];
+//					break;
+			
+				default:
+					throw ("Unknown table used!");
+					break;
+			}
+
+			sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
+											SQL_C_BINARY, SQL_LONGVARBINARY,
+											sql_data_length, 0, sql_data,
+											sql_data_length, &sql_data_length);
+			
+/*			sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
+												SQL_C_BINARY, SQL_LONGVARBINARY,
+												0, 0, &sql_parameter_indicator,
+												0, &sql_execution_indicator);*/
+			evaluate_sql_return(sql_return, "save_blob", "Error binding variable to SQL parameter!");
+		
+			sql_return = SQLBindParameter(sql_statement, 2, SQL_PARAM_INPUT,
+													SQL_C_SLONG, SQL_INTEGER, 10,
+													0, &sql_id, 0, 0);
+			evaluate_sql_return(sql_return, "save_blob", "Error binding variable to SQL parameter!");
+
+
+			string stored_error_messages = "";
+			sql_return = SQLExecute(sql_statement);
+			if (sql_return == SQL_ERROR)
+			{
+				SQLRETURN sql_diag_return;
+				SQLCHAR stat[6];
+				SQLINTEGER err = (SQLINTEGER)-1;
+
+				try
+				{
+					sql_diag_return = SQLGetDiagRec(SQL_HANDLE_STMT, sql_statement,
+																1, stat, &err, 0, 0, 0);
+					evaluate_sql_return(sql_diag_return, "save_clob", "Error retrieving diagnostics!");
+				} catch (string level2_error_message)
+				{
+					if (stored_error_messages != "")
+					{
+						stored_error_messages.append(" ");
+					}
+					stored_error_messages.append(level2_error_message);
+				}
+				
+				if ((strcmp((char*)stat, "23000") == 0) && (err == 1062))
+				{
+					#ifdef DEBUG
+						log(MLog::debug, "save_blob", "Data unchanged. No INSERT needed!");
+					#endif
+				} else
+				{
+					if (stored_error_messages != "")
+					{
+						stored_error_messages.append(" ");
+					}
+					stored_error_messages.append("Error executing prepared SQL command (2)!");
+				}
+				
+				if (stored_error_messages != "")
+				{
+					throw (stored_error_messages);
+				}
+			} else // sql_return != SQL_ERROR
+			{
+/*				if (sql_return == SQL_NEED_DATA)
+				{
+					sql_return = SQLParamData(sql_statement, &sql_parameter_indicator);
+					evaluate_sql_return(sql_return, "save_blob", "Error executing SQLParamData!");
+					if (sql_return != SQL_NEED_DATA)
+					{
+						throw ("Something strange happend. SQL command don't need data!");
+					}
+			
+					int left_data_length = data_length;
+					int buffer_length = 0;
+					SQLCHAR* buffer;
+			
+					while (left_data_length > 0)
+					{
+						if (left_data_length >= SQL_BINARY_BUFFER)
+						{
+							buffer_length = SQL_BINARY_BUFFER;
+							left_data_length = left_data_length - SQL_BINARY_BUFFER;
+						} else
+						{
+							buffer_length = left_data_length;
+							left_data_length = 0;
+						}
+				
+						// building the correct substring...
+						string substring = data_representation.substr(
+												data_length - left_data_length,
+												buffer_length);
+						const char* char_substring = substring.c_str();
+						buffer = (SQLCHAR*)(char_substring);
+						// and convert it to SQLCHAR*. Done!
+				
+						sql_return = SQLPutData(sql_statement, buffer, buffer_length);
+						evaluate_sql_return(sql_return, "save_blob", "Error putting data! (1)");
+					}
+			
+					sql_return = SQLParamData(sql_statement, &sql_parameter_indicator);
+					show_error(SQL_HANDLE_STMT, sql_statement);
+					evaluate_sql_return(sql_return, "save_blob", "Error executing SQLParamData! (2)");
+					if (sql_return == SQL_NEED_DATA)
+					{
+						throw ("Something strange happend. SQL command needs too much data!");
+					}
+				}*/
+		
+				#ifdef DEBUG
+					log(MLog::debug, "save_blob", "INSERT succeed.");
+				#endif
+			} // if
+			
+
+			sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
+			evaluate_sql_return(sql_return, "save_blob", "Error resetting SQL statement parameters");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
+			evaluate_sql_return(sql_return, "save_blob", "Error unbinding SQL statement columns");
+			
+			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
+			evaluate_sql_return(sql_return, "save_blob", "Error closing SQL statement cursor");
+		
+		} else //row_count != 0
+		{
+			#ifdef DEBUG
+				log(MLog::debug, "save_blob", "UPDATE succeed.");
+			#endif
+		}
+	}
+
+} // namespace mapgeneration

@@ -1,0 +1,57 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+# Makefile for the MapGeneratorGUI
+
+# Objectfiles to use for the export
+objects := export.o main.o
+mainobjects :=  util/controlledthread.o util/mlog.o \
+	dbconnection.o edge.o edgecache.o geocoordinate.o node.o \
+	tile.o tilecache.o
+
+# Directory definitions
+bindir := @top_builddir@bin
+srcdir := @top_builddir@src
+exportsrcdir = $(srcdir)/export
+
+# Variables from autoconf
+CXX = @CXX@
+CPPFLAGS = -I$(srcdir) @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+
+# List of full names for the object and dependency files
+deps := $(objects:%.o=%.d)
+fullmainobjects := $(mainobjects:%=$(bindir)/%)
+
+#VPaths
+vpath %.h $(exportsrcdir)
+vpath %.cpp $(exportsrcdir)
+
+
+# Rules
+%.o : %.cpp
+	@top_builddir@libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) @WX_CPPFLAGS@ $< -o $@
+
+
+# Compiles the main executable
+exporter: $(objects)
+	$(MAKE) -C $(bindir) $(mainobjects)
+	@top_builddir@libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) @WX_LIBS@ -o exporter $(objects) $(fullmainobjects)
+
+
+# Removes the binaries
+.PHONY: clean
+clean:
+	-rm -f *.o *.lo *.d ./exporter@EXEEXT@
+	-rm -f -r .libs
+
+-include *.d
+

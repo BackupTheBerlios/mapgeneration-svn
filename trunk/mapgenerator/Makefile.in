@@ -1,0 +1,60 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+
+# Makefile for the MapGenerator
+
+# Directory definitions
+bindir := ./bin
+docdir := ./doc
+srcdir := ./src
+testdir := ./test
+
+# Compiles the main executable
+.PHONY: main
+main:
+	$(MAKE) -C $(bindir) main
+
+# Compiles the gui
+.PHONY: gui
+gui:
+	$(MAKE) -C $(bindir) gui
+
+#Compile the export
+.PHONY: export
+export:
+	$(MAKE) -C $(bindir) export
+
+# Compiles the tests
+.PHONY: tests
+tests:
+	$(MAKE) -C $(bindir) tests
+
+
+# Compiles everything 
+.PHONY: all
+all:
+	$(MAKE) -C $(bindir) all
+
+
+# Starts doxygen to generate the documentation
+.PHONY: doc
+doc:
+	doxygen $(docdir)/Doxy_html
+
+
+# Removes the binaries for the main program and the tests
+.PHONY: clean
+clean:
+	$(MAKE) -C $(bindir) clean
+
+
+# Removes the documentation
+.PHONY: cleandoc
+cleandoc:
+	rm $(docdir)/doxydoc -r
+

@@ -1,0 +1,92 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+# Makefile for the MapGeneratorGUI
+
+# Objectfiles to use for the gui
+xrcs := mainframe.xrc openconnectiondialog.xrc preferencesdialog.xrc \
+	testmodule.xrc mappanel.xrc tracelogpanel.xrc \
+	preferencesgeneralpanel.xrc
+images := open.xpm cut.xpm
+objects := extendedgenericvalidator.o dialoglogic.o \
+	openconnectiondialoglogic.o \
+	preferencesdialoglogic.o module.o modulemanager.o \
+	mainframelogic.o  mgg.o \
+	util/gpsdraw.o \
+	util/mapgenerationdraw.o util/mapdrawer.o \
+	util/mapscrolledwindowlogic.o \
+	modules/testmodule.o \
+	modules/mapmodule/mapmodule.o \
+	modules/mapmodule/mappanellogic.o \
+	modules/tracelogmodule/tracelogmodule.o \
+	modules/tracelogmodule/tracelogpanellogic.o
+mainobjects := util/configuration.o util/pubsub/servicelist.o \
+	util/pubsub/genericservice.o \
+	util/mlog.o util/controlledthread.o edge.o tile.o node.o \
+	geocoordinate.o tracelog.o \
+	dbconnection.o edgecache.o tilecache.o
+
+# Directory definitions
+bindir := @top_builddir@bin
+srcdir := @top_builddir@src
+guibindir = $(bindir)/gui/
+guisrcdir = $(srcdir)/gui/
+
+guisrcxrcdir = $(guisrcdir)/xrcs/
+guibinxrcdir = $(guibindir)/xrcs/
+guisrcimagesdir = $(guisrcdir)/images/
+guibinimagesdir = $(guibindir)/images/
+
+# Variables from autoconf
+CXX = @CXX@
+CPPFLAGS = -I$(srcdir) @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+
+# List of full names for the object, dependency, xrc and image files
+deps := $(objects:%.o=%.d)
+fullmainobjects := $(mainobjects:%=$(bindir)/%)
+fullxrcs := $(xrcs:%=$(guisrcxrcdir)%)
+fullimages := $(images:%=$(guisrcimagesdir)%)
+
+
+#VPaths
+vpath %.h $(guisrcdir)
+vpath %.cpp $(guisrcdir)
+
+
+# Rules
+%.o : %.cpp
+	@top_builddir@libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) @WX_CPPFLAGS@ $< -o $@
+
+# Compiles the main executable
+mgg: $(objects)
+	$(MAKE) -C $(bindir) $(mainobjects)
+	@top_builddir@libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) @WX_LIBS@ -o mgg ../gpstrans/gpsmath.o ../gpstrans/gpsproj.o $(objects) $(fullmainobjects)
+
+	cp $(fullxrcs) $(guibinxrcdir) -f -v
+	cp $(fullimages) $(guibinimagesdir) -f -v
+
+
+# Removes the binaries
+.PHONY: clean
+clean:
+	-rm -f *.o *.lo *.d ./mgg@EXEEXT@
+	-rm -f -r .libs
+	-rm -f $(objects:%=$(guibindir)%)
+	-rm -f $(xrcs:%=$(guibinxrcdir)%)
+	-rm -f $(images:%=$(guibinimagesdir)%)
+	-rm -f ./modules/traceslogmodule/*.o ./modules/tracelogmodule/*.lo ./modules/tracelogmodule/*.d
+	-rm -f ./modules/mapmodule/*.o ./modules/mapmodule/*.lo ./modules/mapmodule/*.d
+	-rm -f ./modules/*.o ./modules/*.lo ./modules/*.d
+	-rm -f ./util/*.o ./util/*.lo ./util/*.d
+
+-include *.d
+

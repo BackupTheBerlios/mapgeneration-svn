@@ -1,0 +1,96 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+# Makefile for the MapGenerator
+
+# Objectfiles to use for the main executable
+objects := util/configuration.o \
+	util/controlledthread.o util/mlog.o \
+	util/pubsub/genericservice.o util/pubsub/servicelist.o \
+	dbconnection.o geocoordinate.o gpspoint.o node.o edge.o \
+	edgecache.o tile.o tilecache.o \
+	tracelog.o tracelogwriter.o \
+	filteredtrace.o traceprocessor.o \
+	tilemanager.o traceconnection.o traceserver.o tracefilter.o \
+	executionmanager.o \
+	main.o
+
+
+# Directory definitions
+bindir := @top_builddir@bin
+srcdir := @top_builddir@src
+
+# Variables from autoconf
+CXX = @CXX@
+CPPFLAGS = -I$(srcdir) @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+
+# List of full names for the object and dependency files
+deps := $(objects:%.o=%.d)
+
+#VPaths
+vpath %.h $(srcdir)
+vpath %.cpp $(srcdir)
+
+
+# Rules
+%.o : %.cpp
+	@top_builddir@libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) $< -o $@
+
+
+# Compiles the main executable
+main: $(objects)
+	@top_builddir@libtool --mode=link $(CXX) @ODBC32_DLL@ $(LDFLAGS) $(LIBS) -o main $(objects)
+
+
+# Compiles the gui
+.PHONY: gui
+gui:
+	$(MAKE) -C ./gpstrans
+	$(MAKE) -C ./gui
+
+# Compiles the tests
+.PHONY: tests
+tests:
+	$(MAKE) -C ./tests all
+
+#Compiles the export
+.PHONY: export
+export:
+	$(MAKE) -C ./export
+
+
+# Compiles the main executable and the tests
+.PHONY: all
+all:
+	$(MAKE) main
+	$(MAKE) export
+ifeq (@enable_gui@, yes)
+	$(MAKE) gui 
+endif
+	$(MAKE) tests
+
+
+# Removes the binaries
+.PHONY: clean
+clean:
+	$(MAKE) -C ./tests clean
+	$(MAKE) -C ./gui clean
+	$(MAKE) -C ./export clean
+	$(MAKE) -C ./gpstrans clean
+	-rm -f *.o *.lo *.d ./main@EXEEXT@ ./util/*.o ./util/*.lo ./util/*.d
+	-rm -f ./util/pubsub/*.o ./util/pubsub/*.lo ./util/pubsub/*.d
+	-rm -f -r .libs
+	-rm -f -r ./util/.libs
+	-rm -f -r ./util/pubsub/.libs
+
+-include $(deps)
+

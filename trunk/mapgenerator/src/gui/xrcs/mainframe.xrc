@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<resource version="2.3.0.1" xmlns="http://www.wxwidgets.org/wxxrc">
+    <object class="wxFrame" name="ID_MAINFRAME">
+        <style>wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxMINIMIZE_BOX|wxMAXIMIZE_BOX|wxCLOSE_BOX</style>
+        <size>1000,700</size>
+        <title>MapGenerator GUI</title>
+        <object class="wxMenuBar" name="ID_MENUBAR">
+            <object class="wxMenu">
+                <label>File</label>
+                <object class="wxMenuItem" name="ID_MENUITEM_OPENCONNECTION">
+                    <label>Open connection ...</label>
+                    <help>Displays "Open Connection" dialog</help>
+                </object>
+                <object class="wxMenuItem" name="ID_MENUITEM_CLOSECONNECTION">
+                    <label>Close connection</label>
+                    <help>Close current connection</help>
+                </object>
+                <object class="separator">
+                </object>
+                <object class="wxMenuItem" name="ID_MENUITEM_PREFERENCES">
+                    <label>Preferences ...</label>
+                    <help>Open "Preferences" dialog</help>
+                </object>
+                <object class="separator">
+                </object>
+                <object class="wxMenu" name="ID_SUBMENU_LASTCONNECTIONS">
+                    <label>Last connections</label>
+                    Last connections
+                </object>
+                <object class="separator">
+                </object>
+                <object class="wxMenuItem" name="ID_MENUITEM_EXIT">
+                    <label>Exit</label>
+                    <help>Exit Mapgenerator GUI</help>
+                </object>
+            </object>
+            <object class="wxMenu">
+                <label>View</label>
+                <object class="wxMenuItem" name="ID_MENUITEM_SHOWMENUBAR">
+                    <label>Show menubar</label>
+                    <checkable>1</checkable>
+                    <checked>1</checked>
+                    <help>Enable/disable menubar</help>
+                </object>
+                <object class="wxMenu" name="ID_SUBMENU_TOOLBAR">
+                    <label>Toolbar</label>
+                    Toolbar options
+                    <object class="wxMenuItem" name="ID_MENUITEM_SHOWFILETOOLBAR">
+                        <label>Show file toolbar</label>
+                        <checkable>1</checkable>
+                        <checked>1</checked>
+                        <help>Show file toolbar (without last connections)</help>
+                    </object>
+                    <object class="wxMenuItem" name="ID_MENUITEM_SHOWXXXTOOLBAR">
+                        <label>Show ??? toolbar</label>
+                        <checkable>1</checkable>
+                        <checked>1</checked>
+                        <help>Show ??? toolbar</help>
+                    </object>
+                    <object class="separator">
+                    </object>
+                    <object class="wxMenuItem" name="ID_MENUITEM_CONFIGURETOOLBARS">
+                        <label>Configure toolbars ...</label>
+                        <help>Open "Configure toolbars" dialogs</help>
+                    </object>
+                </object>
+                <object class="wxMenuItem" name="ID_MENUITEM_SHOWSTATUSBAR">
+                    <label>Show statusbar</label>
+                    <checkable>1</checkable>
+                    <checked>1</checked>
+                    <help>Enable/disable statusbar</help>
+                </object>
+                <object class="separator">
+                </object>
+                <object class="wxMenuItem" name="ID_MENUITEM_VIEW1">
+                    <label>1: Map</label>
+                    <radio>1</radio>
+                    <checked>1</checked>
+                    <help>Switch view to map</help>
+                </object>
+                <object class="wxMenuItem" name="ID_MENUITEM_VIEW2">
+                    <label>2: Tracelog</label>
+                    <radio>1</radio>
+                    <help>Switch view to tracelog</help>
+                </object>
+                <object class="wxMenuItem" name="ID_MENUITEM_VIEW3">
+                    <label>3: View3</label>
+                    <radio>1</radio>
+                    <help>Switch view to view3</help>
+                </object>
+            </object>
+            <object class="wxMenu">
+                <label>Help</label>
+                <object class="wxMenuItem" name="ID_MENUITEM_MANUAL">
+                    <label>Manual ...</label>
+                    <help>Open the manual</help>
+                </object>
+                <object class="separator">
+                </object>
+                <object class="wxMenuItem" name="ID_MENUITEM_ABOUT">
+                    <label>About ...</label>
+                    <help>About this product</help>
+                </object>
+            </object>
+        </object>
+        <object class="wxToolBar" name="ID_TOOLBAR">
+            <style>wxTB_FLAT|wxTB_HORIZONTAL</style>
+            <object class="tool" name="ID_TOOL_OPENCONNECTION">
+                <bitmap>images/open.xpm</bitmap>
+                <label>Open connection ...</label>
+                <tooltip>Open connection ...</tooltip>
+                <longhelp>Displays "Open Connection" dialog</longhelp>
+            </object>
+            <object class="tool" name="ID_TOOL_CLOSECONNECTION">
+                <bitmap>images/open.xpm</bitmap>
+                <label>Close connection</label>
+                <tooltip>Close connection</tooltip>
+                <longhelp>Close current connection</longhelp>
+            </object>
+            <object class="tool" name="ID_TOOL_PREFERENCES">
+                <bitmap>images/open.xpm</bitmap>
+                <label>Preferences ...</label>
+                <tooltip>Preferences ...</tooltip>
+                <longhelp>Open "Preferences" dialog</longhelp>
+            </object>
+        </object>
+        <object class="wxSplitterWindow" name="ID_SPLITTERWINDOW">
+            <style>wxSP_3DBORDER|wxSP_3DSASH|wxNO_BORDER</style>
+            <orientation>horizontal</orientation>
+            <sashpos>300</sashpos>
+            <object class="wxNotebook" name="ID_NOTEBOOK">
+            </object>
+        </object>
+        <object class="wxStatusBar" name="ID_STATUSBAR">
+            <style>wxST_SIZEGRIP|wxNO_BORDER</style>
+            <fields>1</fields>
+            <widths></widths>
+        </object>
+    </object>
+</resource>
