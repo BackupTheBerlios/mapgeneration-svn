@@ -328,18 +328,6 @@ namespace mapgeneration
 	}
 	
 	
-	double
-	GPSPoint::calculate_direction(GeoCoordinate& geo_coordinate)
-	{
-		double direction = GeoCoordinate::calculate_direction(geo_coordinate);
-		set_direction(direction);
-		
-		std::cout << "WARNING, USING OLD METHOD!!!";
-
-		return direction;
-	}
-	
-	
 	GPSPoint
 	GPSPoint::interpolate(const GPSPoint& gpsp_1, const GPSPoint& gpsp_2, const double weight_on_first)
 	{

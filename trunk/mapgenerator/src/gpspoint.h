@@ -59,13 +59,6 @@ namespace mapgeneration
 			
 
 			/**
-			 * @brief Calculates the direction of the GPSPoint.
-			 */
-			double
-			calculate_direction(GeoCoordinate& geo_coordinate);
-
-
-			/**
 			 * @see mapgeneration_util::Serializer
 			 */
 			inline void

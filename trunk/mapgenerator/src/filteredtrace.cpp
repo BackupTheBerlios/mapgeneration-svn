@@ -57,16 +57,16 @@ namespace mapgeneration
 		iterator previous_point = iter;
 		++iter;
 				
-		double previous_direction = 0;
+		double direction = 0;
 		/* selects two successive GPSPoints and calculates the direction */
 		for (; iter != iter_end; ++iter)
 		{
-			previous_point->calculate_direction(*iter);
-			previous_direction = previous_point->get_direction();
+			direction = previous_point->calculate_direction(*iter);
+			previous_point->set_direction(direction);
 			previous_point = iter;
 		}
 		
-		previous_point->set_direction(previous_direction);
+		previous_point->set_direction(direction);
 	}
 
 

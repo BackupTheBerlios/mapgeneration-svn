@@ -26,13 +26,13 @@ namespace mapgeneration
 			"traceprocessor.search_step_size_m", _search_step_size_meters
 		);
 		
-		_search_step_size_meters = 10.0;
+		_search_step_size_meters = 8.0;
 		
 		_service_list->get_service_value(
 			"traceprocessor.search_radius_m", _search_radius_m
 		);
 		
-		_search_radius_m = 15.0;
+		_search_radius_m = 18.0;
 	
 		_service_list->get_service_value(
 			"traceprocessor.search_max_angle_difference_pi", _search_max_angle_difference_pi
@@ -134,8 +134,8 @@ namespace mapgeneration
 			if (tile_pointer == 0)
 			{
 				_tile_cache->insert(*tile_ids_iter, new Tile(*tile_ids_iter));
-				mlog(MLog::debug, "TraceProcessor::create_needed_tiles") 
-					<< "Created new tile " << (*tile_ids_iter) << " \n";
+				//mlog(MLog::debug, "TraceProcessor::create_needed_tiles") 
+				//	<< "Created new tile " << (*tile_ids_iter) << " \n";
 			}
 		}		
 	}
@@ -403,7 +403,7 @@ namespace mapgeneration
 		std::list< std::list<PathEntry> >& finished_segments,
 		PathEntry* start_entry)
 	{				
-		std::cout << "Rebuilding path:";
+//		std::cout << "Rebuilding path:";
 		
 		finished_segments.clear();
 		std::list<PathEntry> empty_segment;
@@ -421,23 +421,25 @@ namespace mapgeneration
 			if ((previous_position != 0) && !connection_from_to(
 				previous_position->_node_id, position->_node_id))
 			{
-				std::cout << "*";
+//				std::cout << "*";
 				finished_segments.push_back(empty_segment);
 				++segment_iter;
 			}
 			
-			std::cout << ".";
+			//std::cout << ".";
 			segment_iter->push_back(*position);
 			
 			previous_position = position;
 			position = position->_connection;
 		}
 		
+		bool do_not_check_last_segment = false;
 		if (segment_iter->size() < 6)
 		{
 			path.clear();
 			path.insert(path.end(), segment_iter->begin(), segment_iter->end());
 			finished_segments.erase(segment_iter);
+			do_not_check_last_segment = false;
 		} else
 		{
 			std::list<PathEntry>::iterator move_start_iter = segment_iter->end();
@@ -450,13 +452,15 @@ namespace mapgeneration
 			path.clear();
 			path.insert(path.end(), move_start_iter, move_end_iter);
 			segment_iter->erase(move_start_iter, move_end_iter);
+			do_not_check_last_segment = true;
 		}
 				
 		segment_iter = finished_segments.begin();
 		std::list< std::list<PathEntry> >::iterator segment_iter_end =
 			finished_segments.end();			
 		//Do not consider last segment, that was already checked above!
-		if (segment_iter != segment_iter_end) --segment_iter;
+		if (do_not_check_last_segment && (segment_iter != segment_iter_end))
+			--segment_iter_end;
 		while (segment_iter != segment_iter_end)
 		{
 			if (segment_iter->size() < 5)
@@ -465,7 +469,7 @@ namespace mapgeneration
 				++segment_iter;
 		}
 		
-		std::cout << "Ok!\n";
+		//std::cout << "Ok!\n";
 	}
 	
 	
@@ -509,9 +513,10 @@ namespace mapgeneration
 			
 			if (path_iter != path_iter_end)
 			{
-				double points = build_connections(path, path_iter, only_connected);				
-				points -= distance_from_to(current_entry->_node_id, path_iter->_node_id) / 10;				
-				points -= angle_difference(current_entry->_node_id, path_iter->_node_id) * 10;
+				double points = build_connections(path, path_iter, only_connected);
+				//points += 5.0;
+				points -= distance_from_to(current_entry->_node_id, path_iter->_node_id) / 10;
+				points -= angle_difference(current_entry->_node_id, path_iter->_node_id);
 								
 				if (points > current_entry->_points)
 				{
@@ -535,7 +540,7 @@ namespace mapgeneration
 				if (!connected)
 				{
 					double points = build_connections(path, path_iter, only_connected);
-					points -= 1000;
+					//points -= 1000.0;
 					points -= distance_from_to(current_entry->_node_id, path_iter->_node_id);
 					points -= angle_difference(current_entry->_node_id, path_iter->_node_id) * 10;
 
@@ -569,7 +574,7 @@ namespace mapgeneration
 		double best_points = -100000.0;
 		PathEntry* best_start_entry = 0;
 
-		std::cout << "Trying to find connected way.\n";
+	//	std::cout << "Trying to find connected way.\n";
 		
 		++_time;
 		
@@ -595,16 +600,16 @@ namespace mapgeneration
 			{
 				double points = build_connections(path, path_iter, true);
 				
-				std::cout << points << " points.";
+		//		std::cout << points << " points.";
 				
 				if (points > best_points)
 				{
-					std::cout << " NEW BEST!";
+		//			std::cout << " NEW BEST!";
 					best_points = points;
 					best_start_entry = &(*path_iter);
 				}
 				
-				std::cout << "\n";
+		//		std::cout << "\n";
 				
 				++path_iter;
 			}
@@ -614,7 +619,7 @@ namespace mapgeneration
 		{
 			++_time;
 			
-			std::cout << "Could not find connection, searching for unconnected best way.\n";
+			//std::cout << "Could not find connection, searching for unconnected best way.\n";
 			if (start_node_id != 0)
 			{
 				PathEntry start_entry;
@@ -637,16 +642,16 @@ namespace mapgeneration
 				{
 					double points = build_connections(path, path_iter, false);
 					
-					std::cout << points << " points.";
+		//			std::cout << points << " points.";
 					
 					if (points > best_points)
 					{
-						std::cout << " NEW BEST!";						
+		//				std::cout << " NEW BEST!";						
 						best_points = points;
 						best_start_entry = &(*path_iter);
 					}
 					
-					std::cout << "\n";
+		//			std::cout << "\n";
 					
 					++path_iter;
 				}
@@ -655,7 +660,7 @@ namespace mapgeneration
 		
 		if ((best_start_entry != 0) && (best_points > -10000.0))
 		{
-			std::cout << "Found way with " << best_points << " points.\n";
+		//	std::cout << "Found way with " << best_points << " points.\n";
 			build_path_and_segments(path, finished_segments, best_start_entry);
 		} else
 		{
@@ -705,17 +710,29 @@ namespace mapgeneration
 			{
 				PathEntry new_entry(position_on_trace_m, *new_node_iter);
 				//++next_path_id;
-				std::list<PathEntry>::iterator path_iter = path.begin();
-				
+				std::list<PathEntry>::iterator path_iter = path.end();
+				std::list<PathEntry>::iterator path_iter_begin = path.begin();
+
 				bool insert = true;
-				for (; path_iter != path.end() && insert == true; ++path_iter)
+				/*
+				 * @todo: This would be more accurate if we would use meters!
+				 */
+				int checked_nodes = 0;
+				for (; (insert == true) && (checked_nodes < 8) && 
+					(path_iter != path_iter_begin); --path_iter, ++checked_nodes)
 				{
 					if (*path_iter == new_entry)
 					{
 						insert = false;
-						new_node_iter = cluster_nodes.erase(new_node_iter);						
+						new_node_iter = cluster_nodes.erase(new_node_iter);
 					}
 				}
+				if ((insert == true) && (checked_nodes < 8) && (*path_iter == new_entry))
+				{
+					insert = false;
+					new_node_iter = cluster_nodes.erase(new_node_iter);
+				}
+				
 				
 				if (insert)
 				{										
@@ -759,7 +776,7 @@ namespace mapgeneration
 															
 					Node::Id next_node_id = path_iter->_node_id;
 					--path_iter;
-					while ((path_iter != path.begin()) && (connected_nodes < 3))
+					while ((path_iter != path.begin()) && (connected_nodes < 6))
 					{
 						if (connection_from_to(path_iter->_node_id, next_node_id))
 							++connected_nodes;
@@ -769,7 +786,7 @@ namespace mapgeneration
 					}
 				}
 				
-				if ((connected_nodes > 2) || (path.back()._position < position_on_trace_m-20.0))
+				if ((connected_nodes > 5) || (path.back()._position < position_on_trace_m-30.0))
 				{
 					std::list< std::list<PathEntry> > finished_segments;
 					simplify_path(previous_node_id, path, finished_segments);
@@ -778,38 +795,24 @@ namespace mapgeneration
 						distinct_position_m = finished_segments.back().back()._position;
 					else
 						distinct_position_m = position_on_trace_m;
+					
+					if (path.back()._position < position_on_trace_m-30.0)
+						path.clear();
 				}
 			}
 
 
-//			std::list<PathEntry>::iterator path_iter = path.begin();
-//			bool end = false;
-//			while(complete_position_m < distinct_position_m-20/*&& !end*/)
-	//		{
-				while /*if*/ (/*(path.size() && complete_position_m<(path.front()._position-20.0))
-					|| (*/!path.size() && complete_position_m<(distinct_position_m-20.0)/*)*/)
-				{
-					complete_position_m += 10.0;
-//					std::cout << "Creating new node at position " << complete_position_m << "\n";
-					GPSPoint new_node_position = _filtered_trace.
-						gps_point_at(complete_position_m);
-					Node::Id new_node_id = create_new_node(new_node_position);
-					if (previous_node_id != 0)
-						connect_nodes(previous_node_id, new_node_id);
-					previous_node_id = new_node_id;
-				} /*else if (path.size()*//* && complete_position_m>=(path.back()._position+20.0)*///)
-/*				{					
-					complete_position_m = path.front()._position;
-					Node::Id used_node_id = path.front()._node_id;
-					
-//					std::cout << "Using node " << Node::tile_id(used_node_id) << ", " << 
-//						Node::local_id(used_node_id) << " at path position " << complete_position_m << "\n";
-					if (previous_node_id != 0)
-						connect_nodes(previous_node_id, path.front()._node_id);
-					previous_node_id = path.front()._node_id;
-					path.pop_front();
-				}*/
-//			}
+			while (!path.size() && complete_position_m<(distinct_position_m-20.0))
+			{
+				complete_position_m += 10.0;
+//				std::cout << "Creating new node at position " << complete_position_m << "\n";
+				GPSPoint new_node_position = _filtered_trace.
+					gps_point_at(complete_position_m);
+				Node::Id new_node_id = create_new_node(new_node_position);
+				if (previous_node_id != 0)
+					connect_nodes(previous_node_id, new_node_id);
+				previous_node_id = new_node_id;
+			}
 
 			position_on_trace_m += 10.0;
 			//std::cout << "Walked to " << position_on_trace_m << "m ********************************************\n";

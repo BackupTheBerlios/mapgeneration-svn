@@ -127,8 +127,8 @@ namespace mapgeneration
 		// Tiles
 		std::set<unsigned int> needed_edges;
 
-		mlog(MLog::debug, "TraceLogWriter::write_header") << "Writing "
-			<< filtered_trace.needed_tile_ids().size() << " tiles.\n";
+		//mlog(MLog::debug, "TraceLogWriter::write_header") << "Writing "
+			//<< filtered_trace.needed_tile_ids().size() << " tiles.\n";
 		Serializer::serialize(*_log_stream, (int)filtered_trace.needed_tile_ids().size());
 		std::vector<unsigned int>::const_iterator tile_ids_iter = 
 			filtered_trace.needed_tile_ids().begin();
