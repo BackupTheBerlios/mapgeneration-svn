@@ -46,7 +46,12 @@ namespace mapgeneration_util
 	{  
 		bool parse_result = parse(_filename.c_str());
 		
-		if (parse_result == false) return false;
+		if (parse_result == false)
+		{
+			mlog(MLog::warning, "Configuration")
+				<< "Could not parse configuration from file. Consequences indistinct!\n";
+			return false;
+		}
 
 		D_ParameterMap::iterator parameter_iter = _parameter_map.begin();
 		D_ParameterMap::iterator parameter_iter_end = _parameter_map.end();
@@ -153,7 +158,9 @@ namespace mapgeneration_util
 			}
 			
 			_service_list->add(generic_service);
-		}		
+		}
+		
+//		std::cout << *_service_list << std::endl;		
 
 		return parse_result;
 	}

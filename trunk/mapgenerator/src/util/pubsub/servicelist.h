@@ -17,6 +17,7 @@ namespace pubsub
 }
 
 
+#include <ostream>
 #include <list>
 #include <map>
 #include <string>
@@ -161,7 +162,16 @@ namespace pubsub
 
 	};
 	
-	
+
+	/* ************************************
+	 *  Output operator
+	 * ***********************************/
+	std::ostream& operator<<(std::ostream& out, const ServiceList& service_list);
+	/* ************************************
+	 *  Output operator
+	 * ***********************************/
+
+
 	template <typename T_Value>			
 	Service<T_Value>*
 	ServiceList::find_service(std::string name)
@@ -179,8 +189,13 @@ namespace pubsub
 	ServiceList::get_service_value(std::string name, T_Value& value)
 	{
 		Service<T_Value>* service = find_service<T_Value>(name);
+		
+//		if (!service) std::cout << "WARNING: Service \"" << name << "\" does not exist!" << std::endl;
 		if (!service) return false;
+		
 		value = service->publish();
+		
+//		std::cout << "Service " << name << "'s value = " << value << std::endl;
 
 		return true;
 	}

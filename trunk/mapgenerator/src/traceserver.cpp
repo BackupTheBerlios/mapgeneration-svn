@@ -38,7 +38,7 @@ namespace mapgeneration
 		mlog(MLog::info, "TraceServer") << "Initializing...\n";
 		
 		int port = 9000;
-		if (!_service_list->get_service_value("trace_server.port", port))
+		if (!_service_list->get_service_value("traceserver.port", port))
 		{
 			mlog(MLog::info, "TraceServer")
 				<< "Configuration for port number not found, using default (" 
