@@ -18,19 +18,20 @@ namespace mapgeneration
 {
 
 	GPSPoint::GPSPoint()
-	: Direction(), GeoCoordinate(), _time(0)
+	: Direction(), GeoCoordinate(), _invalid(false), _time(0)
 	{
 	}
 	  
 	
 	GPSPoint::GPSPoint(double latitude, double longitude, double altitude, double time)
-	: Direction(), GeoCoordinate(latitude, longitude, altitude), _time(time)
+	: Direction(), GeoCoordinate(latitude, longitude, altitude),
+		_invalid(false), _time(time)
 	{
 	}
 	
 	
 	GPSPoint::GPSPoint(const GeoCoordinate& geo_coordinate)
-	: Direction(), GeoCoordinate(geo_coordinate), _time(0)
+	: Direction(), GeoCoordinate(geo_coordinate), _invalid(false), _time(0)
 	{
 	}
   
@@ -39,12 +40,13 @@ namespace mapgeneration
 	GPSPoint::parse_nmea_string (const std::string& gpgga_string, const std::string& gprmc_string) 
 	{
 		const char DELIMITER = ',';
-		const int GPGGA_DELIMITERS[7] = {9, 2, 3, 4, 5, -1, 1};
-		const int GPRMC_DELIMITERS[7] = {-1, 3, 4, 5, 6, 9, 1};
+		const int GPGGA_DELIMITERS[8] = {9, -1, 2, 3, 4, 5, -1, 1};
+		const int GPRMC_DELIMITERS[8] = {-1, 2, 3, 4, 5, 6, 9, 1};
 		
 		enum DelimiterIndex
 		{
 			ALTITUDE = 0,
+			INVALID,
 			LATITUDE,
 			LATITUDE_HEADING,
 			LONGITUDE,
@@ -90,6 +92,17 @@ namespace mapgeneration
 				altitude.append(gpgga_string.substr(delimiter_in_string_index + 1,
 					next_delimiter_in_string_index - delimiter_in_string_index - 1));
 				found_altitude = true;
+			}
+
+			if (run_index == GPGGA_DELIMITERS[INVALID])
+			{
+				std::string invalid_string = gpgga_string.substr(
+					delimiter_in_string_index + 1,
+					next_delimiter_in_string_index - delimiter_in_string_index - 1
+				);
+				
+				if (invalid_string == "V")
+					_invalid = true;
 			}
 
 			if (run_index == GPGGA_DELIMITERS[LATITUDE])
@@ -184,6 +197,17 @@ namespace mapgeneration
 						next_delimiter_in_string_index - delimiter_in_string_index - 1));
 					found_altitude = true;
 				}
+			}
+
+			if (run_index == GPRMC_DELIMITERS[INVALID])
+			{
+				std::string invalid_string = gprmc_string.substr(
+					delimiter_in_string_index + 1,
+					next_delimiter_in_string_index - delimiter_in_string_index - 1
+				);
+				
+				if (invalid_string == "V")
+					_invalid = true;
 			}
 
 			if (run_index == GPRMC_DELIMITERS[LATITUDE])

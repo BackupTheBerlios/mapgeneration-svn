@@ -86,7 +86,15 @@ namespace mapgeneration
 			bool
 			parse_nmea_string (const std::string& gpgga_string, const std::string& gprmc_string);
 	
-	
+
+			/**
+			 * @return the invalid flag
+			 */
+			inline bool
+			get_invalid() const;
+
+
+
 			/**
 			 * @return the time
 			 */
@@ -128,6 +136,12 @@ namespace mapgeneration
 			
 		private:
 
+			/**
+			 * @brief invalid flag as given from the gps reveicer if provided
+			 */
+			bool _invalid;
+			
+			
 			/**
 			 * @brief the time in seconds since 0.00 o'clock 1. January 1900
 			 */
@@ -188,8 +202,15 @@ namespace mapgeneration
 	}
 	
 
+	inline bool
+	GPSPoint::get_invalid() const
+	{
+		return _invalid;
+	}
+
+
 	inline double	
-	GPSPoint::get_time ( ) const
+	GPSPoint::get_time () const
 	{
 		return _time;
 	}

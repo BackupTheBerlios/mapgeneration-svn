@@ -119,8 +119,18 @@ namespace mapgeneration
 		  
 			if (distance_to_tile_border(_NORTHEAST) < radius_threshold)
 				vec_tile_ids.push_back(merge_tile_id_parts(northing + 1, easting + 1));
-			
-		} else if (distance_to_tile_border(_SOUTH) < radius_threshold)
+		}
+		
+		/* We need this extra if-clause! (NO "else if")
+		 * Think about (0/0) [or any other "smooth" coordinate]. Otherwise
+		 * we won't get every needed tile!
+		 * 
+		 * I changed it here, because it works. But you can also think about a
+		 * better concept.
+		 * 
+		 * (Another remark on "smooth" coordinates:
+		 * This methods gives us 9 tiles. Only 4 are needed.) */	
+		if (distance_to_tile_border(_SOUTH) < radius_threshold)
 		{	
 			vec_tile_ids.push_back(merge_tile_id_parts(northing - 1, easting));
 			

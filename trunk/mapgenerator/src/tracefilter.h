@@ -20,13 +20,6 @@
 namespace mapgeneration
 {
 
-	/**
-	 * @brief TraceServer accepts connections on a specific port and creates
-	 * TraceConnections to handle them.
-	 * 
-	 * At the moment this class does not work as it should, so the documentation
-	 * is also not complete and correct.....
-	 */
 	class TraceFilter : public mapgeneration_util::ControlledThread {
 
 		public:
@@ -34,16 +27,8 @@ namespace mapgeneration
 			TraceFilter(pubsub::ServiceList* service_list, TileManager* tile_manager);
 			
 						
-			TraceFilter(pubsub::ServiceList* service_list);
-						
-			
-			TraceFilter();
-			
-			/**
-			 * Method to add trace into the _trace_filter_queue
-			 */
 			void
-			add_trace_in_queue(FilteredTrace& filtered_trace);
+			new_trace(FilteredTrace& filtered_trace);
 
 				
 		protected:
@@ -55,9 +40,6 @@ namespace mapgeneration
 			void
 			thread_init();
 	
-			/**
-			 * "The thread itself" and also the main method of the TraceServer.
-			 */
 			void
 			thread_run();
 		
@@ -69,7 +51,30 @@ namespace mapgeneration
 			TileManager* _tile_manager;
 
 
-			std::queue<FilteredTrace> _trace_filter_queue;
+			std::queue<FilteredTrace> _queue;
+			
+			
+			std::queue<FilteredTrace> _working_queue;
+			
+			
+			void
+			apply_acceleration_filter(FilteredTrace& filtered_trace);
+
+
+			void
+			apply_location_filter(FilteredTrace& filtered_trace);
+			
+			
+			void
+			apply_time_filter(FilteredTrace& filtered_trace);
+
+
+			void
+			apply_speed_filter(FilteredTrace& filtered_trace);
+			
+			
+			/*void
+			show_state(std::string step_name, int number = -1);*/
 						
 	};
 	

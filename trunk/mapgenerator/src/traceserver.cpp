@@ -90,7 +90,7 @@ namespace mapgeneration
 					{
 						mlog(MLog::debug, "TraceServer") << "" << filtered_trace.size() << " Points\n";
 						mlog(MLog::debug, "TraceServer") << "Sending new trace to TileManager.\n";
-						_trace_filter->add_trace_in_queue(filtered_trace);
+						_trace_filter->new_trace(filtered_trace);
 					}
 				}
 				else
