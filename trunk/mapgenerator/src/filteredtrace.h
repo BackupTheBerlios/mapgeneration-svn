@@ -116,6 +116,10 @@ namespace mapgeneration
 			 * 
 			 * @param meters The position to interpolate.
 			 */
+			 
+			GPSPoint
+			old_gps_point_at(double meters);
+			
 			GPSPoint
 			gps_point_at(double meters);
 			
@@ -237,7 +241,7 @@ namespace mapgeneration
 		private:
 		
 
-			std::vector<const_iterator> _fast_access;
+			std::vector< std::pair<const_iterator, double> > _fast_access;
 			
 			
 			/**

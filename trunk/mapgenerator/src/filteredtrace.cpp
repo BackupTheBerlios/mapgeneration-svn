@@ -163,8 +163,48 @@ namespace mapgeneration
 	
 	
 	GPSPoint
+	FilteredTrace::old_gps_point_at(double meters)
+	{
+			iterator iter = begin();
+			iterator iter_end = end();
+				
+			if (iter == iter_end)
+			{
+				mlog(MLog::error, "FilteredTrace") << "Empty FilteredTrace: Cannot calculate new gps point at " << meters << " m!\n";
+				GPSPoint gps_point;
+				return gps_point;
+			}
+		
+			std::list<GPSPoint>::iterator previous_point = iter;
+			++iter;
+		
+			double left_distance = meters;
+			double distance_from_previous_point;
+			for(; iter != iter_end; ++iter)
+			{
+				distance_from_previous_point = previous_point->distance(*iter); // calculating the distance from the previous point
+				if(left_distance < distance_from_previous_point)
+				{
+					double weight = 1.0 - left_distance / previous_point->distance(*iter);
+					GPSPoint new_point = iter->interpolate(*previous_point , *iter, weight);
+					--iter;
+					new_point.set_direction(iter->get_direction());
+					++iter;
+					return new_point;
+				} else 
+				{
+					left_distance -= distance_from_previous_point;
+					previous_point = iter;
+				}
+			}
+		}
+	
+	
+	GPSPoint
 	FilteredTrace::gps_point_at(double meters)
 	{
+		//GPSPoint old_result = old_gps_point_at(meters);
+		
 		if (_cached_size <= 1)
 		{
 			mlog(MLog::error, "FilteredTrace") << "Empty FilteredTrace: "
@@ -190,8 +230,10 @@ namespace mapgeneration
 		{
 			double left_distance = meters - point_before_meters;
 			double weight = 1.0 - left_distance / point_before->distance(*point_after);
+			//double weight = left_distance / point_before->distance(*point_after);
 			GPSPoint new_point = GPSPoint::interpolate(*point_before , *point_after, weight);
 			new_point.set_direction(point_before->get_direction());
+//			std::cout << "Diff: " << old_result.get_latitude() - new_point.get_latitude() << ", " << old_result.get_longitude() - new_point.get_longitude() << ", " << old_result.get_direction() - new_point.get_direction() << ", " << old_result.get_altitude() - new_point.get_altitude() << "\n";
 			return new_point;
 			
 		} else
@@ -234,18 +276,24 @@ namespace mapgeneration
 		if (entry >= _fast_access.size())
 			entry = _fast_access.size() - 1;
 		
-		double current_meters = entry * meters_per_entry;
+		double current_meters = //entry * meters_per_entry;
+			_fast_access[entry].second;
 
-		const_iterator iter = _fast_access[entry];
+		const_iterator iter = _fast_access[entry].first;
 		const_iterator previous_iter = iter;
 		++iter;
-
+//		double previous_meters = current_meters;
+		current_meters += length_m(previous_iter, iter);
 		while ( (current_meters < input_meters) && (iter != end()) )
 		{
-			current_meters += length_m(previous_iter, iter);
 			++previous_iter;
 			++iter;
+			current_meters += length_m(previous_iter, iter);
 		}
+		
+/*		--previous_iter;
+		--iter;*/
+		if (iter == end()) throw ("Fuck");
 		
 		if (output_before_iter != 0)
 			*output_before_iter = previous_iter;
@@ -526,7 +574,7 @@ namespace mapgeneration
 
 		_fast_access.resize(static_cast<int>(ceil(static_cast<double>(size()) * size_factor)));
 //		std::cout << "\tfast_access.size = " << _fast_access.size() << std::endl;
-		_fast_access[0] = begin();
+		_fast_access[0].first = begin();
 
 		const_iterator iter = begin();
 		const_iterator iter_end = end();
@@ -541,6 +589,7 @@ namespace mapgeneration
 
 		int index = 1;
 		int iter_index = 1;
+		double previous_meters = 0.0;
 		double current_meters = 0.0;
 		double meters_per_entry = length_m() / static_cast<double>(_fast_access.size());
 		
@@ -549,11 +598,13 @@ namespace mapgeneration
 
 		for (; iter != iter_end; ++iter, ++previous_iter, ++iter_index)
 		{
+			previous_meters = current_meters;
 			current_meters += length_m(previous_iter, iter);
 //			std::cout << "\t\tcurrent_meters = " << current_meters << std::endl;
 			for (; current_meters > meters_per_entry * index && index < _fast_access.size(); ++index)
 			{
-				_fast_access[index] = previous_iter;
+				_fast_access[index].first = previous_iter;
+				_fast_access[index].second = previous_meters;
 //				std::cout << "\t_fast_access[" << index << "] at meter "
 //					<< meters_per_entry * index << " = " << iter_index - 1 << std::endl;
 			}
