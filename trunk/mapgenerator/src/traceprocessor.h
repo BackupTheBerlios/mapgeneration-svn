@@ -179,6 +179,10 @@ namespace mapgeneration
 			
 			
 			double
+			angle_difference(Node::Id node_id_1, Node::Id node_id_2);
+			
+			
+			double
 			build_connections(std::list<PathEntry>& path,
 				std::list<PathEntry>::iterator path_iter, bool only_connected);
 

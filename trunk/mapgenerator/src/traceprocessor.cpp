@@ -42,6 +42,17 @@ namespace mapgeneration
 		
 		mlog(MLog::debug, "TraceProcessor") << "Initialised (" << _id << ").\n";		
 	}
+	
+	
+	double
+	TraceProcessor::angle_difference(Node::Id node_id_1, Node::Id node_id_2)
+	{
+		TileCache::Pointer tile_1_pointer = _tile_cache->get(Node::tile_id(node_id_1));
+		TileCache::Pointer tile_2_pointer = _tile_cache->get(Node::tile_id(node_id_2));		
+		
+		return (tile_1_pointer->nodes()[Node::local_id(node_id_1)].second.
+			angle_difference(tile_2_pointer->nodes()[Node::local_id(node_id_2)].second));
+	}
 
 
 	void
@@ -470,6 +481,8 @@ namespace mapgeneration
 				
 				points -= distance_from_to(current_entry->_node_id, path_iter->_node_id) / 10;
 				
+				points -= angle_difference(current_entry->_node_id, path_iter->_node_id) * 10;
+				
 				std::cout << "  Modified to " << points;
 					
 				std::cout << "\n";
@@ -504,6 +517,8 @@ namespace mapgeneration
 					points -= 1000;
 					
 					points -= distance_from_to(current_entry->_node_id, path_iter->_node_id);
+					
+					points -= angle_difference(current_entry->_node_id, path_iter->_node_id) * 10;
 					
 					std::cout << "  Modified to " << points;
 	
