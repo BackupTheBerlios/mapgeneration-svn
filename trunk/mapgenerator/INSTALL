@@ -35,8 +35,15 @@ _Cygwin_
 Compilation
 ###########
 
-At first you have to generate the configure script by starting autoconf in
-the program directory. After that you can give configure a try, just run
+At first you have to generate the configure script and the config.h template file by simply starting  
+
+# autoconf
+
+and
+
+# autoheader
+
+in the program directory. After that you can give configure a try, just run
 
 # ./configure
 
