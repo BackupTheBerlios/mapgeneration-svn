@@ -21,16 +21,6 @@ namespace mapgeneration
 		_tile_manager(tile_manager), _trace_log(0)
 	{
 		_tile_cache = _tile_manager->get_tile_cache();
-		
-		/* Some variables we will need. */
-		_best_cluster_node = 0;
-		_current_node = 0;
-		_current_node_id;
-		_current_node_before_merge;
-		_end_main_loop = false;
-		_last_clustering_was_at_crossing = false;
-		_previous_node = 0;
-		_previous_node_id;
 
 		_service_list->get_service_value(
 			"traceprocessor.search_step_size_m", _search_step_size_meters
@@ -76,7 +66,7 @@ namespace mapgeneration
 					<< " (SHOULD NOT HAPPEN HERE!)\n";
 			}
 			
-			std::vector< std::pair<unsigned int, unsigned int> > new_cluster_nodes = 
+			std::vector<Node::Id> new_cluster_nodes = 
 				tile->cluster_nodes_search(gps_point, _search_radius_m, _search_max_angle_difference_pi * PI);
 						
 			result_vector.insert(result_vector.end(), 
@@ -89,31 +79,30 @@ namespace mapgeneration
 	TraceProcessor::connect_nodes(Node::Id first_node_id, 
 		Node::Id second_node_id)
 	{
-		if (first_node_id.first == second_node_id.first &&
-			first_node_id.second == second_node_id.second)
+		if (first_node_id == second_node_id)
 			return;
 
-		TileCache::Pointer tile_pointer = _tile_cache->get(first_node_id.first);
-		Node* node = &(tile_pointer.write().nodes()[first_node_id.second].second);
+		TileCache::Pointer tile_pointer = _tile_cache->get(Node::tile_id(first_node_id));
+		Node* node = &(tile_pointer.write().nodes()[Node::local_id(first_node_id)].second);
 		
 		double direction = node->calculate_direction(_tile_cache->
-			get(second_node_id.first)->nodes()[second_node_id.second].second);
+			get(Node::tile_id(second_node_id))->nodes()[Node::local_id(second_node_id)].second);
 			
 		node->add_next_node_id(second_node_id);
 		node->set_direction(direction);
 
-		std::cout << "Connected nodes " << first_node_id.first << ", "
-			<< first_node_id.second << " and " << second_node_id.first << ", "
-			<< second_node_id.second << "  Direction is " << direction << "\n";
+		std::cout << "Connected nodes " << Node::tile_id(first_node_id) << ", "
+			<< Node::local_id(first_node_id) << " and " << Node::tile_id(second_node_id) << ", "
+			<< Node::local_id(second_node_id) << "  Direction is " << direction << "\n";
 	}
 	
 	
 	bool
 	TraceProcessor::connection_from_to(Node::Id node_id_1, Node::Id node_id_2)
 	{
-		TileCache::Pointer tile_1_pointer = _tile_cache->get(node_id_1.first);
-		if (tile_1_pointer->nodes()[node_id_1.second].first &&
-			tile_1_pointer->nodes()[node_id_1.second].second.
+		TileCache::Pointer tile_1_pointer = _tile_cache->get(Node::tile_id(node_id_1));
+		if (tile_1_pointer->nodes()[Node::local_id(node_id_1)].first &&
+			tile_1_pointer->nodes()[Node::local_id(node_id_1)].second.
 			is_reachable(node_id_2))
 			return true;
 		else
@@ -141,11 +130,11 @@ namespace mapgeneration
 	}
 
 
-	std::pair<unsigned int, unsigned int>
+	Node::Id
 	TraceProcessor::create_new_node(GPSPoint& gps_point)
 	{
 		Node new_node(gps_point);
-		int new_tile_id = new_node.get_tile_id();
+		unsigned int new_tile_id = new_node.get_tile_id();
 		
 		TileCache::Pointer tile = _tile_cache->get(new_tile_id);
 		if (tile == 0)
@@ -154,13 +143,11 @@ namespace mapgeneration
 			tile = _tile_cache->get(new_tile_id);
 		}
 		
+		unsigned int new_node_id_part = (unsigned int)tile.write().nodes().insert(new_node);
 		
-		std::pair<unsigned int, unsigned int> new_node_id =
-			std::make_pair(
-				new_tile_id, (unsigned int)tile.write().nodes().insert(new_node)
-			);
+		Node::Id new_node_id = Node::merge_id_parts(new_tile_id, new_node_id_part);
 
-		_trace_log->new_node(new_node_id, new_node);
+//		_trace_log->new_node(new_node_id, new_node);
 		
 		return new_node_id;
 	}
@@ -234,22 +221,6 @@ namespace mapgeneration
 		
 		_trace_log->merge_node(_best_cluster_node_id, saved_gps_point_for_logging,
 			*_best_cluster_node);*/
-	}
-
-	
-	void
-	TraceProcessor::move_current_to_previous()
-	{
-		_previous_node = _current_node;
-		_previous_node_id = _current_node_id;
-		
-		/* Don't  rely on these! May be removed for speed reasons. */
-		/* But now we relay on them!!! Possible reasons? Perhaps mergeable()? */
-		_current_node = 0;
-		_current_node_id.first = 0;
-		_current_node_id.second = 0;
-		
-		_best_cluster_node = 0;
 	}
 	
 	
@@ -333,8 +304,8 @@ namespace mapgeneration
 			FilteredTrace::const_iterator next_iter = best_iter;
 			++next_iter;
 			
-			double position = _filtered_trace.length_meters(point_before, best_iter)
-				+ t_0 * _filtered_trace.length_meters(best_iter, next_iter);
+			double position = _filtered_trace.length_m(point_before, best_iter)
+				+ t_0 * _filtered_trace.length_m(best_iter, next_iter);
 			
 			return position;
 			
@@ -370,9 +341,9 @@ namespace mapgeneration
 		
 		
 		
-		GeoCoordinate entry_coordinate =
-			_tile_cache->get(path_entry._node_id.first)->
-			nodes()[path_entry._node_id.second].second;
+		GeoCoordinate entry_coordinate = _tile_cache->
+			get(Node::tile_id(path_entry._node_id))->
+			nodes()[Node::local_id(path_entry._node_id)].second;
 		double position = path_entry._position;
 		double previous_distance = 1000000.0;
 		double distance = previous_distance - 1.0;
@@ -380,7 +351,7 @@ namespace mapgeneration
 		
 		double best_position = position;
 		
-		while (distance < previous_distance)
+		while ((distance < previous_distance) && (position <= _filtered_trace.length_m()))
 		{
 			previous_distance = distance;
 			position += 1.0;
@@ -394,7 +365,7 @@ namespace mapgeneration
 		}
 		
 		previous_distance = distance + 1.0;
-		while ( (distance < previous_distance) && (position >= 1.0) )
+		while ((distance < previous_distance) && (position >= 1.0))
 		{
 			previous_distance = distance;
 			position -= 1.0;
@@ -518,19 +489,20 @@ namespace mapgeneration
 			std::cout << "**************************\n";
 			for (; x_iter != ppath_iter->end(); ++x_iter)
 			{				
-				Node::Id old_node_id = std::make_pair((*old_x_iter)->_node_id.first, (*old_x_iter)->_node_id.second);				
-				Node::Id node_id = std::make_pair((*x_iter)->_node_id.first, (*x_iter)->_node_id.second);
-				std::cout << old_node_id.first << ", " << old_node_id.second << " -> " << node_id.first << ", " << node_id.second << ": ";
+				Node::Id old_node_id = (*old_x_iter)->_node_id;
+				Node::Id node_id = (*x_iter)->_node_id;
+				//std::cout << old_node_id.first << ", " << old_node_id.second << " -> " << node_id.first << ", " << node_id.second << ": ";
 				
-				TileCache::Pointer p1 = _tile_cache->get(old_node_id.first);
-				TileCache::Pointer p2 = _tile_cache->get(node_id.first);
+				TileCache::Pointer p1 = _tile_cache->get(Node::tile_id(old_node_id));
+				TileCache::Pointer p2 = _tile_cache->get(Node::tile_id(node_id));
 				
 				/*
 				 * Negative points for distance between nodes that are not
 				 * connected.
 				 */
-				if (! p1->nodes()[old_node_id.second].second.is_reachable(node_id))
-					points -= p1->nodes()[old_node_id.second].second.distance(p2->nodes()[node_id.second].second);
+				if (! p1->nodes()[Node::local_id(old_node_id)].second.is_reachable(node_id))
+					points -= p1->nodes()[Node::local_id(old_node_id)].second.
+					distance(p2->nodes()[Node::local_id(node_id)].second);
 				
 				/*
 				 * Negative points for the direction difference.
@@ -569,8 +541,8 @@ namespace mapgeneration
 		while (n_path_iter != n_path.end())
 		{
 			if ((previous_n_path_iter != n_path_iter) &&
-				(!(_tile_cache->get(previous_n_path_iter->_node_id.first)->
-				nodes()[previous_n_path_iter->_node_id.second].second.
+				(!(_tile_cache->get(Node::tile_id(previous_n_path_iter->_node_id))->
+				nodes()[Node::local_id(previous_n_path_iter->_node_id)].second.
 				is_reachable(n_path_iter->_node_id))))
 			{
 				if (connection_length < 5)
@@ -617,10 +589,9 @@ namespace mapgeneration
 		_filtered_trace.calculate_directions();
 		//_filtered_trace.calculate_times();
 		
-		_filtered_trace.actualize_length_meters();
-		_filtered_trace.actualize_fast_access();
+		_filtered_trace.precompute_data();
 				
-		double trace_length_m = _filtered_trace.length_meters();
+		double trace_length_m = _filtered_trace.length_m();
 		double position_on_trace_m = 0;
 		double distinct_position_m = 0;
 		double complete_position_m = 0;
@@ -628,7 +599,7 @@ namespace mapgeneration
 		int previous_path_id = 0;
 		bool used_different_path_ids = false;
 		int next_path_id = 1;
-		Node::Id previous_node_id = std::make_pair(0, 0);
+		Node::Id previous_node_id = 0;
 		std::list<PathEntry> path;				
 		while (position_on_trace_m < trace_length_m)
 		{
@@ -654,14 +625,17 @@ namespace mapgeneration
 				{
 					if (*path_iter == new_entry)
 					{
-						std::cout << "Catched double entry: " << new_entry._node_id.first << ", " << 
-						new_entry._node_id.second << "\n";
+						std::cout << "Catched double entry: " << 
+							Node::tile_id(new_entry._node_id) << ", " << 
+							Node::local_id(new_entry._node_id) << "\n";
 					
 						insert = false;
 						new_node_iter = cluster_nodes.erase(new_node_iter);
 						
-					} else if (_tile_cache->get(path_iter->_node_id.first)->nodes()[path_iter->_node_id.second].second.connected_nodes()==1 &&
-						_tile_cache->get(path_iter->_node_id.first)->nodes()[path_iter->_node_id.second].second.is_reachable(new_entry._node_id))
+					} else if (_tile_cache->get(Node::tile_id(path_iter->_node_id))->
+						nodes()[Node::local_id(path_iter->_node_id)].second.connected_nodes()==1 &&
+						_tile_cache->get(Node::tile_id(path_iter->_node_id))->
+						nodes()[Node::local_id(path_iter->_node_id)].second.is_reachable(new_entry._node_id))
 					{
 						new_entry._path_id = path_iter->_path_id;
 					}
@@ -670,7 +644,9 @@ namespace mapgeneration
 				if (insert)
 				{										
 					std::cout << "Inserting new node into path: " <<
-						new_entry._node_id.first << ", " << new_entry._node_id.second << "  ID: " << new_entry._path_id << "\n";
+						Node::tile_id(new_entry._node_id) << ", " << 
+						Node::local_id(new_entry._node_id) << "  ID: " << 
+						new_entry._path_id << "\n";
 						
 					if (previous_path_id!=0 && new_entry._path_id!=previous_path_id)
 						used_different_path_ids = true;						
@@ -738,14 +714,13 @@ namespace mapgeneration
 					GPSPoint new_node_position = _filtered_trace.
 						gps_point_at(complete_position_m);
 					Node::Id new_node_id = create_new_node(new_node_position);
-					if (previous_node_id.first != 0)
+					if (previous_node_id != 0)
 						connect_nodes(previous_node_id, new_node_id);
-					previous_node_id.first = new_node_id.first;
-					previous_node_id.second = new_node_id.second;
+					previous_node_id = new_node_id;
 				} else if (path.size() /*&& complete_position_m>=(path.front()._position-20.0)*/)
 				{
 					bool connect = true;
-					if (previous_node_id.first!=0 && 
+					if (previous_node_id!=0 && 
 						!connection_from_to(previous_node_id, path.front()._node_id))
 					{
 						int connection_length = 0;
@@ -777,10 +752,9 @@ namespace mapgeneration
 					{
 						std::cout << "Using node at path position " << complete_position_m << "\n";
 						complete_position_m = path.front()._position;
-						if (previous_node_id.first != 0)
+						if (previous_node_id != 0)
 							connect_nodes(previous_node_id, path.front()._node_id);
-						previous_node_id.first = path.front()._node_id.first;
-						previous_node_id.second = path.front()._node_id.second;
+						previous_node_id = path.front()._node_id;
 						path.pop_front();
 					}
 			}
@@ -803,7 +777,7 @@ namespace mapgeneration
 	TileCache::Pointer
 	TraceProcessor::tile(Node::Id node_id)
 	{
-		return _tile_cache->get(node_id.first);
+		return _tile_cache->get(Node::tile_id(node_id));
 	}
 
 

@@ -70,17 +70,17 @@ namespace mapgeneration_gui
 				{
 					int nnorthing;
 					int neasting;
-					GeoCoordinate::split_tile_id(next_node_id_iter->first, 
+					GeoCoordinate::split_tile_id(Node::tile_id(*next_node_id_iter),
 						nnorthing, neasting);
 					if (nnorthing>=min_tile_id_northing &&
 						nnorthing<=max_tile_id_northing &&
 						neasting>=min_tile_id_easting &&
 						neasting<=max_tile_id_easting)
 					{
-						TileCache::Pointer op = _tile_cache->get(next_node_id_iter->first);
+						TileCache::Pointer op = _tile_cache->get(Node::tile_id(*next_node_id_iter));
 						if (op != 0)
 						{
-							GeoCoordinate nnode=op->nodes()[next_node_id_iter->second].second;
+							GeoCoordinate nnode=op->nodes()[Node::local_id(*next_node_id_iter)].second;
 							MapGenerationDraw::arrow(_gps_draw, node_iter->second, nnode);
 						}
 					}
@@ -90,7 +90,7 @@ namespace mapgeneration_gui
 	}
 	
 	
-	void
+/*	void
 	MapDrawer::draw_tiles(
 		unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
 		unsigned int max_tile_id_northing, unsigned int max_tile_id_easting)
@@ -118,14 +118,14 @@ namespace mapgeneration_gui
 						{
 							int nnorthing;
 							int neasting;
-							GeoCoordinate::split_tile_id(next_node_id_iter->first, 
+							GeoCoordinate::split_tile_id(Node::tile_id(*next_node_id_iter), 
 								nnorthing, neasting);
 							if (nnorthing>=min_tile_id_northing &&
 								nnorthing<=max_tile_id_northing &&
 								neasting>=min_tile_id_easting &&
 								neasting<=max_tile_id_easting)
 							{
-								TileCache::Pointer op = _tile_cache->get(next_node_id_iter->first);
+								TileCache::Pointer op = _tile_cache->get(Node::tile_id(*next_node_id_iter));
 								if (op != 0)
 								{
 									GeoCoordinate nnode=op->nodes()[next_node_id_iter->second].second;
@@ -137,7 +137,7 @@ namespace mapgeneration_gui
 				}
 			}
 		}
-	}
+	}*/
 
 
 	void

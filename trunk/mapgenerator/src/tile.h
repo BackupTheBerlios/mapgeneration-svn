@@ -9,6 +9,14 @@
 #ifndef TILE_H
 #define TILE_H
 
+#ifdef HAVE_CONFIG_H
+	#include "config.h"
+#endif
+
+#ifdef HAVE_STDINT_H
+	#include "stdint.h"
+#endif
+
 #include "gpspoint.h"
 #include "node.h"
 #include "util/fixpointvector.h"
@@ -31,6 +39,9 @@ namespace mapgeneration
 	class Tile {
 
 		public:
+		
+			typedef uint32_t Id;
+		
 		
 			/**
 			 * @brief Empty constructor.
@@ -55,7 +66,7 @@ namespace mapgeneration
 			 * 
 			 * @return the vector
 			 */
-			std::vector< std::pair<unsigned int, unsigned int> >
+			std::vector<Node::Id>
 			cluster_nodes_search(const GPSPoint& gps_point, const double search_radius, const double search_angle) const;
 			
 		

@@ -36,20 +36,14 @@ namespace mapgeneration
 	
 	
 	void
-	Node::add_next_node_id(std::pair<unsigned int, unsigned int> next_node_id)
+	Node::add_next_node_id(Id next_node_id)
 	{
-		std::vector< std::pair<unsigned int, unsigned int> >::iterator iter=
-			_next_node_ids.begin();
-		for (; iter != _next_node_ids.end() && 
-			(iter->first!=next_node_id.first || 
-				iter->second!=next_node_id.second);
-			iter++)
+		std::vector<Id>::iterator iter = _next_node_ids.begin();
+		for (; iter != _next_node_ids.end() && *iter!=next_node_id; iter++)
 		{}
-		
-		Node::Id new_node_id = std::make_pair(next_node_id.first, next_node_id.second);
+				
 		if (iter == _next_node_ids.end())
-			_next_node_ids.push_back(new_node_id);
-		std::cout << "_next_node_ids.size(): " << _next_node_ids.size() << "\n";
+			_next_node_ids.push_back(next_node_id);
 	}
 	
 	
@@ -92,12 +86,8 @@ namespace mapgeneration
 	bool
 	Node::is_reachable(Id node_id) const
 	{
-		std::vector< std::pair<unsigned int, unsigned int> >::const_iterator 
-			iter=_next_node_ids.begin();
-		for (; iter != _next_node_ids.end() && 
-			(iter->first!=node_id.first || 
-				iter->second!=node_id.second);
-			iter++)
+		std::vector<Id>::const_iterator iter = _next_node_ids.begin();
+		for (; (iter != _next_node_ids.end()) && (*iter != node_id); iter++)
 		{}
 		
 		if (iter == _next_node_ids.end())

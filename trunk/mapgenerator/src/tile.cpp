@@ -27,10 +27,10 @@ namespace mapgeneration
 	}
 	
 	
-	std::vector< std::pair<unsigned int, unsigned int> >
+	std::vector<Node::Id>
 	Tile::cluster_nodes_search(const GPSPoint& gps_point, const double search_radius, const double search_angle) const
 	{	
-		std::vector< std::pair<unsigned int, unsigned int> > cluster_nodes;
+		std::vector<Node::Id> cluster_nodes;
 		
 		FixpointVector<Node>::const_iterator iter = nodes().begin();
 		for(; iter != nodes().end(); ++iter)
@@ -39,7 +39,7 @@ namespace mapgeneration
 			double angle_difference = iter->second.angle_difference(gps_point);
 			if ((distance <= search_radius) && (angle_difference <= search_angle))
 			{
-				cluster_nodes.push_back(std::make_pair(get_id(), iter.position_number()));
+				cluster_nodes.push_back(Node::merge_id_parts(get_id(), iter.position_number()));
 			}
 		}
 		

@@ -9,6 +9,14 @@
 #ifndef SERIALIZER_H
 #define SERIALIZER_H
 
+#ifdef HAVE_CONFIG_H
+	#include "config.h"
+#endif
+
+#ifdef HAVE_STDINT_H
+	#include "stdint.h"
+#endif
+
 #include <iostream>
 #include <list>
 #include <sstream>
@@ -63,6 +71,9 @@ namespace mapgeneration_util
 		
 		inline static void
 		deserialize(std::istream& i_stream, long& lon);
+				
+		inline static void
+		deserialize(std::istream& i_stream, uint64_t& uint64);
 		
 		
 		template <typename T_1, typename T_2>
@@ -148,6 +159,9 @@ namespace mapgeneration_util
 		inline static void
 		serialize(std::ostream& o_stream, const long lon);
 
+		inline static void
+		serialize(std::ostream& o_stream, const uint64_t uint64);		
+
 
 		template <typename T_1, typename T_2>
 		inline static void
@@ -231,6 +245,14 @@ namespace mapgeneration_util
 	{
 		i_stream.read(reinterpret_cast<char*>(&lon), sizeof(long));
 	}
+	
+	
+	inline void
+	Serializer::deserialize(std::istream& i_stream, uint64_t& uint64)
+	{
+		i_stream.read(reinterpret_cast<char*>(&uint64), sizeof(uint64_t));
+	}
+	
 	
 	
 	template <typename T_1, typename T_2>
@@ -372,6 +394,13 @@ namespace mapgeneration_util
 	Serializer::serialize(std::ostream& o_stream, const long lon)
 	{
 		o_stream.write(reinterpret_cast<const char*>(&lon), sizeof(long));
+	}
+	
+	
+	inline void
+	Serializer::serialize(std::ostream& o_stream, const uint64_t uint64)
+	{
+		o_stream.write(reinterpret_cast<const char*>(&uint64), sizeof(uint64_t));
 	}
 	
 	

@@ -22,7 +22,7 @@ namespace mapgeneration
 	FilteredTrace::FilteredTrace(pubsub::ServiceList* service_list)
 	: _fast_access(),
 		_gps_points_have_valid_altitudes(true),
-		_length_meters(-1.0),
+		_length_m(-1.0),
 		_needed_tile_ids(),
 		_points_from_previous_start(),
 		_service_list(service_list)
@@ -34,77 +34,12 @@ namespace mapgeneration
 	: std::list<GPSPoint>::list(filtered_trace),
 		_fast_access(filtered_trace._fast_access),
 		_gps_points_have_valid_altitudes(filtered_trace._gps_points_have_valid_altitudes),
-		_length_meters(filtered_trace._length_meters),
+		_length_m(filtered_trace._length_m),
 		_needed_tile_ids(filtered_trace._needed_tile_ids),
 		_points_from_previous_start(filtered_trace._points_from_previous_start),
 		_service_list(filtered_trace._service_list)
 	{
 		/** @todo Check if this copy constructor works. */
-	}
-	
-	
-	void
-	FilteredTrace::actualize_fast_access()
-	{
-		std::cout << std::endl << "Actualizing fast_access...";
-		
-		if (size() <= 0)
-		{
-			_fast_access.clear();
-			std::cout << "ready (size <= 0)" << std::endl;
-			return;
-		}
-
-		double size_factor;
-		_service_list->get_service_value("filteredtrace.size_factor", size_factor);
-		
-		std::cout << std::endl;
-		std::cout << "\tsize_factor = " << size_factor << std::endl;
-		std::cout << "\tfiltered_trace.size = " << size() << std::endl;
-
-		_fast_access.resize(static_cast<int>(ceil(static_cast<double>(size()) * size_factor)));
-		std::cout << "\tfast_access.size = " << _fast_access.size() << std::endl;
-		_fast_access[0] = begin();
-
-		const_iterator iter = begin();
-		const_iterator iter_end = end();
-		++iter;
-
-		if (iter == iter_end)
-		{
-			return;
-		}
-
-		const_iterator previous_iter = begin();
-
-		int index = 1;
-		int iter_index = 1;
-		double current_meters = 0.0;
-		double meters_per_entry = length_meters() / static_cast<double>(_fast_access.size());
-		
-		std::cout << "\tlength = " << length_meters() << std::endl;
-		std::cout << "\tmeters_per_entry = " << meters_per_entry << std::endl;
-
-		for (; iter != iter_end; ++iter, ++previous_iter, ++iter_index)
-		{
-			current_meters += length_meters(previous_iter, iter);
-			std::cout << "\t\tcurrent_meters = " << current_meters << std::endl;
-			for (; current_meters > meters_per_entry * index; ++index)
-			{
-				_fast_access[index] = previous_iter;
-				std::cout << "\t_fast_access[" << index << "] at meter "
-					<< meters_per_entry * index << " = " << iter_index - 1 << std::endl;
-			}
-		}
-
-		std::cout << std::endl;
-	}
-	
-	
-	void
-	FilteredTrace::actualize_length_meters()
-	{
-		_length_meters = length_meters(begin(), --(end()));
 	}
 
 
@@ -229,7 +164,16 @@ namespace mapgeneration
 	{
 		if (size() <= 1)
 		{
-			mlog(MLog::error, "FilteredTrace") << "Empty FilteredTrace: Cannot calculate new gps point at " << meters << " m!\n";
+			mlog(MLog::error, "FilteredTrace") << "Empty FilteredTrace: "
+				<< "Cannot calculate new gps point at " << meters << "m!\n";
+			GPSPoint gps_point;
+			return gps_point;
+		}
+		
+		if (meters<0 || meters>length_m())
+		{
+			mlog(MLog::error, "FilteredTrace") << "Position does not exist: "
+				<< "Cannot calculate new gps point at " << meters << "m!\n";
 			GPSPoint gps_point;
 			return gps_point;
 		}
@@ -237,7 +181,6 @@ namespace mapgeneration
 		const_iterator point_before;
 		const_iterator point_after;
 		double point_before_meters;
-//		double point_after_meters;
 		
 		if (gps_points_before_and_after(meters, &point_before, &point_after,
 				&point_before_meters))
@@ -281,7 +224,7 @@ namespace mapgeneration
 			return false;
 		}
 
-		double meters_per_entry = length_meters() / static_cast<double>(_fast_access.size());
+		double meters_per_entry = length_m() / static_cast<double>(_fast_access.size());
 		int entry = static_cast<int>(floor(input_meters / meters_per_entry));
 		double current_meters = entry * meters_per_entry;
 
@@ -291,7 +234,7 @@ namespace mapgeneration
 
 		while ( (current_meters < input_meters) && (iter != end()) )
 		{
-			current_meters += length_meters(previous_iter, iter);
+			current_meters += length_m(previous_iter, iter);
 			++previous_iter;
 			++iter;
 		}
@@ -304,7 +247,7 @@ namespace mapgeneration
 		
 		if (output_before_iter_meters != 0)
 			*output_before_iter_meters
-				= current_meters - length_meters(previous_iter, iter);
+				= current_meters - length_m(previous_iter, iter);
 		
 		if (output_after_iter_meters != 0)
 			*output_after_iter_meters = current_meters;
@@ -314,7 +257,7 @@ namespace mapgeneration
 
 
 	double
-	FilteredTrace::length_meters(const const_iterator& begin_incl,
+	FilteredTrace::length_m(const const_iterator& begin_incl,
 		const const_iterator& end_incl) const
 	{
 		if (begin_incl == end_incl)
@@ -325,16 +268,16 @@ namespace mapgeneration
 		const_iterator iter_end = end_incl;
 		
 		++iter;
-		double length_meters = 0.0;
+		double length_m = 0.0;
 
 		do
 		{
-			length_meters += previous_iter->distance(*iter);
+			length_m += previous_iter->distance(*iter);
 			++previous_iter;
 			++iter;
 		} while (previous_iter != iter_end);
 
-		return length_meters;
+		return length_m;
 	}
 	
 		
@@ -545,6 +488,67 @@ namespace mapgeneration
 	{
 		return back().get_time();
 	}*/
+	
+	
+	void
+	FilteredTrace::precompute_data()
+	{
+		std::cout << std::endl << "Precomputing data structures...";
+		
+		_length_m = length_m(begin(), --(end()));
+		
+		if (size() <= 0)
+		{
+			_fast_access.clear();
+			std::cout << "ready (size <= 0)" << std::endl;
+			return;
+		}
+
+		double size_factor;
+		_service_list->get_service_value("filteredtrace.size_factor", size_factor);
+		
+		std::cout << std::endl;
+		std::cout << "\tsize_factor = " << size_factor << std::endl;
+		std::cout << "\tfiltered_trace.size = " << size() << std::endl;
+
+		_fast_access.resize(static_cast<int>(ceil(static_cast<double>(size()) * size_factor)));
+		std::cout << "\tfast_access.size = " << _fast_access.size() << std::endl;
+		_fast_access[0] = begin();
+
+		const_iterator iter = begin();
+		const_iterator iter_end = end();
+		++iter;
+
+		if (iter == iter_end)
+		{
+			return;
+		}
+
+		const_iterator previous_iter = begin();
+
+		int index = 1;
+		int iter_index = 1;
+		double current_meters = 0.0;
+		double meters_per_entry = length_m() / static_cast<double>(_fast_access.size());
+		
+		std::cout << "\tlength = " << length_m() << std::endl;
+		std::cout << "\tmeters_per_entry = " << meters_per_entry << std::endl;
+
+		for (; iter != iter_end; ++iter, ++previous_iter, ++iter_index)
+		{
+			current_meters += length_m(previous_iter, iter);
+			std::cout << "\t\tcurrent_meters = " << current_meters << std::endl;
+			for (; current_meters > meters_per_entry * index; ++index)
+			{
+				_fast_access[index] = previous_iter;
+				std::cout << "\t_fast_access[" << index << "] at meter "
+					<< meters_per_entry * index << " = " << iter_index - 1 << std::endl;
+			}
+		}
+
+		std::cout << std::endl;
+	}
+	
 	
 	
 	std::vector<unsigned int>

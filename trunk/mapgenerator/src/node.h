@@ -24,6 +24,7 @@
 #include "util/direction.h"
 #include "util/serializer.h"
 
+
 using namespace mapgeneration_util;
 
 
@@ -50,10 +51,10 @@ namespace mapgeneration
 
 		public:
 		
-		
-			typedef std::pair<unsigned int, unsigned int> Id;
-			typedef uint64_t newID;
-		
+			typedef uint64_t Id;
+			
+			typedef uint32_t LocalId;
+
 
 			/**
 			 * @brief Empty constructor.
@@ -78,9 +79,8 @@ namespace mapgeneration
 			
 			
 			void
-			add_next_node_id(
-				std::pair<unsigned int, unsigned int> next_node_id);
-				
+			add_next_node_id(Id next_node_id);
+
 				
 			int
 			connected_nodes() const;
@@ -115,6 +115,10 @@ namespace mapgeneration
 			bool
 			is_reachable(Id node_id) const;
 			
+			
+			static inline Node::LocalId
+			local_id(Id id);
+			
 
 			/**
 			 * @brief Merges two gpspoints.
@@ -129,12 +133,16 @@ namespace mapgeneration
 			merge(const GPSPoint& gps_point);
 			
 			
+			static inline Id
+			merge_id_parts(uint32_t tile_id, uint32_t local_node_id);
+			
+			
 			/**
 			 * @brief Returns a reference to the vector of next node ids.
 			 * 
 			 * @return Reference to vector of next node ids.
 			 */
-			inline std::vector< std::pair<unsigned int, unsigned int> >&
+			inline std::vector<Id>&
 			next_node_ids();
 			
 			
@@ -144,7 +152,7 @@ namespace mapgeneration
 			 * 
 			 * @return Constant reference to vector of next node ids.
 			 */
-			inline const std::vector< std::pair<unsigned int, unsigned int> >&
+			inline const std::vector<Id>&
 			next_node_ids() const;
 			
 			
@@ -174,6 +182,14 @@ namespace mapgeneration
 			set_mpi(int mpi);
 			
 			
+			static inline void
+			split_id(Id id, uint32_t& tile_id, LocalId& local_id);
+			
+			
+			static inline uint32_t
+			tile_id(Id id);
+			
+			
 		private:
 		
 			/**
@@ -191,7 +207,7 @@ namespace mapgeneration
 			/**
 			 * @brief A vector of node ids that reachable from this node.
 			 */
-			std::vector< std::pair<unsigned int, unsigned int> >
+			std::vector<Id>
 			_next_node_ids;
 
 
@@ -228,14 +244,28 @@ namespace mapgeneration
 	}
 	
 	
-	inline std::vector< std::pair<unsigned int, unsigned int> >&
+	inline Node::LocalId
+	Node::local_id(Id id)
+	{
+		return (id & 0x00000000FFFFFFFFULL);
+	}
+	
+	
+	inline Node::Id
+	Node::merge_id_parts(uint32_t tile_id, LocalId local_id)
+	{
+		return ((((Node::Id)tile_id) << 32) + local_id);
+	}
+	
+	
+	inline std::vector<Node::Id>&
 	Node::next_node_ids()
 	{
 		return _next_node_ids;
 	}
 			
 			
-	inline const std::vector< std::pair<unsigned int, unsigned int> >&
+	inline const std::vector<Node::Id>&
 	Node::next_node_ids() const
 	{
 		return _next_node_ids;
@@ -257,6 +287,22 @@ namespace mapgeneration
 	{
 		_multi_purpose_integer = mpi;
 	}
+	
+	
+	inline void
+	Node::split_id(Id id, uint32_t& tile_id, LocalId& local_id)
+	{
+		tile_id = id >> 32;
+		local_id = id & 0x00000000FFFFFFFFULL;
+	}
+	
+	
+	inline uint32_t
+	Node::tile_id(Id id)
+	{
+		return (id >> 32);
+	}
+	
 	
 } // namespace mapgeneration
 

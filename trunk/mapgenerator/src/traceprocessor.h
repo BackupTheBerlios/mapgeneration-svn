@@ -49,8 +49,7 @@ namespace mapgeneration
 					bool
 					operator==(PathEntry path_entry)
 					{
-						if (_node_id.first == path_entry._node_id.first &&
-							_node_id.second == path_entry._node_id.second)
+						if (_node_id == path_entry._node_id)
 							return true;
 						else
 							return false;
@@ -58,17 +57,13 @@ namespace mapgeneration
 					
 					
 					PathEntry()
-					: _position(0), _path_id(0)
+					: _position(0), _path_id(0), _node_id(0)
 					{
-						_node_id.first = 0;
-						_node_id.second = 0;
 					}
 					
-					PathEntry(const double position, const int path_id, const Node::Id& node_id)
-					: _position(position), _path_id(path_id)
+					PathEntry(const double position, const int path_id, const Node::Id node_id)
+					: _position(position), _path_id(path_id), _node_id(node_id)
 					{
-						_node_id.first = node_id.first;
-						_node_id.second = node_id.second;
 					}
 			};
 		
@@ -176,93 +171,6 @@ namespace mapgeneration
 
 
 			/**
-			 * @brief Pointer to the best clusterable node.
-			 * 
-			 * Only contains a reasonable value after invocation of
-			 * calculate_best_cluster_node.
-			 * 
-			 * @see calculate_best_cluster_node
-			 * @see _best_cluster_node_id
-			 */
-			Node* _best_cluster_node;			
-
-
-			/**
-			 * @brief the ID of the best clusterable node, always corresponds 
-			 * to the _best_cluster_node.
-			 * 
-			 * Only contains a reasonable value after invocation of
-			 * calculate_best_cluster_node.
-			 * 
-			 * @see calculate_best_cluster_node
-			 * @see _best_cluster_node
-			 */
-			std::pair<unsigned int, unsigned int> _best_cluster_node_id;
-			
-			
-			/**
-			 * @brief Pointer to the current node.
-			 * 
-			 * Only defined after current node is known.
-			 * 
-			 * @see _current_node_id
-			 */
-			Node* _current_node;
-			
-			
-			/**
-			 * @brief The ID of the current node, always corresponds to the
-			 * _current_node.
-			 * 
-			 * @see _current_node
-			 */
-			std::pair<unsigned int, unsigned int> _current_node_id;
-			
-			
-			/**
-			 * @brief A copy of the current node before it was merged.
-			 */
-			Node _current_node_before_merge;
-
-			
-			/**
-			 * @brief Flag indicating that the main loop ends.
-			 */
-			bool _end_main_loop;
-
-
-			/**
-			 * @brief Flag indicating that the last clustering was at a crossing.
-			 */
-			bool _last_clustering_was_at_crossing;
-						
-			
-			/**
-			 * @brief Pointer to the previous node.
-			 * 
-			 * Is 0 in the first loop.
-			 * 
-			 * @see _previous_node_id
-			 */
-			Node* _previous_node;
-
-
-			/**
-			 * @brief The ID of the previous node, always corresponds to the 
-			 * _previous_node.
-			 * 
-			 * @see _previous_node
-			 */
-			std::pair<unsigned int, unsigned int> _previous_node_id;
-			
-
-			/**
-			 * @brief Pointer to an older unused GPSPoint if it was not used.
-			 */
-			GPSPoint* _unused_gps_point;
-			
-			
-			/**
 			 * @brief Calculates all clusterable nodes and adds them to the
 			 * given vector.
 			 * 
@@ -300,7 +208,7 @@ namespace mapgeneration
 			 * 
 			 * @return Id of the new created node.
 			 */
-			std::pair<unsigned int, unsigned int>
+			Node::Id
 			create_new_node(GPSPoint& gps_point);
 
 			
@@ -320,14 +228,6 @@ namespace mapgeneration
 			 */
 /*			bool
 			mergeable();*/
-			
-			
-			/**
-			 * @brief Copies every _current_* attribute to the corresponding
-			 * _previous_* attribute.
-			 */
-			void
-			move_current_to_previous();
 			
 			
 			double

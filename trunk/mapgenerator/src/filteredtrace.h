@@ -46,11 +46,7 @@ namespace mapgeneration
 
 			
 			void
-			actualize_fast_access();
-			
-			
-			void
-			actualize_length_meters();
+			precompute_data();
 
 
 			/**
@@ -153,7 +149,7 @@ namespace mapgeneration
 			 * @return Length of the trace in meters.
 			 */
 			inline double
-			length_meters();
+			length_m();
 			
 			
 			
@@ -250,7 +246,7 @@ namespace mapgeneration
 			bool _gps_points_have_valid_altitudes;
 			
 			
-			double _length_meters;
+			double _length_m;
 			
 			
 			/**
@@ -270,7 +266,7 @@ namespace mapgeneration
 			
 			
 			double
-			length_meters(const const_iterator& begin_incl,
+			length_m(const const_iterator& begin_incl,
 				const const_iterator& end_incl) const;
 	};
 
@@ -283,9 +279,9 @@ namespace mapgeneration
 	
 	
 	inline double
-	FilteredTrace::length_meters()
+	FilteredTrace::length_m()
 	{
-		return _length_meters;
+		return _length_m;
 	}
 	
 	
