@@ -5,6 +5,9 @@
 * Licensed under the Academic Free License version 2.1                         *
 *******************************************************************************/
 
+#ifndef SERVICESYSTEM_INIT
+#error Please do not include service.h, use servicesystem.h instead.
+#else
 
 #ifndef SERVICE_H
 #define SERVICE_H
@@ -286,42 +289,8 @@ namespace pubsub
 	}
 	
 	
-	/* ************************************
-	 *  Output operator
-	 * ***********************************/
-	std::ostream& operator<<(std::ostream& out, const ServiceList& service_list)
-	{
-		out << std::endl;
-		out << "ServiceList:" << std::endl;
-		out << "==================================" << std::endl;
-		
-		std::map<std::string, GenericService*>::const_iterator iter
-			= service_list.services_by_name().begin();
-		std::map<std::string, GenericService*>::const_iterator iter_end
-			= service_list.services_by_name().end();
-		for (; iter != iter_end; ++iter)
-		{
-			out << "\"" << iter->first << "\"\t\t\"";
-			
-			if (iter->second->get_data_type_name() == typeid(int).name())
-				out << (dynamic_cast<Service<int>* const>(iter->second))->publish();
-			if (iter->second->get_data_type_name() == typeid(double).name())
-				out << (dynamic_cast<Service<double>*>(iter->second))->publish();
-			if (iter->second->get_data_type_name() == typeid(std::string).name())
-				out << (dynamic_cast<Service<std::string>*>(iter->second))->publish();
-	
-			out << "\"" << std::endl;
-		}
-		
-		out << std::endl;
-		
-		return out;
-	}
-	/* ************************************
-	 *  Output operator
-	 * ***********************************/
-	
-	
 } // namespace pubsub
 
 #endif //SERVICE_H
+
+#endif //SERVICESYSTEM_H

@@ -168,8 +168,12 @@ namespace mapgeneration_util
 	{
 		if (_garantuee_uniqueness)
 		{
+			/*
+			 *  @todo: Why do we find find without std:: and why does it not
+			 * work with std:: ????
+			 */
 			iterator find_iter 
-				= std::find(_fixed_size_queue.begin(), _fixed_size_queue.end(), element);
+				= find(_fixed_size_queue.begin(), _fixed_size_queue.end(), element);
 		
 			if (find_iter == _fixed_size_queue.end())
 			{

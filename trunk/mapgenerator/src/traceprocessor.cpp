@@ -383,13 +383,21 @@ namespace mapgeneration
 	
 	
 	void
-	TraceProcessor::simplify_path(std::list<PathEntry>& path)
+	TraceProcessor::simplify_path(Node::Id start_node_id, 
+		std::list<PathEntry>& path)
 	{
+		if (start_node_id != 0)
+		{
+			
+		} else
+		{
+		}
+		
 		/*
 		 * Very short pathes are simplified by clearing:
 		 * we don't want that short connections.
 		 */
-		if ((path.back()._position - path.front()._position) < 50.0)
+/*		if ((path.back()._position - path.front()._position) < 50.0)
 		{
 			//std::cout << "Simplifying by clearing, path has a total length of just "
 			//	<< path.back()._position - path.front()._position << "\n";
@@ -497,15 +505,15 @@ namespace mapgeneration
 				//std::cout << old_node_id.first << ", " << old_node_id.second << " -> " << node_id.first << ", " << node_id.second << ": ";
 				
 				TileCache::Pointer p1 = _tile_cache->get(Node::tile_id(old_node_id));
-				TileCache::Pointer p2 = _tile_cache->get(Node::tile_id(node_id));
+				TileCache::Pointer p2 = _tile_cache->get(Node::tile_id(node_id));*/
 				
 				/*
 				 * Negative points for distance between nodes that are not
 				 * connected.
 				 */
-				if (! p1->nodes()[Node::local_id(old_node_id)].second.is_reachable(node_id))
+/*				if (! p1->nodes()[Node::local_id(old_node_id)].second.is_reachable(node_id))
 					points -= p1->nodes()[Node::local_id(old_node_id)].second.
-					approximated_distance(p2->nodes()[Node::local_id(node_id)].second);
+					approximated_distance(p2->nodes()[Node::local_id(node_id)].second);*/
 				
 				/*
 				 * Negative points for the direction difference.
@@ -514,7 +522,7 @@ namespace mapgeneration
 				
 				//std::cout << points << "\n";
 				
-				if (points < best_points) break;
+/*				if (points < best_points) break;
 				
 				old_x_iter = x_iter;
 			}
@@ -569,8 +577,10 @@ namespace mapgeneration
 		if (n_path.size() > 4)
 			path.insert(path.end(), n_path.begin(), n_path.end());
 		
-		std::cout << "New path has " << path.size() << " path entries\n";
+		std::cout << "New path has " << path.size() << " path entries\n";*/
 		
+		
+				
 	}
 
 
@@ -591,7 +601,6 @@ namespace mapgeneration
 //		_filtered_trace.filter(); this is done in the TraceFilter!!!
 		//_filtered_trace.calculate_directions();
 		//_filtered_trace.calculate_times();
-		
 		_filtered_trace.precompute_data();
 				
 		double trace_length_m = _filtered_trace.length_m();
@@ -698,7 +707,7 @@ namespace mapgeneration
 				if ((ident_path_ids > 5) || (path.back()._position < position_on_trace_m-20.0))
 				{
 					//std::cout << "Last " << ident_path_ids << " path ids are identically " << path_id << " simplifying path.\n";
-					simplify_path(path);
+					simplify_path(previous_node_id, path);
 					distinct_position_m = position_on_trace_m;
 					//std::cout << "Done, set distinct position_m to " << distinct_position_m << "\n";
 				}

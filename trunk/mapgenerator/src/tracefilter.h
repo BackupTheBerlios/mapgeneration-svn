@@ -15,7 +15,7 @@
 
 #include "gpspoint.h"
 #include "tilemanager.h"
-#include "util/pubsub/servicelist.h"
+#include "util/pubsub/servicesystem.h"
 
 namespace mapgeneration
 {

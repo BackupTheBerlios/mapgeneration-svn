@@ -8,6 +8,7 @@
 
 #include "filteredtrace.h"
 
+#include <cmath>
 #include <iostream>
 #include <list>
 #include <string>

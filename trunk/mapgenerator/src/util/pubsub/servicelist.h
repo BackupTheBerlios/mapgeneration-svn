@@ -5,6 +5,9 @@
 * Licensed under the Academic Free License version 2.1                         *
 *******************************************************************************/
 
+#ifndef SERVICESYSTEM_INIT
+#error Please do not include service.h, use servicesystem.h instead.
+#else
 
 #ifndef SERVICELIST_H
 #define SERVICELIST_H
@@ -22,8 +25,6 @@ namespace pubsub
 #include <map>
 #include <string>
 #include "genericservice.h"
-//#include "service.h"
-
 
 namespace pubsub
 {
@@ -172,35 +173,6 @@ namespace pubsub
 	 * ***********************************/
 
 
-	template <typename T_Value>			
-	Service<T_Value>*
-	ServiceList::find_service(std::string name)
-	{
-		GenericService* generic_service = find_generic_service(name);
-		if (!generic_service)
-			return 0;
-
-		return (dynamic_cast<Service<T_Value>*>(generic_service));
-	}
-
-
-	template <typename T_Value>
-	bool
-	ServiceList::get_service_value(std::string name, T_Value& value)
-	{
-		Service<T_Value>* service = find_service<T_Value>(name);
-		
-//		if (!service) std::cout << "WARNING: Service \"" << name << "\" does not exist!" << std::endl;
-		if (!service) return false;
-		
-		value = service->publish();
-		
-//		std::cout << "Service " << name << "'s value = " << value << std::endl;
-
-		return true;
-	}
-
-
 	inline int
 	ServiceList::number_of_services() const
 	{
@@ -217,4 +189,7 @@ namespace pubsub
 
 } // namespace pubsub
 
+
 #endif //SERVICELIST_H
+
+#endif //SERVICESYSTEM_H

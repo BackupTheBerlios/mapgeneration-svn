@@ -23,7 +23,7 @@ namespace mapgeneration
 #include "tilecache.h"
 #include "traceprocessor.h"
 #include "util/mlog.h"
-#include "util/pubsub/servicelist.h"
+#include "util/pubsub/servicesystem.h"
 
 
 using namespace mapgeneration_util;

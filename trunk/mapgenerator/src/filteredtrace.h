@@ -13,7 +13,7 @@
 #include <set>
 #include <string>
 #include "gpspoint.h"
-#include "util/pubsub/servicelist.h"
+#include "util/pubsub/servicesystem.h"
 
 namespace mapgeneration
 {

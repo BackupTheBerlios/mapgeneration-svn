@@ -16,7 +16,7 @@
 #include "tilemanager.h"
 #include "tracefilter.h"
 #include "traceserver.h"
-#include "util/pubsub/servicelist.h"
+#include "util/pubsub/servicesystem.h"
 
 
 namespace mapgeneration

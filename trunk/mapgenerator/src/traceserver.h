@@ -15,7 +15,7 @@
 
 #include "tracefilter.h"
 #include "traceconnection.h"
-#include "util/pubsub/servicelist.h"
+#include "util/pubsub/servicesystem.h"
 
 
 namespace mapgeneration

@@ -22,10 +22,17 @@ namespace mapgeneration_gui
 		
 	class Module
 	{
-		
-		friend bool MainFrameLogic::register_module(Module* module);
+	
+		/*
+		 * Since gcc 3.4.x it is impossible to declare private functions as
+		 * friends, when they are not visible at the moment of the friend
+		 * declaration. The official solution to this is to declare the
+		 * whole class as friend:
+		 */
+		friend class MainFrameLogic;
+		/*friend bool MainFrameLogic::register_module(Module* module);
 		friend bool MainFrameLogic::unregister_module(Module* module);
-		friend void MainFrameLogic::on_notebook_page_changed (wxNotebookEvent& event);
+		friend void MainFrameLogic::on_notebook_page_changed (wxNotebookEvent& event);*/
 		
 		public:
 			

@@ -10,7 +10,7 @@
 #define CONNECTION_H
 
 #include <cc++/socket.h>
-#include <iostream.h>
+#include <iostream>
 
 #include "tilemanager.h"
 #include "traceconnection.h"

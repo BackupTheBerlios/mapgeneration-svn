@@ -13,9 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "pubsub/servicelist.h"
-#include "pubsub/service.h"
-#include "pubsub/genericservice.h"
+#include "pubsub/servicesystem.h"
 
 namespace mapgeneration_util
 {

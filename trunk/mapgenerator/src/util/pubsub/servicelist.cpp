@@ -7,7 +7,7 @@
 
 
 #include <iostream>
-#include "servicelist.h"
+#include "servicesystem.h"
 
 
 namespace pubsub
@@ -66,6 +66,36 @@ namespace pubsub
 		std::list<ServiceList*>::iterator iter = _service_lists.begin();
 		for (; iter != _service_lists.end(); iter++)
 			(*iter)->remove_service_from_list(name);
+	}
+	
+	
+	std::ostream& operator<<(std::ostream& out, const ServiceList& service_list)
+	{
+		out << std::endl;
+		out << "ServiceList:" << std::endl;
+		out << "==================================" << std::endl;
+		
+		std::map<std::string, GenericService*>::const_iterator iter
+			= service_list.services_by_name().begin();
+		std::map<std::string, GenericService*>::const_iterator iter_end
+			= service_list.services_by_name().end();
+		for (; iter != iter_end; ++iter)
+		{
+			out << "\"" << iter->first << "\"\t\t\"";
+			
+			if (iter->second->get_data_type_name() == typeid(int).name())
+				out << (dynamic_cast<Service<int>* const>(iter->second))->publish();
+			if (iter->second->get_data_type_name() == typeid(double).name())
+				out << (dynamic_cast<Service<double>*>(iter->second))->publish();
+			if (iter->second->get_data_type_name() == typeid(std::string).name())
+				out << (dynamic_cast<Service<std::string>*>(iter->second))->publish();
+	
+			out << "\"" << std::endl;
+		}
+		
+		out << std::endl;
+		
+		return out;
 	}
 	
 	

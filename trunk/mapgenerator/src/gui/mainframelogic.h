@@ -33,7 +33,7 @@ namespace mapgeneration_gui
 #include "openconnectiondialoglogic.h"
 #include "preferencesdialoglogic.h"
 #include "../util/fixedsizequeue.h"
-#include "../util/pubsub/servicelist.h"
+#include "../util/pubsub/servicesystem.h"
 
 namespace mapgeneration_gui
 {
