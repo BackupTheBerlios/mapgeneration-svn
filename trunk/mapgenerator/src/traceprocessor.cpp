@@ -416,8 +416,8 @@ namespace mapgeneration
 		PathEntry* next_position = 0;
 		while (position != 0)
 		{
-			std::cout << Node::tile_id(position->_node_id) << ", " << 
-				Node::local_id(position->_node_id) << "\n";
+			//std::cout << Node::tile_id(position->_node_id) << ", " << 
+			//	Node::local_id(position->_node_id) << "\n";
 				
 			next_position = position->_connection;
 			position->_connection = 0;
@@ -473,19 +473,19 @@ namespace mapgeneration
 			
 			if (path_iter != path_iter_end)
 			{
-				std::cout << "C-->\n";
+//				std::cout << "C-->\n";
 				double points = build_connections(path, path_iter, only_connected);
-				std::cout << "C<--\n";
+//				std::cout << "C<--\n";
 			
-				std::cout << "Points: " << points;
+//				std::cout << "Points: " << points;
 				
 				points -= distance_from_to(current_entry->_node_id, path_iter->_node_id) / 10;
 				
 				points -= angle_difference(current_entry->_node_id, path_iter->_node_id) * 10;
 				
-				std::cout << "  Modified to " << points;
+//				std::cout << "  Modified to " << points;
 					
-				std::cout << "\n";
+//				std::cout << "\n";
 				
 				if (points > current_entry->_points)
 				{
@@ -508,11 +508,11 @@ namespace mapgeneration
 	//			if ((only_connected && connected) || !only_connected)
 				if (!connected)
 				{
-					std::cout << "-->\n";
+//					std::cout << "-->\n";
 					double points = build_connections(path, path_iter, only_connected);
-					std::cout << "<--\n";
+//					std::cout << "<--\n";
 				
-					std::cout << "Points: " << points;
+//					std::cout << "Points: " << points;
 										
 					points -= 1000;
 					
@@ -520,9 +520,9 @@ namespace mapgeneration
 					
 					points -= angle_difference(current_entry->_node_id, path_iter->_node_id) * 10;
 					
-					std::cout << "  Modified to " << points;
+//					std::cout << "  Modified to " << points;
 	
-					std::cout << "\n";
+//					std::cout << "\n";
 					
 					if (points > current_entry->_points)
 					{
@@ -704,9 +704,9 @@ namespace mapgeneration
 				
 				if (insert)
 				{										
-					std::cout << "Inserting new node into path: " <<
-						Node::tile_id(new_entry._node_id) << ", " << 
-						Node::local_id(new_entry._node_id) << "\n.";
+//					std::cout << "Inserting new node into path: " <<
+//						Node::tile_id(new_entry._node_id) << ", " << 
+//						Node::local_id(new_entry._node_id) << "\n.";
 					
 					//std::cout << "  Optimizing position starting with " << position_on_trace_m << "\n";
 					double optimal_position = optimal_node_position(new_entry);
@@ -756,10 +756,10 @@ namespace mapgeneration
 				
 				if ((connected_nodes > 2) || (path.back()._position < position_on_trace_m-20.0))
 				{
-					std::cout << "Last " << connected_nodes << " nodes are connected.\n";
+//					std::cout << "Last " << connected_nodes << " nodes are connected.\n";
 					simplify_path(previous_node_id, path);
 					distinct_position_m = position_on_trace_m;
-					std::cout << "Done, set distinct position_m to " << distinct_position_m << "\n";
+//					std::cout << "Done, set distinct position_m to " << distinct_position_m << "\n";
 				}
 			}
 
@@ -772,7 +772,7 @@ namespace mapgeneration
 					|| (!path.size() && complete_position_m<(distinct_position_m-20.0)))
 				{
 					complete_position_m += 10.0;
-					std::cout << "Creating new node at position " << complete_position_m << "\n";
+//					std::cout << "Creating new node at position " << complete_position_m << "\n";
 					GPSPoint new_node_position = _filtered_trace.
 						gps_point_at(complete_position_m);
 					Node::Id new_node_id = create_new_node(new_node_position);
@@ -784,8 +784,8 @@ namespace mapgeneration
 					complete_position_m = path.front()._position;
 					Node::Id used_node_id = path.front()._node_id;
 					
-					std::cout << "Using node " << Node::tile_id(used_node_id) << ", " << 
-						Node::local_id(used_node_id) << " at path position " << complete_position_m << "\n";
+//					std::cout << "Using node " << Node::tile_id(used_node_id) << ", " << 
+//						Node::local_id(used_node_id) << " at path position " << complete_position_m << "\n";
 					if (previous_node_id != 0)
 						connect_nodes(previous_node_id, path.front()._node_id);
 					previous_node_id = path.front()._node_id;
