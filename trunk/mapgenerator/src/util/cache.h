@@ -1078,6 +1078,8 @@ namespace mapgeneration_util
 		
 		while (!should_stop())
 		{
+			write_back();
+			
 			if (cached_size() > soft_max_cached_size() &&
 				!(_options & _NO_MEMORY_LIMIT))
 			{				
