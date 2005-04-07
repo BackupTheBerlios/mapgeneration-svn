@@ -231,6 +231,7 @@ namespace mapgeneration_gui
 	void
 	MapDrawer::reload()
 	{
+		_tile_cache->flush();
 		update_used_tile_blocks();
 	}
 
@@ -288,8 +289,7 @@ namespace mapgeneration_gui
 		
 		std::vector<unsigned int> used_tile_ids = _tile_cache->get_used_ids();
 		std::vector<unsigned int>::iterator iter = used_tile_ids.begin();
-		std::vector<unsigned int>::iterator iter_end = used_tile_ids.end();
-		std::sort(iter, iter_end);
+		std::vector<unsigned int>::iterator iter_end = used_tile_ids.end();		
 		for (; iter!=iter_end; ++iter)
 		{
 			int tile_id_northing, tile_id_easting;
