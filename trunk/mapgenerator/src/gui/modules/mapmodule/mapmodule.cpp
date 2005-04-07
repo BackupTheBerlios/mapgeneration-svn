@@ -54,6 +54,9 @@ namespace mapgeneration_gui
 		MGG_XRC_EVT_BUTTON(_content_panel, "zoom_out_button",
 			MapPanelLogic::on_zoom_out_button, _map_panel_logic);
 		
+		MGG_XRC_EVT_BUTTON(_content_panel, "reload_button",
+			MapPanelLogic::on_reload_button, _map_panel_logic);
+		
 		MGG_XRC_EVT(wxEVT_LEFT_DOWN, _content_panel, "map_panel",
 			MapPanelLogic::on_mouse_event, _map_panel_logic);
 		MGG_XRC_EVT(wxEVT_LEFT_UP, _content_panel, "map_panel",

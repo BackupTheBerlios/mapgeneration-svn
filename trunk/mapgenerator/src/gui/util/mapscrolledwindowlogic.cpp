@@ -115,6 +115,13 @@ namespace mapgeneration_gui
 			set_center(wxPoint(view_start_x + (int)x, view_start_y + (int)y));
 		}
 	}
+
+
+	void
+	MapScrolledWindowLogic::on_reload_button(wxCommandEvent& event)
+	{
+		reload();
+	}
 	
 	
 	void
@@ -128,6 +135,14 @@ namespace mapgeneration_gui
 	MapScrolledWindowLogic::on_zoom_out_button(wxCommandEvent& event)
 	{
 		zoom(1.0/2.0);
+	}
+	
+	
+	void
+	MapScrolledWindowLogic::reload()
+	{
+		_map_drawer.reload();
+		_map_scrolled_window->Refresh();
 	}
 	
 	

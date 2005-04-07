@@ -87,57 +87,7 @@ namespace mapgeneration_gui
 				}
 			}
 		}
-	}
-	
-	
-/*	void
-	MapDrawer::draw_tiles(
-		unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
-		unsigned int max_tile_id_northing, unsigned int max_tile_id_easting)
-	{
-		for (int northing = min_tile_id_northing; northing <= max_tile_id_northing; ++northing)
-		{
-			for (int easting = min_tile_id_easting; easting <= max_tile_id_easting; ++easting)
-			{
-				unsigned int tile_id = 
-					GeoCoordinate::merge_tile_id_parts(northing, easting);
-				TileCache::Pointer current_tile = _tile_cache->get(tile_id);
-				if (current_tile != 0)
-				{
-					FixpointVector<Node>::iterator node_iter =
-						current_tile.write().nodes().begin();
-					FixpointVector<Node>::iterator node_iter_end =
-						current_tile.write().nodes().end();
-					for (; node_iter != node_iter_end; ++node_iter)
-					{
-						std::vector<Node::Id>::const_iterator next_node_id_iter = 
-							node_iter->second.next_node_ids().begin();
-						std::vector<Node::Id>::const_iterator next_node_id_iter_end =
-							node_iter->second.next_node_ids().end();
-						for (; next_node_id_iter != next_node_id_iter_end; ++next_node_id_iter)
-						{
-							int nnorthing;
-							int neasting;
-							GeoCoordinate::split_tile_id(Node::tile_id(*next_node_id_iter), 
-								nnorthing, neasting);
-							if (nnorthing>=min_tile_id_northing &&
-								nnorthing<=max_tile_id_northing &&
-								neasting>=min_tile_id_easting &&
-								neasting<=max_tile_id_easting)
-							{
-								TileCache::Pointer op = _tile_cache->get(Node::tile_id(*next_node_id_iter));
-								if (op != 0)
-								{
-									GeoCoordinate nnode=op->nodes()[next_node_id_iter->second].second;
-									MapGenerationDraw::arrow(_gps_draw, node_iter->second, nnode);
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}*/
+	}	
 
 
 	void
@@ -164,9 +114,6 @@ namespace mapgeneration_gui
 			view_start_y += update_iter.GetY();
 			view_end_x = view_start_x + update_iter.GetW();
 			view_end_y = view_start_y + update_iter.GetH();
-			
-			/*std::cout << "Partmin: " << view_start_x << ", " << view_start_y << "\nPartmax:"
-			<< view_end_x << ", " << view_end_y << "\n";*/
 
 		    ++update_iter;
 			
@@ -183,11 +130,7 @@ namespace mapgeneration_gui
 	
 			_gps_draw->reproject(view_start_x, view_start_y, max_latitude, min_longitude);
 			_gps_draw->reproject(view_end_x, view_end_y, min_latitude, max_longitude);
-	
-			/*std::cout << "GPS Min: " << min_latitude << ", " << min_longitude << "\n GPSMax:" 
-				<< max_latitude << ", " << max_longitude << "\n";*/
 				
-			
 			for (int y=(((int)min_longitude)/10-1)*10; y<=(int)max_longitude+10; y+=10)
 				for (int x=(((int)min_latitude)/10-1)*10; x<=(int)max_latitude+10; x+=10)
 				{
@@ -205,10 +148,6 @@ namespace mapgeneration_gui
 			int max_tile_id_northing, max_tile_id_easting;
 			GeoCoordinate::split_tile_id(min_tile_id, min_tile_id_northing, min_tile_id_easting);
 			GeoCoordinate::split_tile_id(max_tile_id, max_tile_id_northing, max_tile_id_easting);
-			
-			/*std::cout << "ID Min: " << min_tile_id_northing << ", " << min_tile_id_easting << "\n ID Max:"
-				<< max_tile_id_northing << ", " << max_tile_id_easting << "\n";*/
-
 				
 			tiles_to_display = 
 				((long)(max_tile_id_northing - min_tile_id_northing)) * 
@@ -286,6 +225,13 @@ namespace mapgeneration_gui
 		}
 
 		_use_prefetch = true;
+	}
+	
+	
+	void
+	MapDrawer::reload()
+	{
+		update_used_tile_blocks();
 	}
 
 	

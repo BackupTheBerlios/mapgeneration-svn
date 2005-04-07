@@ -51,11 +51,19 @@ namespace mapgeneration_gui
 			
 			
 			void
+			on_reload_button(wxCommandEvent& event);
+						
+			
+			void
 			on_zoom_in_button(wxCommandEvent& event);
 	
 	
 			void
 			on_zoom_out_button(wxCommandEvent& event);
+						
+			
+			void
+			reload();
 			
 			
 			void

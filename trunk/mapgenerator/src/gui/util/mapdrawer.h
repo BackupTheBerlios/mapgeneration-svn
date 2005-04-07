@@ -50,6 +50,10 @@ namespace mapgeneration_gui
 			void
 			tile_prefetched(unsigned int id);
 			
+			
+			void
+			reload();
+			
 
 		private:			
 			
@@ -94,12 +98,6 @@ namespace mapgeneration_gui
 			
 			void
 			draw_tile(unsigned int tile_id,
-				unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
-				unsigned int max_tile_id_northing, unsigned int max_tile_id_easting);
-			
-			
-			void
-			draw_tiles(
 				unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
 				unsigned int max_tile_id_northing, unsigned int max_tile_id_easting);
 			
