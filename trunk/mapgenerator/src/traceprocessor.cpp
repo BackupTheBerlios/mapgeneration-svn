@@ -545,8 +545,8 @@ namespace mapgeneration
 					GPSPoint point_on_trace = _filtered_trace.gps_point_at(path_iter->_position);
 					Node node = _tile_cache->get(Node::tile_id(path_iter->_node_id))->
 						nodes()[Node::local_id(path_iter->_node_id)].second;
-					points -= point_on_trace.distance(node);
-					points -= point_on_trace.angle_difference(node);
+					points -= point_on_trace.distance(node) / 5;
+					points -= point_on_trace.angle_difference(node) * 50;
 					points -= (path_iter->_position - current_entry->_position) / 8;
 
 					if (points > current_entry->_points)

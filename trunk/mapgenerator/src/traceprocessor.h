@@ -21,6 +21,7 @@ namespace mapgeneration
 #include "tilemanager.h"
 #include "tracelogwriter.h"
 #include "util/constants.h"
+#include "util/fixedsizequeue.h"
 #include "util/mlog.h"
 #include "util/pubsub/servicesystem.h"
 
@@ -280,6 +281,7 @@ namespace mapgeneration
 			
 			void
 			use_segments(std::list< std::list<PathEntry> >& finished_segments, 
+				//FixedSizeQueue<Node::Id>& last_used_node_ids,
 				double& complete_position_m, Node::Id& previous_node_id);
 			
 			
