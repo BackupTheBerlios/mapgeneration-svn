@@ -52,6 +52,10 @@ namespace mapgeneration_gui
 			
 			void
 			on_reload_button(wxCommandEvent& event);
+			
+			
+			void
+			on_scroll_event(wxScrollEvent& event);			
 						
 			
 			void
@@ -75,12 +79,8 @@ namespace mapgeneration_gui
 			
 			
 			void
-			set_tile_cache(TileCache* tile_cache);
-			
-			
-			void
-			tile_prefetched(unsigned int id);
-			
+			set_tile_cache(TileCache* tile_cache);			
+						
 			
 			void
 			update_window_setup();
@@ -109,7 +109,7 @@ namespace mapgeneration_gui
 			
 			double _offset_x;
 			double _offset_y;
-			
+						
 			double _zoom_factor;
 			
 	};

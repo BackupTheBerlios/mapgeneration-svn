@@ -74,6 +74,10 @@ namespace mapgeneration_gui
 			set(wxDC* dc, double x_offset, double y_offset, double zoom_factor);
 			
 			
+			inline void
+			set_dc(wxDC* dc);
+			
+			
 			void 
 			text(double latitude, double longitude, const wxString& text);
 			
@@ -132,6 +136,13 @@ namespace mapgeneration_gui
 	{
 		double new_y = ((double)y / _zoom_factor) - _y_offset;
 		return (int)new_y;
+	}
+	
+	
+	inline void
+	GPSDraw::set_dc(wxDC* dc)
+	{
+		_dc = dc;
 	}
 	
 	

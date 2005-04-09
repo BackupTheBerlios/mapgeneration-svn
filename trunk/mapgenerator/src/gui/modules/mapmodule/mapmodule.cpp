@@ -70,6 +70,11 @@ namespace mapgeneration_gui
 		MGG_XRC_EVT(wxEVT_LEFT_DCLICK, _content_panel, "map_panel",
 			MapPanelLogic::on_mouse_event, _map_panel_logic);
 			
+		MGG_XRC_EVT(wxEVT_SCROLL_THUMBTRACK, _content_panel, "map_panel",
+			MapPanelLogic::on_scroll_event, _map_panel_logic);
+		MGG_XRC_EVT(wxEVT_SCROLL_THUMBRELEASE, _content_panel, "map_panel",
+			MapPanelLogic::on_scroll_event, _map_panel_logic);
+			
 		/*Mouse events:
 		 * DECLARE_EVENT_TYPE(wxEVT_LEFT_DOWN, 100)
 		 * DECLARE_EVENT_TYPE(wxEVT_LEFT_UP, 101)

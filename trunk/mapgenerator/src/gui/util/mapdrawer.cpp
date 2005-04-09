@@ -20,19 +20,19 @@ namespace mapgeneration_gui
 	
 	MapDrawer::MapDrawer
 		(wxScrolledWindow* map_scrolled_window, GPSDraw* gps_draw, 
-		TileCache* tile_cache)		
+		TileCache* tile_cache)
 	: 	_current_draw_id(1),
+		_draw_prefetched_tiles(false),
 		_gps_draw(gps_draw),
 		_last_paint_seconds(0),
 		_map_scrolled_window(map_scrolled_window),
 		_tile_cache(tile_cache), 
-		_tile_prefetch_caller(0, this, &MapDrawer::tile_prefetched),
+		_tile_prefetch_notifier(0, this, &MapDrawer::tile_prefetched),
+		_tiles_to_display(0),
 		_used_tile_blocks_5(), 
 		_used_tile_blocks_50(), 
 		_use_prefetch(true)
-	{		
-		_tile_prefetch_proxy.register_subscriber(&_tile_prefetch_caller);		
-		
+	{
 		std::bitset<3600> empty_bitset_5;
 		empty_bitset_5.reset();		
 		_used_tile_blocks_5.
@@ -49,10 +49,56 @@ namespace mapgeneration_gui
 	
 	
 	void
+	MapDrawer::draw_prefetched_tiles(wxDC* dc)
+	{
+		if (_tiles_to_display > 100000L)
+		{
+			_prefetched_queue_mutex.enter();
+			_prefetched_tile_ids.clear();
+			_prefetched_queue_mutex.leave();
+			return;
+		}
+		
+		bool end = false;
+		while(!end)
+		{
+			_prefetched_queue_mutex.enter();
+			if (_prefetched_tile_ids.empty())
+			{
+				end = true;
+				_prefetched_queue_mutex.leave();
+			} else
+			{
+				Tile::Id id = _prefetched_tile_ids.front();
+				_prefetched_tile_ids.pop_front();
+				_prefetched_queue_mutex.leave();
+				
+				TileCache::Pointer tile_pointer;
+				tile_pointer = _tile_cache->get(id);
+				if (tile_pointer != 0)
+				{
+					dc->SetPen(*wxThePenList->FindOrCreatePen(wxColour(150, 150, 150), 1, wxSOLID));
+					MapGenerationDraw::tile_border(_gps_draw, id);
+					dc->SetPen(*wxThePenList->FindOrCreatePen(wxColour(0, 0, 0), 1, wxSOLID));
+					draw_tile(id, 
+						_min_tile_id_northing, _min_tile_id_easting, 
+						_max_tile_id_northing, _max_tile_id_easting);
+				}
+			}
+		}
+	}
+	
+	
+	void
 	MapDrawer::draw_tile(unsigned int tile_id,
 		unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
 		unsigned int max_tile_id_northing, unsigned int max_tile_id_easting)
 	{
+		int northing, easting;
+		GeoCoordinate::split_tile_id(tile_id, northing, easting);
+		if ((northing < min_tile_id_northing) || (northing > max_tile_id_northing) ||
+			(easting < min_tile_id_easting) || (easting > max_tile_id_easting))
+			return;
 		TileCache::Pointer current_tile = _tile_cache->get(tile_id);
 		if (current_tile != 0)
 		{
@@ -95,13 +141,75 @@ namespace mapgeneration_gui
 	{
 		if (_tile_cache == 0) return;
 		
-		_last_paint_seconds = time(0);
-		long tiles_to_display;
+/*		if (_draw_prefetched_tiles)
+		{
+			_draw_prefetched_tiles = false;
+			draw_prefetched_tiles(&dc);
+			return;
+		}*/
+		
+		if (_use_prefetch)
+			_tile_cache->clear_prefetch_queue();
 		
 		int pixels_per_unit_x, pixels_per_unit_y;
 		_map_scrolled_window->GetScrollPixelsPerUnit(&pixels_per_unit_x, &pixels_per_unit_y);
 		
 		int view_start_x, view_start_y, view_end_x, view_end_y;
+		
+		{
+			_map_scrolled_window->GetViewStart(&view_start_x, &view_start_y);
+			view_start_x *= pixels_per_unit_x;
+			view_start_y *= pixels_per_unit_y;			
+			int width, height;
+			_map_scrolled_window->GetClientSize(&width, &height);
+			view_end_x = view_start_x + width;
+			view_end_y = view_start_y + height;
+						
+			double min_latitude;
+			double min_longitude;
+			double max_latitude;
+			double max_longitude;
+	
+			_gps_draw->reproject(view_start_x, view_start_y, max_latitude, min_longitude);
+			_gps_draw->reproject(view_end_x, view_end_y, min_latitude, max_longitude);
+
+			unsigned int min_tile_id = 
+				GeoCoordinate::get_tile_id(min_latitude, min_longitude);
+			unsigned int max_tile_id =
+				GeoCoordinate::get_tile_id(max_latitude, max_longitude);
+										
+			GeoCoordinate::split_tile_id(min_tile_id, _min_tile_id_northing, _min_tile_id_easting);
+			GeoCoordinate::split_tile_id(max_tile_id, _max_tile_id_northing, _max_tile_id_easting);
+				
+			_tiles_to_display = 
+				((long)(_max_tile_id_northing - _min_tile_id_northing)) * 
+				((long)(_max_tile_id_easting - _min_tile_id_easting));
+			
+			
+/*			if (_tiles_to_display <= 100000L)
+			{
+				for (int y=_min_tile_id_northing; y<=_max_tile_id_northing; y+=1)
+					for (int x=_min_tile_id_easting; x<=_max_tile_id_easting; x+=1)
+					{
+						if (_used_tile_blocks_50[x/50].test(y/50))
+						{
+							if (_used_tile_blocks_5[x/5].test(y/5))
+							{
+								unsigned int tile_id = GeoCoordinate::merge_tile_id_parts(y, x);
+								_tile_cache->get_or_prefetch(tile_id, 
+									&_tile_prefetch_notifier);
+							} else
+							{
+								x = (x/5+1) * 5 - 1;
+							}
+						} else
+						{
+							x = (x/50+1) * 50 - 1;
+						}
+					}
+			}*/
+		}
+		
  		wxRegionIterator update_iter(_map_scrolled_window->GetUpdateRegion());
 
 		while (update_iter)
@@ -137,25 +245,20 @@ namespace mapgeneration_gui
 					_gps_draw->line((double)x, (double)y, (double)x+10, (double)y);
 					_gps_draw->line((double)x, (double)y, (double)x, (double)y+10);
 				}
-			
-				
+
 			unsigned int min_tile_id = 
 				GeoCoordinate::get_tile_id(min_latitude, min_longitude);
 			unsigned int max_tile_id =
 				GeoCoordinate::get_tile_id(max_latitude, max_longitude);
-			
+
 			int min_tile_id_northing, min_tile_id_easting;
 			int max_tile_id_northing, max_tile_id_easting;
+						
 			GeoCoordinate::split_tile_id(min_tile_id, min_tile_id_northing, min_tile_id_easting);
 			GeoCoordinate::split_tile_id(max_tile_id, max_tile_id_northing, max_tile_id_easting);
-				
-			tiles_to_display = 
-				((long)(max_tile_id_northing - min_tile_id_northing)) * 
-				((long)(max_tile_id_easting - min_tile_id_easting));
 	
-			if (tiles_to_display <= 1296000L)
-			{
-				dc.SetPen(*wxThePenList->FindOrCreatePen(wxColour(150, 150, 150), 1, wxSOLID));
+			if (_tiles_to_display <= 100000L)
+			{				
 				for (int y=min_tile_id_northing; y<=max_tile_id_northing; y+=1)
 					for (int x=min_tile_id_easting; x<=max_tile_id_easting; x+=1)
 					{
@@ -168,16 +271,18 @@ namespace mapgeneration_gui
 								TileCache::Pointer tile_pointer;
 								if (_use_prefetch)
 									tile_pointer = 
-										_tile_cache->get_or_prefetch(tile_id, 
-															&_tile_prefetch_proxy);
+										_tile_cache->get_or_prefetch(tile_id,
+											&_tile_prefetch_notifier);
 								else
-									tile_pointer = _tile_cache->get(tile_id);
+									tile_pointer = _tile_cache->get(tile_id);								
 								if (tile_pointer != 0)
 								{
+									dc.SetPen(*wxThePenList->FindOrCreatePen(wxColour(150, 150, 150), 1, wxSOLID));
 									MapGenerationDraw::tile_border(_gps_draw, tile_id);
+									dc.SetPen(*wxThePenList->FindOrCreatePen(wxColour(0, 0, 0), 1, wxSOLID));
 									draw_tile(tile_id, 
-										min_tile_id_northing, min_tile_id_easting, 
-										max_tile_id_northing, max_tile_id_easting);
+										_min_tile_id_northing, _min_tile_id_easting, 
+										_max_tile_id_northing, _max_tile_id_easting);
 								}
 							} else
 							{
@@ -189,7 +294,7 @@ namespace mapgeneration_gui
 						}
 					}
 			}
-			else if (tiles_to_display <= 6480000L)
+			else if (_tiles_to_display <= 6480000L)
 			{
 				dc.SetPen(*wxThePenList->FindOrCreatePen(wxColour(0, 0, 0), 1, wxSOLID));
 				for (int y=(min_tile_id_northing/5)*5; y<=max_tile_id_northing; y+=5)
@@ -247,6 +352,9 @@ namespace mapgeneration_gui
 	void
 	MapDrawer::tile_prefetched(unsigned int id)
 	{
+		_prefetched_queue_mutex.enter();
+		_prefetched_tile_ids.push_back(id);	
+		_prefetched_queue_mutex.leave();
 /*		TileCache::Pointer tile_pointer=_tile_cache->get(id);
 		if (tile_pointer != 0)
 		{
@@ -299,6 +407,26 @@ namespace mapgeneration_gui
 			_used_tile_blocks_50[tile_id_easting/50].set(tile_id_northing/50);
 		}
 	}
+	
+	
+	void
+	MapDrawer::thread_run()
+	{
+		while(!should_stop())
+		{
+			_prefetched_queue_mutex.enter();
+			if (!_prefetched_tile_ids.empty())
+			{
+				_prefetched_tile_ids.clear();
+				_prefetched_queue_mutex.leave();
+				_use_prefetch = false;
+				_map_scrolled_window->Refresh();
+			}
+			_prefetched_queue_mutex.leave();
+						
+			_should_stop_event.wait(500);
+		}
+	}	
 	
 } // namespace mapgeneration_gui
 

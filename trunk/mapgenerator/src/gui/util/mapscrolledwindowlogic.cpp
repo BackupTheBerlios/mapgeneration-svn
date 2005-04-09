@@ -21,7 +21,7 @@ namespace mapgeneration_gui
 	
 	MapScrolledWindowLogic::MapScrolledWindowLogic
 		(wxScrolledWindow* map_scrolled_window)
-	: _dragging(false), 
+	:	_dragging(false), 
 		_gps_draw(),
 		_map_drawer(map_scrolled_window, &_gps_draw, 0),
 		_map_scrolled_window(map_scrolled_window),
@@ -29,11 +29,13 @@ namespace mapgeneration_gui
 		_offset_y(0), 
 		_tile_cache(0),
 		_zoom_factor(0.0001)
-	{		
+	{
 		_map_scrolled_window->SetScrollRate(1, 1);
 		_map_scrolled_window->EnableScrolling(true, true);
 		
 		update_window_setup();
+		
+		_map_drawer.controlled_start(false);
 	}
 	
 	
@@ -121,6 +123,14 @@ namespace mapgeneration_gui
 	MapScrolledWindowLogic::on_reload_button(wxCommandEvent& event)
 	{
 		reload();
+	}
+	
+	
+	void
+	MapScrolledWindowLogic::on_scroll_event(wxScrollEvent& event)
+	{
+		std::cout << "X";
+		
 	}
 	
 	
