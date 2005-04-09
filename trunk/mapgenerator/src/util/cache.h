@@ -16,7 +16,7 @@
 #include <utility>
 #include "util/controlledthread.h"
 #include "util/mlog.h"
-#include "util/pubsub/asynchronousproxy.h"
+#include "util/pubsub/subscriber.h"
 
 
 namespace mapgeneration_util
@@ -198,6 +198,13 @@ namespace mapgeneration_util
 			inline int
 			cached_size();
 			
+			
+			/**
+			 * @brief Removes all entries from the prefetch queue.
+			 */
+			void
+			clear_prefetch_queue();
+			
 
 			/**
 			 * \brief Saves all unwritten data.
@@ -223,14 +230,22 @@ namespace mapgeneration_util
 			Entry*
 			get_entry(T_ID id);
 			
+			
+			/**
+			 * @brief Fast version of get. If the element is not cached,
+			 * returns 0.
+			 */
+			Pointer
+			get_if_in_cache(T_ID id);
+			
 
 			/**
-			 * @brief Fast version of get_const. If the element
+			 * @brief Fast version of get. If the element
 			 * is not cached, returns 0 and starts a prefetch for the element.
 			 */
 			Pointer
 			get_or_prefetch(T_ID id, 
-				pubsub::AsynchronousProxy<T_ID>* notifier = 0);
+				pubsub::Subscriber<T_ID>* notifier = 0);
 			
 			
 			/**
@@ -275,12 +290,21 @@ namespace mapgeneration_util
 			
 			
 			/**
+			 * @brief Returns true if the prefetch queue is not empty
+			 * or the thread is prefetching the last object.
+			 * @return True if prefetching is active.
+			 */
+			bool
+			is_prefetching();
+			
+			
+			/**
 			 * \brief Orders the cache to load the element.
 			 * 
 			 * @param id The id of the element to prefetch.
 			 */
 			void
-			prefetch(T_ID id, pubsub::AsynchronousProxy<T_ID>* notifier = 0);
+			prefetch(T_ID id, pubsub::Subscriber<T_ID>* notifier = 0);
 			
 			
 			/**
@@ -389,6 +413,22 @@ namespace mapgeneration_util
 		
 		
 		private:
+		
+			/**
+			 * We start with the MUTEX variable.
+			 */
+
+			/**
+			 * @brief The mutex that protects everything at the moment.
+			 */
+			ost::Mutex _mutex;
+			
+			/**
+			 * @brief Protect the prefetch queue.
+			 */
+			ost::Mutex _prefetch_queue_mutex;
+			
+				
 						
 			/**
 			 * @brief The current size of all cached objects.
@@ -409,13 +449,9 @@ namespace mapgeneration_util
 			/**
 			 * @brief The hard limit of the cached_size.
 			 */
-			int _hard_max_cached_size;
+			int _hard_max_cached_size;			
 			
-			/**
-			 * \brief The mutex that protects everything at the moment.
-			 */
-			ost::Mutex _mutex;
-			
+				
 			/**
 			 * @brief The data of the cache.
 			 */
@@ -437,7 +473,7 @@ namespace mapgeneration_util
 			/**
 			 * @brief Contains all object ids that should be prefetched.
 			 */
-			std::deque< std::pair <T_ID, pubsub::AsynchronousProxy<T_ID>* > >
+			std::deque< std::pair <T_ID, pubsub::Subscriber<T_ID>* > >
 				_prefetches;
 
 
@@ -454,6 +490,7 @@ namespace mapgeneration_util
 			 */
 			std::deque<T_ID> _unused_ids;
 			
+
 			
 			void
 			free_cache_down_to(int max_size);
@@ -732,6 +769,16 @@ namespace mapgeneration_util
 		_mutex.leave();
 		return cached_size;
 	}
+	
+
+	template <typename T_ID, typename T_Elem>	
+	void
+	Cache<T_ID, T_Elem>::clear_prefetch_queue()
+	{
+		_prefetch_queue_mutex.enter();
+		_prefetches.clear();
+		_prefetch_queue_mutex.leave();
+	}
 
 
 	template <typename T_ID, typename T_Elem>
@@ -787,8 +834,27 @@ namespace mapgeneration_util
 	
 	template <typename T_ID, typename T_Elem>
 	typename Cache<T_ID, T_Elem>::Pointer
+	Cache<T_ID, T_Elem>::get_if_in_cache(T_ID id)
+	{
+		_mutex.enter();
+
+		Entry* entry = search_in_cache(id);
+		if (entry)
+		{
+			typename Cache<T_ID, T_Elem>::Pointer pointer(entry);
+			_mutex.leave();
+			return pointer;
+		}
+
+		_mutex.leave();
+		return typename Cache<T_ID, T_Elem>::Pointer(0);
+	}
+	
+	
+	template <typename T_ID, typename T_Elem>
+	typename Cache<T_ID, T_Elem>::Pointer
 	Cache<T_ID, T_Elem>::get_or_prefetch(T_ID id, 
-		pubsub::AsynchronousProxy<T_ID>* notifier)
+		pubsub::Subscriber<T_ID>* notifier)
 	{
 		_mutex.enter();
 
@@ -930,21 +996,35 @@ namespace mapgeneration_util
 		
 		return dirty;
 	}
+	
+	
+	template <typename T_ID, typename T_Elem>
+	bool
+	Cache<T_ID, T_Elem>::is_prefetching()
+	{
+		bool result = false;
+		
+		_prefetch_queue_mutex.enter();
+		result = !_prefetches.empty();
+		_prefetch_queue_mutex.leave();
+		
+		return result;
+	}
 
 
 	template <typename T_ID, typename T_Elem>
 	void
 	Cache<T_ID, T_Elem>::prefetch(T_ID id, 
-		pubsub::AsynchronousProxy<T_ID>* notifier)
+		pubsub::Subscriber<T_ID>* notifier)
 	{
-		_mutex.enter();
+		_prefetch_queue_mutex.enter();
 		_prefetches.push_back(
-			std::pair<T_ID, pubsub::AsynchronousProxy<T_ID>* >(
+			std::pair<T_ID, pubsub::Subscriber<T_ID>* >(
 				id,
 				notifier
 			)
 		);
-		_mutex.leave();
+		_prefetch_queue_mutex.leave();
 		
 		_thread_should_work_event.signal();
 	}
@@ -1088,24 +1168,33 @@ namespace mapgeneration_util
 				_mutex.leave();
 			}
 			
-			while(_prefetches.size() > 0)
+			bool end = false;
+			while(!end)
 			{
+				
+				_prefetch_queue_mutex.enter();
+				if (_prefetches.empty())
+					end = true;
+				else
+				{
+					T_ID id = _prefetches.front().first;
+					pubsub::Subscriber<T_ID>* notifier = 
+						_prefetches.front().second;
+					
+					_mutex.enter();				
+					if (!search_in_cache(id))
+						load_into_cache(id);
+					_mutex.leave();
+	
+					if (notifier)
+						notifier->receive(id);
+					_prefetches.pop_front();					
+				}
+				_prefetch_queue_mutex.leave();
+				
 				_mutex.enter();
-				T_ID id = _prefetches.front().first;
-				if (!search_in_cache(id))
-					load_into_cache(id);				
-				
-				pubsub::AsynchronousProxy<T_ID>* notifier = 
-					_prefetches.front().second;
-				_mutex.leave();
-				
-				if (notifier)
-					notifier->receive(id);
-
-				_mutex.enter();					
-				_prefetches.pop_front();
 				if (cached_size() > soft_max_cached_size())
-					free_cache_down_to(soft_max_cached_size());
+					free_cache_down_to(soft_max_cached_size());				
 				_mutex.leave();
 			}
 
