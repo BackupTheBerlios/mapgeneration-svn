@@ -124,7 +124,7 @@ namespace mapgeneration
 		
 		
 			/*
-			 * We start with an extra section for all the parameter:
+			 * We start with an extra section for all the parameters:
 			 * *****************************************************
 			 */
 
@@ -174,15 +174,40 @@ namespace mapgeneration
 			
 			
 			/**
+			 * @brief A counter to set unique time stamps in build_connections.
+			 */
+			int _time;
+			
+			
+			/**
 			 * @brief The TraceProcessorLogger for this TraceProcessor
 			 */
 			TraceLogWriter* _trace_log;
 			
 			
+			
+			/**
+			 * @brief Calculates the angle difference between the nodes with
+			 * the given ids.
+			 * 
+			 * @param node_id_1 Id of the first node.
+			 * @parma node_id_2 Id of the second node. Really.
+			 */
 			double
 			angle_difference(Node::Id node_id_1, Node::Id node_id_2);
 			
 			
+			/**
+			 * @brief Recursive function to calculate the best path.
+			 * 
+			 * @param path A reference to the main algorithms path.
+			 * @param path_iter The iterator of the path entry to start from.
+			 * @param only_connected True if only connections should be checked,
+			 * false otherwise.
+			 * 
+			 * @return The points of the best path from the given path_iter to
+			 * the last entry of the path.
+			 */
 			double
 			build_connections(std::list<PathEntry>& path,
 				std::list<PathEntry>::iterator path_iter, bool only_connected);
@@ -200,10 +225,22 @@ namespace mapgeneration
 				std::list<Node::Id>& result_vector);
 			
 
+			/**
+			 * @brief Connects the nodes with the given ids.
+			 * 
+			 * @param first_node_id The id of the first node.
+			 * @param second_node_id You guess it...
+			 */
 			void
 			connect_nodes(Node::Id first_node_id, Node::Id second_node_id);
 			
 			
+			/**
+			 * @brief Checks of the nodes with the given ids are connected.
+			 * 
+			 * @return True if the nodes with are 
+			 * connected, false otherwise.
+			 */
 			bool
 			connection_from_to(Node::Id node_id_1, Node::Id node_id_2);
 			
@@ -230,6 +267,15 @@ namespace mapgeneration
 			create_new_node(GPSPoint& gps_point);
 			
 			
+			/**
+			 * @brief Determines the distance between the nodes with the
+			 * given ids.
+			 * 
+			 * @param node_id_1 Id of the first node.
+			 * @parma node_id_2 Id of the second node.
+			 * 
+			 * @return The distance between the nodes.
+			 */
 			double
 			TraceProcessor::distance_from_to(Node::Id node_id_1, 
 				Node::Id node_id_2);
@@ -245,24 +291,53 @@ namespace mapgeneration
 			
 			
 			/**
-			 * @brief Return true, if at least one mergeable point is found.
+			 * @brief Calculates the point of the trace in meters that 
+			 * optimaly corresponds to the path_entry.
 			 * 
-			 * @return true, if at least one mergeable point is found, else false
+			 * @return The optimal position in meters.
 			 */
-/*			bool
-			mergeable();*/
-			
-			
 			double
 			optimal_node_position(PathEntry path_entry);
 			
 			
+			
+			/**
+			 * @brief Rebuilds path and segments after a run of simplify path.
+			 * 
+			 * This method is used to build a row of segments and the new
+			 * path after the path was simplified by simplify_path. Each
+			 * segment contains a row of already connected nodes that are
+			 * used in the current trace. Some gps points from the end of
+			 * the simplified path are copied into a new path to be used
+			 * in further computations.
+			 * 
+			 * @param path A reference to the main algorithms' path.
+			 * @param finished_segments A reference to the list that should
+			 * contain the calculated segments.
+			 * @param start_entry A pointer to the first entry of the 
+			 * simplified path.
+			 */
 			void
 			TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,
 				std::list< std::list<PathEntry> >& finished_segments,
 				PathEntry* start_entry);
 			
 			
+			/**
+			 * @brief Calculated the best path using the nodes in the path
+			 * variable.
+			 * 
+			 * simplify_path starts one or more instances of the recursive
+			 * build_connections method to calculate the best possible
+			 * path starting at the previous_node_id and ending at the last
+			 * entry of the path.
+			 * 
+			 * @param previous_node_id Id of the node at which the path has to
+			 * start. May be zero = invalid.
+			 * @param path A reference to the main algorithms' path.
+			 * @param finished_segments A reference to the list that should
+			 * contain the calculated segments.
+			 */
 			void
 			simplify_path(Node::Id previous_node_id, 
 				std::list<PathEntry>& path,
@@ -279,13 +354,21 @@ namespace mapgeneration
 			tile(Node::Id node_id);
 			
 			
+			
+			/**
+			 * @brief Uses the finished_segments list calculated by
+			 * simplify_path and build_segments to merge the current trace
+			 * to the map.
+			 * 
+			 * @param finished_segments A reference to the segment list that 
+			 * has to be processed.
+			 * @param complete_position_m A reference to the main
+			 * algorithms' complete_position_m.
+			 * @param A reference to the previous_node_id of the main algorithm.
+			 */
 			void
-			use_segments(std::list< std::list<PathEntry> >& finished_segments, 
-				//FixedSizeQueue<Node::Id>& last_used_node_ids,
+			use_segments(std::list< std::list<PathEntry> >& finished_segments,
 				double& complete_position_m, Node::Id& previous_node_id);
-			
-			
-			int _time;
 	};
 
 	
