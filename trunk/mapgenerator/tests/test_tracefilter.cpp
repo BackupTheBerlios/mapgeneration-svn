@@ -20,7 +20,7 @@
 #include "gpspoint.h"
 #include "filteredtrace.h"
 #include "tracefilter.h"
-#include "util/pubsub/servicelist.h"
+#include "util/pubsub/servicesystem.h"
 #include "util/configuration.h"
 
 using namespace mapgeneration;

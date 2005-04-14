@@ -8,8 +8,7 @@
 
 #include <iostream>
 
-#include "util/pubsub/servicelist.h"
-#include "util/pubsub/service.h"
+#include "util/pubsub/servicesystem.h"
 #include "util/pubsub/publisher.h"
 #include "util/pubsub/subscriber.h"
 #include "util/pubsub/callsubscriber.h"
