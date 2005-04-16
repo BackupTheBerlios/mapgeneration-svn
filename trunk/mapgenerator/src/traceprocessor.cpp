@@ -160,6 +160,45 @@ namespace mapgeneration
 	}
 	
 	
+	void
+	TraceProcessor::create_nodes(double& completed_position_m, double end_position_m,
+		bool use_end_position, Node::Id& previous_node_id)
+	{		
+		/** 
+		 * @todo The node distance should be dynamic.
+		 */
+		/**
+		 * The while loop creates nodes up to the last step before end_position.
+		 */
+		while (completed_position_m < (end_position_m - 15.0))
+		{
+			completed_position_m += 10.0;
+			GPSPoint new_node_position = _filtered_trace.
+				gps_point_at(completed_position_m);
+			Node::Id new_node_id = create_new_node(new_node_position);
+			if (previous_node_id != 0)
+				connect_nodes(previous_node_id, new_node_id);
+			previous_node_id = new_node_id;
+		}
+		
+		/**
+		 * If the end position should be used a node is created at the 
+		 * end position.
+		 */
+		if (use_end_position)
+		{
+			completed_position_m = end_position_m;
+			GPSPoint new_node_position = _filtered_trace.
+				gps_point_at(completed_position_m);
+			Node::Id new_node_id = create_new_node(new_node_position);
+			if (previous_node_id != 0)
+				connect_nodes(previous_node_id, new_node_id);
+			previous_node_id = new_node_id;
+		}
+		
+	}
+	
+	
 	double
 	TraceProcessor::distance_from_to(Node::Id node_id_1, Node::Id node_id_2)
 	{
@@ -560,7 +599,7 @@ namespace mapgeneration
 		
 		double best_points = -100000.0;
 		PathEntry* best_start_entry = 0;
-		int method;
+		int method = 0;
 
 		while (best_start_entry == 0 && method < 2)
 		{
@@ -636,15 +675,26 @@ namespace mapgeneration
 		
 		// All position are relative to the start of the trace and in meters.
 		
-		// The current position of the scanner that look for existing nodes.
-		double scan_position_m = 0;
+		/* 
+		 * The current position of the scanner that look for existing nodes. The
+		 * scanner will almost always be some steps ahead of the distinct and
+		 * completed positions.
+		 */		
+		double scan_position_m = 0.0;
 		
-		// The position up to which the usage of the trace information is 
-		// distinct.
-		double distinct_position_m = 0;
+		/* 
+		 * The position up to which the usage of the trace information is 
+		 * distinct, when creating new nodes the trace information may and
+		 * should be used roughly up to this position. We start with -100.0,
+		 * because the position 0.0 might be used if we initialized this with
+		 * 0.0.
+		 */
+		double distinct_position_m = -100.0;
 		
-		// The position up to which the trace is merge to the map.
-		double completed_position_m = 0;
+		/*
+		 * The position up to which the trace is already merged to the map.
+		 */
+		double completed_position_m = 0.0;
 		
 		std::vector< std::list<PathEntry>::iterator > new_path_entries;
 		Node::Id previous_node_id = 0;
@@ -776,7 +826,11 @@ namespace mapgeneration
 			}
 
 
-			while (!path.size() && completed_position_m<(distinct_position_m-20.0))
+			if (!path.size())
+				create_nodes(completed_position_m, distinct_position_m, false,
+					previous_node_id);
+
+			/*while (!path.size() && completed_position_m<(distinct_position_m-20.0))
 			{
 				completed_position_m += 10.0;
 				GPSPoint new_node_position = _filtered_trace.
@@ -785,7 +839,7 @@ namespace mapgeneration
 				if (previous_node_id != 0)
 					connect_nodes(previous_node_id, new_node_id);
 				previous_node_id = new_node_id;
-			}
+			}*/
 
 			if (walk_on)
 				scan_position_m += 10.0;
@@ -829,7 +883,7 @@ namespace mapgeneration
 			/*
 			 * Fill pre-segment gap.
 			 */
-			while(completed_position_m < (segment_iter->_position - 15.0))
+			/*while(completed_position_m < (segment_iter->_position - 15.0))
 			{
 				completed_position_m += 10.0;
 				GPSPoint new_node_position = _filtered_trace.
@@ -838,7 +892,9 @@ namespace mapgeneration
 				if (previous_node_id != 0)
 					connect_nodes(previous_node_id, new_node_id);
 				previous_node_id = new_node_id;
-			}
+			}*/
+			create_nodes(completed_position_m, segment_iter->_position, false,
+				previous_node_id);
 			
 			/*
 			 * Apply segment.

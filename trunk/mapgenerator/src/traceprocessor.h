@@ -268,6 +268,28 @@ namespace mapgeneration
 			
 			
 			/**
+			 * @brief Creates new nodes from the given completed_position_m to 
+			 * the end_position_m.
+			 * 
+			 * @param completed_position_m A reference to the main algorithms'
+			 * completed_position_m.
+			 * 
+			 * @param end_position_m The position at which to stop creating
+			 * nodes.
+			 * 
+			 * @param use_end_position If true the last node is created at
+			 * end_position_m, if false the last node is created one step before
+			 * end_position_m.
+			 * 
+			 * @param previous_node_id A reference to the main algorithms'
+			 * previous_node_id.
+			 */
+			void
+			create_nodes(double& completed_position_m, double end_position_m,
+				bool use_end_position, Node::Id& previous_node_id);
+			
+			
+			/**
 			 * @brief Determines the distance between the nodes with the
 			 * given ids.
 			 * 
