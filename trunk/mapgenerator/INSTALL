@@ -17,7 +17,7 @@ Requirements
 _General_
 
 - commoncpp2: Most versions work. :-)
-- wxWindows/wxWidgets: xrc-support is needed, this alway compiled in version 2.5
+- wxWindows/wxWidgets: xrc-support is required, this is always compiled in version 2.5
 	 and optionally available in 2.4
 
 
@@ -57,9 +57,10 @@ including the path, to odbc32.dll with --with-odbc32-dll.
 
 After configure finished, run
 
-# ./make all
+# ./make
+# ./make gui
 
-to compile everything.
+to compile the main program and the gui. make all will try to compile the exporter and tests, but these do not work at the moment...
 
 
 
