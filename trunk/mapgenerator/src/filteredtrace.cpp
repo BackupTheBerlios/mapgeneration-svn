@@ -49,20 +49,30 @@ namespace mapgeneration
 	void
 	FilteredTrace::calculate_directions()
 	{
+		// Initialize iterators
 		if (size() < 2) return;
 		
 		iterator iter = begin();
 		iterator iter_end = end();
-		
+
 		iterator previous_point = iter;
 		++iter;
-				
+		
+		// Initialize direction variables
 		double direction = 0;
-		/* selects two successive GPSPoints and calculates the direction */
+		double previous_direction = 0;
+		
+		// Calculate direction for first point
+		direction = previous_point->calculate_direction(*iter);
+		previous_point->set_direction(direction);
+		previous_direction = direction;
+		previous_point = iter;
+		++iter;
 		for (; iter != iter_end; ++iter)
 		{
 			direction = previous_point->calculate_direction(*iter);
-			previous_point->set_direction(direction);
+			previous_point->set_direction((previous_direction + direction) / 2);
+			previous_direction = direction;
 			previous_point = iter;
 		}
 		
@@ -230,10 +240,7 @@ namespace mapgeneration
 		{
 			double left_distance = meters - point_before_meters;
 			double weight = 1.0 - left_distance / point_before->distance(*point_after);
-			//double weight = left_distance / point_before->distance(*point_after);
 			GPSPoint new_point = GPSPoint::interpolate(*point_before , *point_after, weight);
-			new_point.set_direction(point_before->get_direction());
-//			std::cout << "Diff: " << old_result.get_latitude() - new_point.get_latitude() << ", " << old_result.get_longitude() - new_point.get_longitude() << ", " << old_result.get_direction() - new_point.get_direction() << ", " << old_result.get_altitude() - new_point.get_altitude() << "\n";
 			return new_point;
 			
 		} else

@@ -337,6 +337,10 @@ namespace mapgeneration
 		GPSPoint interpolated_gps_point(GeoCoordinate::interpolate(gpsp_1, gpsp_2, weight_on_first));
 		interpolated_gps_point.set_time(gpsp_1.get_time() * weight_on_first + 
 			gpsp_2.get_time() * weight_on_second);
+		interpolated_gps_point.set_direction(
+			gpsp_1.get_direction() * weight_on_first +
+			gpsp_2.get_direction() * weight_on_second
+		);
 		
 		return interpolated_gps_point;
 	}
