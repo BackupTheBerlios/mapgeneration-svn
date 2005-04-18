@@ -37,8 +37,9 @@ namespace mapgeneration
 		for(; iter != iter_end; ++iter)
 		{
 			double distance = iter->second.approximated_distance(gps_point);
-			double angle_difference = iter->second.angle_difference(gps_point);
-			if ((distance <= search_radius) && (angle_difference <= search_angle))
+			double direction_difference = iter->
+				second.minimal_direction_difference_to(gps_point);
+			if ((distance <= search_radius) && (direction_difference <= search_angle))
 			{
 				cluster_nodes.push_back(Node::merge_id_parts(get_id(), iter.position_number()));
 			}

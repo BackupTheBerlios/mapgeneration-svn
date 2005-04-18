@@ -120,7 +120,7 @@ namespace mapgeneration_util
 		const double PI=3.141592653589793238462643;
 		double difference = direction._direction - _direction;
 		if (difference < 0) difference *= -1;
-		if (difference > PI) difference = (2 * PI) - difference;
+		if (difference >= PI) difference = (2 * PI) - difference;
 		
 		return difference;
 	}

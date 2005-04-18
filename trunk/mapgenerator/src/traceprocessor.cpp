@@ -51,7 +51,9 @@ namespace mapgeneration
 		TileCache::Pointer tile_2_pointer = _tile_cache->get(Node::tile_id(node_id_2));		
 		
 		return (tile_1_pointer->nodes()[Node::local_id(node_id_1)].second.
-			angle_difference(tile_2_pointer->nodes()[Node::local_id(node_id_2)].second));
+			minimal_direction_difference_to(
+				tile_2_pointer->nodes()[Node::local_id(node_id_2)].second)
+			);
 	}
 
 
@@ -99,8 +101,7 @@ namespace mapgeneration
 		double direction = node->calculate_direction(_tile_cache->
 			get(Node::tile_id(second_node_id))->nodes()[Node::local_id(second_node_id)].second);
 			
-		node->add_next_node_id(second_node_id);
-		node->set_direction(direction);
+		node->add_next_node(second_node_id, direction);
 	}
 	
 	
@@ -432,6 +433,7 @@ namespace mapgeneration
 	
 	void
 	TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,
+		bool keep_last_entries,
 		std::list< std::list<PathEntry> >& finished_segments,
 		PathEntry* start_entry)
 	{				
@@ -460,25 +462,28 @@ namespace mapgeneration
 		}
 		
 		bool do_not_check_last_segment = false;
-		if (segment_iter->size() < 6)
+		path.clear();
+		
+		if (keep_last_entries)
 		{
-			path.clear();
-			path.insert(path.end(), segment_iter->begin(), segment_iter->end());
-			finished_segments.erase(segment_iter);
-			do_not_check_last_segment = false;
-		} else
-		{
-			std::list<PathEntry>::iterator move_start_iter = segment_iter->end();
-			--move_start_iter;
-			--move_start_iter;
-			--move_start_iter;
-			--move_start_iter;
-			--move_start_iter;
-			std::list<PathEntry>::iterator move_end_iter = segment_iter->end();
-			path.clear();
-			path.insert(path.end(), move_start_iter, move_end_iter);
-			segment_iter->erase(move_start_iter, move_end_iter);
-			do_not_check_last_segment = true;
+			if (segment_iter->size() < 6)
+			{
+				path.insert(path.end(), segment_iter->begin(), segment_iter->end());
+				finished_segments.erase(segment_iter);
+				do_not_check_last_segment = false;
+			} else
+			{
+				std::list<PathEntry>::iterator move_start_iter = segment_iter->end();
+				--move_start_iter;
+				--move_start_iter;
+				--move_start_iter;
+				--move_start_iter;
+				--move_start_iter;
+				std::list<PathEntry>::iterator move_end_iter = segment_iter->end();
+				path.insert(path.end(), move_start_iter, move_end_iter);
+				segment_iter->erase(move_start_iter, move_end_iter);
+				do_not_check_last_segment = true;
+			}
 		}
 				
 		segment_iter = finished_segments.begin();
@@ -534,12 +539,18 @@ namespace mapgeneration
 				(path_iter->_node_id != *next_nodes_iter); ++path_iter);
 			
 			if (path_iter != path_iter_end)
-			{
+			{				
 				double points = build_connections(path, path_iter, only_connected);
+				
 				// If we set this to 1000 the programm need lots of memory!!!!! ????
 				//points += 10.0;
-				points -= distance_from_to(current_entry->_node_id, path_iter->_node_id) / 10;
-				points -= angle_difference(current_entry->_node_id, path_iter->_node_id);
+				
+				// Negative points for:								
+				// distance we want to walk from node to node
+				points -= distance_from_to(
+					current_entry->_node_id, path_iter->_node_id) * 0.9;
+								
+				//points -= angle_difference(current_entry->_node_id, path_iter->_node_id);
 								
 				if (points > current_entry->_points)
 				{
@@ -562,13 +573,24 @@ namespace mapgeneration
 				if (!connected)
 				{
 					double points = build_connections(path, path_iter, only_connected);
+						
+					// Negative points for:				
+					// no connection
 					points -= 1000.0;
+					
+					// distance between point on trace and node in path
 					GPSPoint point_on_trace = _filtered_trace.gps_point_at(path_iter->_position);
 					Node node = _tile_cache->get(Node::tile_id(path_iter->_node_id))->
 						nodes()[Node::local_id(path_iter->_node_id)].second;
-					points -= point_on_trace.distance(node) / 5;
-					points -= point_on_trace.angle_difference(node) * 50;
-					points -= (path_iter->_position - current_entry->_position) / 8;
+					points -= point_on_trace.distance(node) * 2;
+					
+					// direction difference between point and node
+					points -= node.minimal_direction_difference_to(
+						point_on_trace) * 40;
+					
+					// distance between current nodes position and connection
+					//	position
+					points -= (path_iter->_position - current_entry->_position);
 
 					if (points > current_entry->_points)
 					{
@@ -587,6 +609,7 @@ namespace mapgeneration
 	
 	void
 	TraceProcessor::simplify_path(Node::Id start_node_id, 
+		bool keep_last_entries,
 		std::list<PathEntry>& path, 
 		std::list< std::list<PathEntry> >& finished_segments)
 	{
@@ -647,7 +670,8 @@ namespace mapgeneration
 		
 		if ((best_start_entry != 0) && (best_points > -10000.0))
 		{
-			build_path_and_segments(path, finished_segments, best_start_entry);
+			build_path_and_segments(path, keep_last_entries,
+				finished_segments, best_start_entry);
 		} else
 		{
 			std::cout << "Could not find any way, clearing path.\n";
@@ -811,15 +835,22 @@ namespace mapgeneration
 					}*/
 					
 					std::list< std::list<PathEntry> > finished_segments;
-					simplify_path(previous_node_id, path, finished_segments);
-					use_segments(finished_segments, /*last_used_node_ids,*/ completed_position_m, previous_node_id);
+					
+					bool keep_last_entries = true;
+					if (path.back()._position < scan_position_m-30.0)
+						keep_last_entries = false;
+						
+					simplify_path(previous_node_id, keep_last_entries, path, finished_segments);
+					
 					if (finished_segments.size())
 						distinct_position_m = finished_segments.back().back()._position;
 					else
 						distinct_position_m = scan_position_m;
 					
-					if (!path.empty() && (path.back()._position < scan_position_m-30.0))
-						path.clear();
+					use_segments(finished_segments, /*last_used_node_ids,*/ completed_position_m, previous_node_id);
+					
+					/*if (!path.empty() && (path.back()._position < scan_position_m-30.0))
+						path.clear();*/
 					
 					connected_nodes_row = false;
 				}

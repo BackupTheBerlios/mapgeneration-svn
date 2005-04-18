@@ -47,7 +47,7 @@ namespace mapgeneration
 	 * @see Direction
 	 * @see GeoCoordiante
 	 */
-	class Node : public Direction, public GeoCoordinate {
+	class Node : public GeoCoordinate {
 
 		public:
 		
@@ -79,7 +79,11 @@ namespace mapgeneration
 			
 			
 			void
-			add_next_node_id(Id next_node_id);
+			add_direction(double direction);
+			
+			
+			void
+			add_next_node(Id node_id, double direction);
 
 				
 			int
@@ -118,6 +122,14 @@ namespace mapgeneration
 			
 			static inline Node::LocalId
 			local_id(Id id);
+			
+			
+			double
+			minimal_direction_difference_to(const Direction& direction) const;
+			
+			
+			double
+			minimal_direction_difference_to(const Node& node) const;
 			
 
 			/**
@@ -193,6 +205,14 @@ namespace mapgeneration
 		private:
 		
 			/**
+			 * @brief A vector of the directions that are associated with this
+			 * node. This are not the directions to the _next_node_ids!
+			 * 
+			 */
+			std::vector<Direction>
+			_directions;
+		
+			/**
 			 * @brief This is used for different temporary storage operations
 			 * in some parts of the program. This value is not serialized
 			 * and may behave oddly. It is accessible via get_mpi and set_mpi.
@@ -223,8 +243,8 @@ namespace mapgeneration
 	inline void
 	Node::deserialize(std::istream& i_stream)
 	{
-		Direction::deserialize(i_stream);
 		GeoCoordinate::deserialize(i_stream);
+		Serializer::deserialize(i_stream, _directions);
 		Serializer::deserialize(i_stream, _next_node_ids);
 		Serializer::deserialize(i_stream, _weight);
 	}
@@ -275,8 +295,8 @@ namespace mapgeneration
 	inline void
 	Node::serialize(std::ostream& o_stream) const
 	{
-		Direction::serialize(o_stream);
 		GeoCoordinate::serialize(o_stream);
+		Serializer::serialize(o_stream, _directions);
 		Serializer::serialize(o_stream, _next_node_ids);
 		Serializer::serialize(o_stream, _weight);
 	}

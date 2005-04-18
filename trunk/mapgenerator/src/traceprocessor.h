@@ -341,6 +341,7 @@ namespace mapgeneration
 			 */
 			void
 			TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,
+				bool keep_last_entries,
 				std::list< std::list<PathEntry> >& finished_segments,
 				PathEntry* start_entry);
 			
@@ -362,6 +363,7 @@ namespace mapgeneration
 			 */
 			void
 			simplify_path(Node::Id previous_node_id, 
+				bool keep_last_entries,
 				std::list<PathEntry>& path,
 				std::list< std::list<PathEntry> >& finished_segments);
 			
