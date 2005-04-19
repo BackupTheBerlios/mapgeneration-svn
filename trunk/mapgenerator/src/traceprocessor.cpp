@@ -821,15 +821,16 @@ namespace mapgeneration
 						for (; new_entries_iter != new_path_entries.end(); ++new_entries_iter)
 							path.erase(*new_entries_iter);
 						walk_on = false;
-					} /*else if (path.back()._position < scan_position_m-30.0)
+					} else if (path.back()._position < scan_position_m-30.0)
 					{
 						// Insert a destination point.
 						GPSPoint new_node_position = _filtered_trace.
 							gps_point_at(scan_position_m);
 						Node::Id new_node_id = create_new_node(new_node_position);
 						path.push_back(PathEntry(scan_position_m, new_node_id));
-						std::cout << "Inserted destination point.\n";
-					} else
+					//	std::cout << "Inserted destination point.\n";
+					}
+			/*		} else
 					{
 						std::cout << "Did not insert destination point.\n";
 					}*/
