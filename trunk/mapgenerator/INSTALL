@@ -10,44 +10,38 @@ This program is not intended for the end users and therefore installation
 _may be_ a bit tricky.
 
 
-
 Requirements
 ############
 
-_General_
+General:
+	- commoncpp2: Most versions work. :-)
+	- wxWindows/wxWidgets: xrc-support is required, this is always 
+	  compiled in version 2.5 and optionally available in 2.4
 
-- commoncpp2: Most versions work. :-)
-- wxWindows/wxWidgets: xrc-support is required, this is always compiled in version 2.5
-	 and optionally available in 2.4
-
-
-_Linux_
-
-- unixODBC
+Linux:
+	- unixODBC
 
 
-_Cygwin_
-
-- ODBC: I'm not sure in the moment, if you have to install something. :-/
-
+Cygwin:
+	- ODBC: I'm not sure in the moment, if you have to install 
+	  something. :-/
 
 
 Compilation
 ###########
 
-At first you have to generate the configure script and the config.h template file by simply starting  
+The configure script and the config.h.in template file are not included in the subversion repository. If you have a repository version you have to create these files by executing 
 
 # autoconf
-
-and
-
 # autoheader
 
-in the program directory. After that you can give configure a try, just run
+in the program directory. The releases already include these files.
+
+After that you can give configure a try, just run
 
 # ./configure
 
-if it complains about missing libraries, have a look at the configure options
+if it complains about missing libraries, have a look at the configure options with
 
 # ./configure --help
 
@@ -63,35 +57,26 @@ After configure finished, run
 to compile the main program and the gui. make all will try to compile the exporter and tests, but these do not work at the moment...
 
 
-
 Installation
 ############
 
-...is not yet supported.
-
+...is not yet supported. In the future this will probably work with make install...
 
 
 Running
 #######
 
-To run the programs you need to configure a database for use with odbc.
-Something like this in your .odbc.ini will do the trick:
-
-[MapGeneration]
-Description = MapGeneration Database
-Trace = Off
-TraceFile = stderr
-Driver = ???
-SERVER = ???
-USER = mapgeneration
-PASSWORD = mg
-PORT = ???
-DATABASE = mapgeneration
-SOCKET = ???
-
-The database name and password are not configurabe at the moment. The 
-database layout is fixed automatically if the needed tables are not 
-found.At the moment only MySQL-support is tested.
+As all data is stored into a database we need to create a database and register it with unixODBC. The following entry in the file ~/.odbc.ini works for me. You have to use exactly these names for the odbc entry (MapGeneration), database (mapgeneration), user (mapgeneration) and password (mg) at the moment. (At least if you do not want to edit the source code... :-) Instead of manually editing the config file you can also use a odbc gui, of course.
+ 
+ [MapGeneration]
+ Description = MySQL MapGeneration Database
+ Driver = /usr/lib/libmyodbc3.so
+ SERVER = localhost
+ USER = mapgeneration
+ PASSWORD = mg
+ DATABASE = mapgeneration
+ SOCKET = /var/run/mysqld/mysqld.sock
+ PORT = 3306
 
 After the database is started type
 
@@ -99,4 +84,6 @@ After the database is started type
 
 # cd bin/gui
 # ./mgg		to run the gui
+
+Further information about using the program and a set of example traces is available online at the MapGeneration Project homepage at mapgeneration.berlios.de.
 
