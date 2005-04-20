@@ -29,7 +29,7 @@ namespace mapgeneration
 	
 	std::vector<Node::Id>
 	Tile::cluster_nodes_search(const GPSPoint& gps_point, const double search_radius, const double search_angle) const
-	{	
+	{
 		std::vector<Node::Id> cluster_nodes;
 		
 		FixpointVector<Node>::const_iterator iter = nodes().begin();
