@@ -20,7 +20,6 @@
 #include "util/mlog.h"
 
 #define MAX_SQL_CHAR_LENGTH (255)
-#define NUM_OF_PREPARED_STATEMENTS (15)
 #define SQL_BINARY_BUFFER (8192)
 
 using std::string;
@@ -41,17 +40,18 @@ namespace mapgeneration
 	{
 
 		public:
-	
-			/**
-			 * @brief Simple enumeration of table names.
-			 * 
-			 * Use it when a Table variable is needed.
-			 */
-			enum Table 
+		
+		
+			class Table
 			{
-				_TILES = 1,
-				_EDGES,
-				_FILTEREDTRACES
+				public:
+				
+					std::string _name;
+					
+					/**
+					 * @brief Prepared SQL statement handles.
+					 */
+					std::vector<SQLHSTMT> _prepared_statements;
 			};
 
 	
@@ -82,15 +82,17 @@ namespace mapgeneration
 			 */
 			void
 			connect(string dns, string user, string password, bool correct_structure = false);
-
-
+			
+			
 			/**
-			 * @brief Deletes tile.
+			 * @brief Deletes entry from DB.
 			 * 
-			 * @param id edge ID
+			 * @param from_table the table where the entry is located
+			 * @param id the id
 			 */
 			void
-			delete_tile(unsigned int id);
+			remove(size_t table_id, unsigned int id);
+			
 			 
 
 			/**
@@ -116,25 +118,35 @@ namespace mapgeneration
 				void
 				dropTables();
 			#endif
-	
-
+			
+			
 			/**
-			 * @brief Returns a (min-)sorted vector containing all used tile IDs.
+			 * @brief Returns a vector containing all used IDs from the specified
+			 * table.
 			 * 
 			 * @return the vector of unsigned int
 			 */
 			std::vector<unsigned int>
-			get_all_used_tile_ids();
-			
-			
+			get_all_used_ids(size_t table_id);
+
+
 			/**
-			 * @brief Returns a vector containing the free tile IDs in between plus
-			 * the first unused ID.
+			 * @brief Returns a vector containing the free IDs in between plus
+			 * the first unused ID form the specified table.
 			 * 
 			 * @return the vector of unsigned int.
 			 */
 			std::vector<unsigned int>
-			get_free_tile_ids();
+			get_free_ids(size_t table_id);
+
+
+			/**
+			 * @brief Returns the ID next to max id
+			 * 
+			 * @return next to max id
+			 */
+			unsigned int
+			get_next_to_max_id(size_t table_id);
 			
 			
 			/**
@@ -142,26 +154,35 @@ namespace mapgeneration
 			 */
 			void 
 			init();
-		
-	
+			
+			
 			/**
-			 * @brief Loads tile.
+			 * @brief Loads a BLOB from DB into a string.
 			 * 
-			 * @param id tile ID
-			 * @return string representation of the required tile or NULL if not found
+			 * @param table the table from which will be loaded
+			 * @param id the id
+			 * @return string representation of BLOB
 			 */
 			string*
-			load_tile(unsigned int id);
-		
-		
+			load(size_t table_id, unsigned int id);
+			
+			
 			/**
-			 * @brief Saves tile.
-			 * 
-			 * @param id
-			 * @param data_representation string representaion of a tile
+			 * @brief Registers a new table.
 			 */
-			void
-			save_tile(unsigned int id, string& data_representation);
+			size_t
+			register_table(std::string name);
+			
+
+			/**
+			 * @brief Save a string as BLOB in DB.
+			 * 
+			 * @param table the table in which will be saved
+			 * @param id the id
+			 * @param data the string
+			 */
+			void 
+			save(size_t table_id, unsigned int id, string& data);
 		
 		
 		private:
@@ -171,16 +192,18 @@ namespace mapgeneration
 			 */	
 			enum
 			{
-				select_edge = 0,
-				select_tile,
-				update_tile,
-				insert_tile,
-				select_tile_ids,
-				select_free_tile_ids,
-				select_max_tile_id
+				select = 0,
+				update,
+				insert,
+				select_ids,
+				select_free_ids,
+				select_max_id
 			};
+			
 
-	
+			static const int number_of_statements = 6;
+
+
 			/**
 			 * @brief Flag. Set true when connected.
 			 */			
@@ -204,11 +227,12 @@ namespace mapgeneration
 			 */
 			bool _inited;
 			
-	
+			
 			/**
-			 * @brief Prepared SQL statement handles.
+			 * @brief Collection of all registered tables.
 			 */
-			SQLHSTMT _prepared_statements[NUM_OF_PREPARED_STATEMENTS];		
+			std::vector<Table>
+			_tables;
 			
 		
 			/**
@@ -227,16 +251,6 @@ namespace mapgeneration
 			 */
 			inline void
 			correct_db_structure();
-
-	
-			/**
-			 * @brief Deletes entry from DB.
-			 * 
-			 * @param from_table the table where the entry is located
-			 * @param id the id
-			 */
-			 void
-			 delete_entry(Table from_table, unsigned int id);
 			 
 	
 			/**
@@ -267,52 +281,12 @@ namespace mapgeneration
 			inline void
 			evaluate_sql_return(SQLRETURN sql_return, string caller, string message);
 		
-	
-			/**
-			 * @brief Returns a vector containing all used IDs from the specified
-			 * table.
-			 * 
-			 * @return the vector of unsigned int
-			 */
-			std::vector<unsigned int>
-			get_all_used_ids(Table table);
-
-
-			/**
-			 * @brief Returns a vector containing the free IDs in between plus
-			 * the first unused ID form the specified table.
-			 * 
-			 * @return the vector of unsigned int.
-			 */
-			std::vector<unsigned int>
-			get_free_ids(Table table);
-
-
-			/**
-			 * @brief Returns the ID next to max id
-			 * 
-			 * @return next to max id
-			 */
-			unsigned int
-			get_next_to_max_id(Table table);
-
 
 			/**
 			 * @brief Frees prepared statements.
 			 */			
 			inline void
 			free_prepare_statements();
-			
-	
-			/**
-			 * @brief Loads a BLOB from DB into a string.
-			 * 
-			 * @param table the table from which will be loaded
-			 * @param id the id
-			 * @return string representation of BLOB
-			 */
-			string*
-			load_blob(Table table, unsigned int id);
 
 		
 			/**
@@ -333,17 +307,6 @@ namespace mapgeneration
 			 */
 			inline void
 			prepare_statements();
-
-
-			/**
-			 * @brief Save a string as BLOB in DB.
-			 * 
-			 * @param table the table in which will be saved
-			 * @param id the id
-			 * @param data the string
-			 */
-			void 
-			save_blob(Table table, unsigned int id, string& data);
 		
 	
 			/**

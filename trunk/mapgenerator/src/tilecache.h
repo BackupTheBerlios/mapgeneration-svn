@@ -35,6 +35,7 @@ namespace mapgeneration
 			 * The default constructor.
 			 */
 			TileCache::TileCache(DBConnection* db_connection, 
+				size_t table_id,
 				Strategy strategy = _FIFO, unsigned int options = 0, 
 				int hard_max_cached_size=0, int soft_max_cached_size=0);
 
@@ -77,6 +78,12 @@ namespace mapgeneration
 			 * \brief The used DB-Connection.
 			 */			
 			DBConnection* _db_connection;
+			
+			
+			/**
+			 * @brief The id of the tiles table in the DBConnection.
+			 */
+			size_t _table_id;
 
 	};
 

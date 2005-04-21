@@ -46,12 +46,13 @@ namespace mapgeneration
 		
 		mlog(MLog::info, "ExecutionManager") << "Initializing DBConnection.\n";
 		_db_connection = new DBConnection();
+		size_t tiles_table_id = _db_connection->register_table("tiles");		
 		_db_connection->init();
 		_db_connection->connect("MapGeneration", "mapgeneration", "mg", true);
 		mlog(MLog::info, "ExecutionManager") << "DBConnection initialized.\n";
 		
 		mlog(MLog::info, "ExecutionManager") << "Starting TileCache.\n";
-		_tile_cache = new TileCache(_db_connection, 
+		_tile_cache = new TileCache(_db_connection, tiles_table_id,
 			TileCache::_FIFO, TileCache::_STANDARD_CACHE, 12000000, 10000000);
 		_tile_cache->controlled_start();
 		mlog(MLog::info, "ExecutionManager") << "TileCache started.\n";

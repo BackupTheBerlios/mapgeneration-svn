@@ -26,7 +26,8 @@ int main()
 
 	// construct...
 	mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::DBConnection.\n";		
-	DBConnection dbc;
+	DBConnection dbc;	
+	size_t test_table_id = dbc.register_table("test");
 	// constructor called.
 
 	try
@@ -58,7 +59,7 @@ int main()
 		mlog(MLog::debug, "test_dbconnection") << "Size of input = 1,000,000\n";
 		
 		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::save_tile.\n";
-		dbc.save_tile(-100, data_string);
+		dbc.save(test_table_id, -100, data_string);
 		mlog(MLog::debug, "test_dbconnection") << "Press \"x\" to continue.\n";
 		while (!stop)
 		{
@@ -69,7 +70,7 @@ int main()
 		
 		//load some data...
 		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::load_tile.\n";
-		string* temp = dbc.load_tile(-100);
+		string* temp = dbc.load(test_table_id, -100);
 
 		if (temp->compare(data_string) == 0)
 		{
@@ -98,7 +99,7 @@ int main()
 
 		// delete data...
 		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::delete_tile.\n";
-		dbc.delete_tile(-100);
+		dbc.remove(test_table_id, -100);
 		mlog(MLog::debug, "test_dbconnection") << "Press \"x\" to continue.\n";
 		while (!stop)
 		{
@@ -110,19 +111,19 @@ int main()
 		// perform some more tests
 		for (int i = -10; i < 0; ++i)
 		{
-			dbc.save_tile(i, data_string);
+			dbc.save(test_table_id, i, data_string);
 		}
 		
 		for (int i = -10; i < 0; i = i + 3)
 		{
-			string* temp = dbc.load_tile(i);
+			string* temp = dbc.load(test_table_id, i);
 			delete temp;
 		}
 		
 		for (int i = -10; i < 0; i = i + 4)
 		{
 			string test = "hallo";
-			dbc.save_tile(i, test);
+			dbc.save(test_table_id, i, test);
 		}
 		mlog(MLog::debug, "test_dbconnection") << "Press \"x\" to continue.\n";
 		while (!stop)
@@ -132,41 +133,16 @@ int main()
 		stop = false;
 		// performed
 		
-		// drop tables???
-		#ifdef DEBUG
-			mlog(MLog::debug, "test_dbconnection") << "Delete tables? Press \"DD\". Else \"xx\".\n";
-			while (!stop)
-			{
-				if (getchar() == 'D')
-				{
-					dbc.dropTables();
-					stop = true;
-				} else if (getchar() == 'x')
-				{
-					stop = true;
-				}
-			}
-		#endif
-		
+		// drop tables
+		mlog(MLog::debug, "test_dbconnection") << "Delete tables.\n";
+		dbc.dropTables();
 	}
 	catch (string error_message)
 	{
 		cout << error_message << endl;
 
-		// drop tables???
-		#ifdef DEBUG
-			mlog(MLog::debug, "test_dbconnection") << "Delete tables? Press \"DD\". Else \"xx\".\n";
-			while (!stop)
-			{
-				if (getchar() == 'D')
-				{
-					dbc.dropTables();
-					stop = true;
-				} else if (getchar() == 'x')
-				{
-					stop = true;
-				}
-			}
-		#endif
+		// drop tables
+		mlog(MLog::debug, "test_dbconnection") << "Delete tables.\n";
+		dbc.dropTables();
 	}
 }

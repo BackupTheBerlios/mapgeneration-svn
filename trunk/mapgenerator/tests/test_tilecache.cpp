@@ -50,12 +50,13 @@ int main()
 		
 	mlog(MLog::debug, "test_tilecache") << "Creating DBConnection\n";
 	DBConnection* db_connection = new DBConnection();
+	size_t test_table_id = db_connection->register_table("test");
 	db_connection->init();
 	db_connection->connect("MapGeneration", "mapgeneration", "mg", true);
 	
 	mlog(MLog::debug, "test_tilecache") << "Generating a cache with some content...\n";	
-	TileCache* tile_cache = new TileCache(db_connection, TileCache::_FIFO,
-		TileCache::_STANDARD_CACHE, 1000000, 800000);
+	TileCache* tile_cache = new TileCache(db_connection, test_table_id, 
+		TileCache::_FIFO, TileCache::_STANDARD_CACHE, 1000000, 800000);
 
 
 	/*
@@ -164,6 +165,10 @@ int main()
 			mlog << " " << (*iter);
 	}
 	mlog << "\n";
+	
+	mlog(MLog::debug, "test_tilecache") << "And deleting the test table: ";
+	db_connection->dropTables();
+	mlog << "Ok\n";
 
 	mlog(MLog::debug, "test_tilecache") << "Deleting TileCache!\n";
 	delete tile_cache;

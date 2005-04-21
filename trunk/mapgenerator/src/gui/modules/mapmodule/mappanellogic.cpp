@@ -23,11 +23,12 @@ namespace mapgeneration_gui
 		mlog(MLog::info, "MapPanelLogic") 
 			<< "Initializing DBConnection and caches.\n";
 		_db_connection = new DBConnection();
+		size_t tiles_table_id = _db_connection->register_table("tiles");
 		_db_connection->init();
 		_db_connection->connect("MapGeneration", "mapgeneration", "mg");
 
-		TileCache* tile_cache = new TileCache(_db_connection, TileCache::_FIFO,
-			TileCache::_NO_WRITEBACK, 20000000,	18000000);
+		TileCache* tile_cache = new TileCache(_db_connection, tiles_table_id,
+			TileCache::_FIFO, TileCache::_NO_WRITEBACK, 20000000, 18000000);
 		tile_cache->start();
 
 		set_tile_cache(tile_cache);
