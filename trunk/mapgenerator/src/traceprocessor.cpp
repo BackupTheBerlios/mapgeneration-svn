@@ -549,7 +549,7 @@ namespace mapgeneration
 				// Negative points for:								
 				// distance we want to walk from node to node
 				points -= distance_from_to(
-					current_entry->_node_id, path_iter->_node_id) * 0.9;
+					current_entry->_node_id, path_iter->_node_id) * 0.85;
 								
 				//points -= angle_difference(current_entry->_node_id, path_iter->_node_id);
 								
@@ -577,7 +577,7 @@ namespace mapgeneration
 						
 					// Negative points for:				
 					// no connection
-					points -= 1000.0;
+					points -= 10.0;
 					
 					// distance between point on trace and node in path
 					GPSPoint point_on_trace = _filtered_trace.gps_point_at(path_iter->_position);
@@ -585,13 +585,30 @@ namespace mapgeneration
 						node(path_iter->_node_id);
 					points -= point_on_trace.distance(node) * 2;
 					
+					// distance between point on trace and current node
+					point_on_trace = _filtered_trace.gps_point_at(current_entry->_position);
+					node = _tile_cache->get(Node::tile_id(current_entry->_node_id))->
+						node(current_entry->_node_id);
+					points -= point_on_trace.distance(node) * 2;
+					
 					// direction difference between point and node
 					points -= node.minimal_direction_difference_to(
-						point_on_trace) * 40;
+						point_on_trace) * 40.0;
 					
 					// distance between current nodes position and connection
 					//	position
 					points -= (path_iter->_position - current_entry->_position);
+					
+					// complicated
+					if (current_entry->_position < path_iter->_position-20.0)
+					{
+						Node current_entry_node = _tile_cache->get(
+							Node::tile_id(current_entry->_node_id))->node(current_entry->_node_id);
+						point_on_trace = _filtered_trace.gps_point_at(current_entry->_position + 10.0);
+						double direction = current_entry_node.calculate_direction(point_on_trace);
+						double diff = current_entry_node.minimal_direction_difference_to(Direction(direction));
+						points -= diff * 5.0;
+					}
 
 					if (points > current_entry->_points)
 					{
