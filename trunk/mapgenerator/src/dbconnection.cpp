@@ -189,37 +189,15 @@ namespace mapgeneration
 			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
 			evaluate_sql_return(sql_return, "destroy", "Error executing \"DROP TABLE\" statement! (1)");
 
-			sql_text = (SQLCHAR*)"DROP TABLE edges;";
-			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
-			evaluate_sql_return(sql_return, "destroy", "Error executing \"DROP TABLE\" statement! (2)");
-
-//			sql_text = (SQLCHAR*)"DROP TABLE filteredtraces;";
-//			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
-//			evaluate_sql_return(sql_return, "destroy", "Error executing \"DROP TABLE\" statement! (3)");
-
 			log(MLog::debug, "dropTables", "Tables destroyed!");
 		}
 	#endif
-
-
-	std::vector<unsigned int>
-	DBConnection::get_all_used_edge_ids()
-	{
-		return get_all_used_ids(_EDGES);
-	}
 	
 	
 	std::vector<unsigned int>
 	DBConnection::get_all_used_tile_ids()
 	{
 		return get_all_used_ids(_TILES);
-	}
-	
-	
-	std::vector<unsigned int>
-	DBConnection::get_free_edge_ids()
-	{
-		return get_free_ids(_EDGES);
 	}
 	
 	
@@ -289,89 +267,6 @@ namespace mapgeneration
 		_inited =true;
 		log(MLog::notice, "init", "Init DBConnection... successful finished.");
 	}
-	
-	
-	string*
-	DBConnection::load_edge(unsigned int id)
-	{
-		
-		if (_inited ==true && _connected == true)
-		{
-			try
-			{
-				return load_blob(_EDGES, id);
-			} catch (string error_message)
-			{
-				throw_error_message("load_edge", error_message);
-			}
-		} else
-		{
-			throw_error_message("load_edge", "Not inited and/or connected!");
-		}
-	}
-
-
-	/**
-	 * Methode okay.
-	 * Save-Methode fehlt noch. Siehe dortiger Kommentar!
-	 */
-/*	vector<string>*
-	DBConnection::load_filteredtrace(unsigned int id)
-	{
-		try
-		{
-			vector<string>* datas = new vector<string>();
-
-			SQLRETURN sql_return;
-			SQLHSTMT sql_statement = _prepared_statements[select_filteredtrace];
-		
-			/** @TODO: Dynamisch machen!!!!  Oder dr???ber nachdenken! */
-		
-/*			SQLINTEGER sql_id = (SQLINTEGER)id;
-			SQLCHAR sql_chars[10000];
-			SQLINTEGER sql_chars_length = (SQLINTEGER)(10000);
-			SQLLEN sql_chars_len;
-		
-			sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
-													SQL_C_SLONG, SQL_INTEGER, 10,
-													0, &sql_id, 0, 0);
-			evaluate_sql_return(sql_return, "load_blob", "Error binding variable to SQL parameter!");
-	
-			sql_return = SQLExecute(sql_statement);
-			evaluate_sql_return(sql_return, "load_blob", "Error executing prepared SQL command!");
-
-			sql_return = SQLBindCol(sql_statement, 1, SQL_C_BINARY, sql_chars,
-											sql_chars_length, &sql_chars_len);
-			evaluate_sql_return(sql_return, "load_blob", "Error binding variable to SQL column!");
-
-			sql_return = SQLFetch(sql_statement);
-			evaluate_sql_return(sql_return, "load_blob", "Error fetching data from result set!");
-		
-			while (sql_return != SQL_NO_DATA)
-			{
-				datas->push_back(string((char*)sql_chars));
-			}
-		
-			#ifdef DEBUG
-				log(MLog::debug, "load_blob", "Data successfully loaded");
-			#endif
-
-			sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
-			evaluate_sql_return(sql_return, "load_blob", "Error resetting SQL statement parameters");
-			
-			sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
-			evaluate_sql_return(sql_return, "load_blob", "Error unbinding SQL statement columns");
-			
-			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
-			evaluate_sql_return(sql_return, "load_blob", "Error closing SQL statement cursor");
-		
-			return datas;
-
-		} catch (string error_message)
-		{
-			throw_error_message("load_filteredtrace", error_message);
-		}
-	}*/
 
 
 	string* 
@@ -389,25 +284,6 @@ namespace mapgeneration
 		} else
 		{
 			throw_error_message("load_tile", "Not inited and/or connected!");
-		}
-	}
-	
-	
-	void
-	DBConnection::delete_edge(unsigned int id)
-	{
-		if (_inited == true && _connected == true)
-		{
-			try
-			{
-				delete_entry(_EDGES, id);
-			} catch (string error_message)
-			{
-				throw_error_message("delete_edge", error_message);
-			}
-		} else
-		{
-			throw_error_message("delete_edge", "Not inited and/or connected!");
 		}
 	}
 
@@ -428,36 +304,7 @@ namespace mapgeneration
 		{
 			throw_error_message("delete_tile", "Not inited and/or connected!");
 		}
-	}
-
-
-	void 
-	DBConnection::save_edge(unsigned int id, string& data_representation)
-	{
-		if (_inited == true && _connected == true)
-		{
-			try
-			{
-				save_blob(_EDGES, id, data_representation);
-			} catch (string error_message)
-			{
-				throw_error_message("save_edge", error_message);
-			}
-		} else
-		{
-			throw_error_message("save_edge", "Not inited and/or connected!");
-		}
-	}
-	
-
-	/**
-	 * Spaeter mal drueber nachdenken.
-	 * Stichwort: Gleiche Traces (also absolut gleich!) duerfen nicht rein!
-	 */
-/*	void 
-	DBConnection::save_filteredtrace(unsigned int id, string& data_representation)
-	{
-	}*/
+	}	
 
 
 	void 
@@ -496,8 +343,6 @@ namespace mapgeneration
 
 		// definition of SHOULD-exist-table-names
 		search_tables.push_back("tiles");
-		search_tables.push_back("edges");
-//		search_tables.push_back("filteredtraces");
 		
 		SQLHSTMT statement;
 		SQLRETURN sql_return;
@@ -622,35 +467,6 @@ namespace mapgeneration
 			
 			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
 			evaluate_sql_return(sql_return, "correct_db_structure", "Error closing SQL statement cursor");
-		
-			// creates edges table...
-			sql_text = (SQLCHAR*)"CREATE TABLE edges (id INTEGER NOT NULL PRIMARY KEY, data LONG VARBINARY);";
-			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
-			evaluate_sql_return(sql_return, "correct_DB_structure", "Error executing \"CREATE TABLE\" - statement! (2)");
-
-			sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
-			evaluate_sql_return(sql_return, "correct_db_structure", "Error resetting SQL statement parameters");
-			
-			sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
-			evaluate_sql_return(sql_return, "correct_db_structure", "Error unbinding SQL statement columns");
-			
-			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
-			evaluate_sql_return(sql_return, "correct_db_structure", "Error closing SQL statement cursor");
-
-			// creates filteredtraces table...
-/*			sql_text = (SQLCHAR*)"CREATE TABLE filteredtraces (id INTEGER NOT NULL PRIMARY KEY, data BLOB);";
-			sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
-			evaluate_sql_return(sql_return, "correct_DB_structure", "Error executing \"CREATE TABLE\" - statement! (3)");
-		
-			sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
-			evaluate_sql_return(sql_return, "correct_db_structure", "Error resetting SQL statement parameters");
-			
-			sql_return = SQLFreeStmt(sql_statement, SQL_UNBIND);
-			evaluate_sql_return(sql_return, "correct_db_structure", "Error unbinding SQL statement columns");
-			
-			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
-			evaluate_sql_return(sql_return, "correct_db_structure", "Error closing SQL statement cursor");
-*/
 
 			log(MLog::info, "correct_db_structure", "Correcting tables... successful!");
 		} catch (string error_message)
@@ -903,10 +719,6 @@ namespace mapgeneration
 			case _TILES:
 				sql_statement = _prepared_statements[select_tile_ids];
 				break;
-			
-			case _EDGES:
-				sql_statement = _prepared_statements[select_edge_ids];
-				break;
 				
 			default:
 				throw ("Unknown table used!");
@@ -936,7 +748,7 @@ namespace mapgeneration
 		evaluate_sql_return(sql_return, "get_all_used_ids", "Error closing SQL statement cursor");
 		
 		#ifdef DEBUG
-			log(MLog::debug, "get_all_used_ids", "Data successfully loaded");
+		//	log(MLog::debug, "get_all_used_ids", "Data successfully loaded");
 		#endif
 		
 /*		#ifdef DEBUG
@@ -963,11 +775,7 @@ namespace mapgeneration
 			case _TILES:
 				sql_statement = _prepared_statements[select_free_tile_ids];
 				break;
-			
-			case _EDGES:
-				sql_statement = _prepared_statements[select_free_edge_ids];
-				break;
-				
+							
 			default:
 				throw ("Unknown table used!");
 				break;
@@ -996,7 +804,7 @@ namespace mapgeneration
 		evaluate_sql_return(sql_return, "get_free_ids", "Error closing SQL statement cursor");
 		
 		#ifdef DEBUG
-			log(MLog::debug, "get_free_ids", "Data successfully loaded");
+		//	log(MLog::debug, "get_free_ids", "Data successfully loaded");
 		#endif
 		
 				ids.push_back(get_next_to_max_id(table));
@@ -1026,10 +834,6 @@ namespace mapgeneration
 			case _TILES:
 				sql_statement = _prepared_statements[select_max_tile_id];
 				break;
-			
-			case _EDGES:
-				sql_statement = _prepared_statements[select_max_edge_id];
-				break;
 				
 			default:
 				throw ("Unknown table used!");
@@ -1049,7 +853,7 @@ namespace mapgeneration
 			++col_value;
 		} else
 		{
-			mlog(MLog::debug, "DBConnection") << "no data\n";
+		//	mlog(MLog::debug, "DBConnection") << "no data\n";
 		}
 
 		sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
@@ -1062,7 +866,7 @@ namespace mapgeneration
 		evaluate_sql_return(sql_return, "get_next_to_max_id", "Error closing SQL statement cursor");
 		
 		#ifdef DEBUG
-			log(MLog::debug, "get_next_to_max_id", "Data successfully loaded");
+		//	log(MLog::debug, "get_next_to_max_id", "Data successfully loaded");
 		#endif
 		
 		std::cout << "XX:" << col_value << "\n";
@@ -1121,11 +925,7 @@ namespace mapgeneration
 			case _TILES:
 				sql_statement = _prepared_statements[select_tile];
 				break;
-			
-			case _EDGES:
-				sql_statement = _prepared_statements[select_edge];
-				break;
-				
+							
 			default:
 				throw ("Unknown table used!");
 				break;
@@ -1307,17 +1107,8 @@ namespace mapgeneration
 		sql_commands[select_tile] = "SELECT data FROM tiles WHERE id = ?;";
 		sql_commands[update_tile] = "UPDATE tiles SET data = ? WHERE id = ?;";
 		sql_commands[insert_tile] = "INSERT INTO tiles (data, id) VALUES (?, ?);";
-		sql_commands[select_edge] = "SELECT data FROM edges WHERE id = ?;";
-		sql_commands[update_edge] = "UPDATE edges SET data = ? WHERE id = ?;";
-		sql_commands[insert_edge] = "INSERT INTO edges (data, id) VALUES (?, ?);";
-		sql_commands[select_filteredtrace] = "SELECT data FROM filteredtraces WHERE id = ?;";
-		sql_commands[update_filteredtrace] = "UPDATE filteredtraces SET data = ? WHERE id = ?;";
-		sql_commands[insert_filteredtrace] = "INSERT INTO filteredtraces (data, id) VALUES (?, ?);";
-		sql_commands[select_edge_ids] = "SELECT id FROM edges ORDER BY id ASC;";
 		sql_commands[select_tile_ids] = "SELECT id FROM tiles ORDER BY id ASC;";
-		sql_commands[select_free_edge_ids] = "SELECT id FROM edges WHERE data = \"\" ORDER BY id ASC;";
 		sql_commands[select_free_tile_ids] = "SELECT id FROM tiles WHERE data = \"\" ORDER BY id ASC;";
-		sql_commands[select_max_edge_id] = "SELECT MAX(id) FROM edges;";
 		sql_commands[select_max_tile_id] = "SELECT MAX(id) FROM tiles;";
 		
 		try
@@ -1344,7 +1135,7 @@ namespace mapgeneration
 		} // level 1 try-catch
 
 		#ifdef DEBUG
-			log(MLog::debug, "prepare_statements", "Everything successfully done.");
+		//	log(MLog::debug, "prepare_statements", "Everything successfully done.");
 		#endif
 	}
 	
@@ -1360,14 +1151,6 @@ namespace mapgeneration
 			case _TILES:
 				sql_statement = _prepared_statements[update_tile];
 				break;
-			
-			case _EDGES:
-				sql_statement = _prepared_statements[update_edge];
-				break;
-				
-//			case filteredtraces:
-//				sql_statement = _prepared_statements[insert_filteredtrace];
-//				break;
 			
 			default:
 				throw ("Unknown table used!");
@@ -1477,7 +1260,7 @@ namespace mapgeneration
 		if (row_count == 0)
 		{
 			#ifdef DEBUG
-				log(MLog::debug, "save_blob", "UPDATE failed. Will try INSERT...");
+			//	log(MLog::debug, "save_blob", "UPDATE failed. Will try INSERT...");
 			#endif
 
 			switch (table)
@@ -1485,14 +1268,6 @@ namespace mapgeneration
 				case _TILES:
 					sql_statement = _prepared_statements[insert_tile];
 					break;
-			
-				case _EDGES:
-					sql_statement = _prepared_statements[insert_edge];
-					break;
-				
-//				case filteredtraces:
-//					sql_statement = _prepared_statements[update_filteredtrace];
-//					break;
 			
 				default:
 					throw ("Unknown table used!");
@@ -1541,7 +1316,7 @@ namespace mapgeneration
 				if ((strcmp((char*)stat, "23000") == 0) && (err == 1062))
 				{
 					#ifdef DEBUG
-						log(MLog::debug, "save_blob", "Data unchanged. No INSERT needed!");
+				//		log(MLog::debug, "save_blob", "Data unchanged. No INSERT needed!");
 					#endif
 				} else
 				{
@@ -1605,7 +1380,7 @@ namespace mapgeneration
 				}*/
 		
 				#ifdef DEBUG
-					log(MLog::debug, "save_blob", "INSERT succeed.");
+				//	log(MLog::debug, "save_blob", "INSERT succeed.");
 				#endif
 			} // if
 			
@@ -1622,7 +1397,7 @@ namespace mapgeneration
 		} else //row_count != 0
 		{
 			#ifdef DEBUG
-				log(MLog::debug, "save_blob", "UPDATE succeed.");
+		//		log(MLog::debug, "save_blob", "UPDATE succeed.");
 			#endif
 		}
 	}

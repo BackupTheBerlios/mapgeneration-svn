@@ -85,15 +85,6 @@ namespace mapgeneration
 
 
 			/**
-			 * @brief Deletes edge.
-			 * 
-			 * @param id edge ID
-			 */
-			void
-			delete_edge(unsigned int id);
-
-
-			/**
 			 * @brief Deletes tile.
 			 * 
 			 * @param id edge ID
@@ -125,15 +116,6 @@ namespace mapgeneration
 				void
 				dropTables();
 			#endif
-			
-		
-			/**
-			 * @brief Returns a (min-)sorted vector containing all used edge IDs.
-			 * 
-			 * @return the vector of unsigned int
-			 */
-			std::vector<unsigned int>
-			get_all_used_edge_ids();
 	
 
 			/**
@@ -143,16 +125,6 @@ namespace mapgeneration
 			 */
 			std::vector<unsigned int>
 			get_all_used_tile_ids();
-
-
-			/**
-			 * @brief Returns a (min-)sorted vector containing the free egde IDs
-			 * in between plus the first unused ID.
-			 * 
-			 * @return the vector of unsigned int.
-			 */
-			std::vector<unsigned int>
-			get_free_edge_ids();
 			
 			
 			/**
@@ -171,27 +143,6 @@ namespace mapgeneration
 			void 
 			init();
 		
-
-			/**
-			 * @brief Loads egde.
-			 * 
-			 * @param id edge ID
-			 * @return string representation of the required edge or NULL if not found
-			 */
-			string*
-			load_edge(unsigned int id);
-		
-		
-			/**
-			 * @brief Loads filtered traces.
-			 * 
-			 * @param id tile ID
-			 * @return string representation of the required filtered trace or NULL
-			 * if not found
-			 */
-//			vector<string>*
-//			load_filteredtrace(long id);
-
 	
 			/**
 			 * @brief Loads tile.
@@ -201,26 +152,6 @@ namespace mapgeneration
 			 */
 			string*
 			load_tile(unsigned int id);
-
-	
-			/**
-			 * @brief Saves edge.
-			 * 
-			 * @param id edge ID
-			 * @param data_representation string representaion of an edge
-			 */
-			void
-			save_edge(unsigned int id, string& data_representation);
-		
-		
-			/**
-			 * @brief Saves filtered trace.
-			 * 
-			 * @param id
-			 * @param data_representation string representaion of a filtered trace
-			 */
-//			void
-//			save_filteredtrace(long id, string& data_representation);
 		
 		
 			/**
@@ -241,19 +172,11 @@ namespace mapgeneration
 			enum
 			{
 				select_edge = 0,
-				update_edge,
-				insert_edge,
 				select_tile,
 				update_tile,
 				insert_tile,
-				select_filteredtrace,
-				update_filteredtrace,
-				insert_filteredtrace,
-				select_edge_ids,
 				select_tile_ids,
-				select_free_edge_ids,
 				select_free_tile_ids,
-				select_max_edge_id,
 				select_max_tile_id
 			};
 
