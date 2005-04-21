@@ -50,9 +50,8 @@ namespace mapgeneration
 		TileCache::Pointer tile_1_pointer = _tile_cache->get(Node::tile_id(node_id_1));
 		TileCache::Pointer tile_2_pointer = _tile_cache->get(Node::tile_id(node_id_2));		
 		
-		return (tile_1_pointer->nodes()[Node::local_id(node_id_1)].second.
-			minimal_direction_difference_to(
-				tile_2_pointer->nodes()[Node::local_id(node_id_2)].second)
+		return (tile_1_pointer->node(node_id_1).
+			minimal_direction_difference_to(tile_2_pointer->node(node_id_2))
 			);
 	}
 
@@ -94,12 +93,13 @@ namespace mapgeneration
 	{
 		if (first_node_id == second_node_id)
 			return;
-
+		
+		/** @todo think about uncritical write access to nodes! */
 		TileCache::Pointer tile_pointer = _tile_cache->get(Node::tile_id(first_node_id));
-		Node* node = &(tile_pointer.write().nodes()[Node::local_id(first_node_id)].second);
+		Node* node = &(tile_pointer.write().node(first_node_id));
 		
 		double direction = node->calculate_direction(_tile_cache->
-			get(Node::tile_id(second_node_id))->nodes()[Node::local_id(second_node_id)].second);
+			get(Node::tile_id(second_node_id))->node(second_node_id));
 			
 		node->add_next_node(second_node_id, direction);
 	}
@@ -109,9 +109,8 @@ namespace mapgeneration
 	TraceProcessor::connection_from_to(Node::Id node_id_1, Node::Id node_id_2)
 	{
 		TileCache::Pointer tile_1_pointer = _tile_cache->get(Node::tile_id(node_id_1));
-		if (tile_1_pointer->nodes()[Node::local_id(node_id_1)].first &&
-			tile_1_pointer->nodes()[Node::local_id(node_id_1)].second.
-			is_reachable(node_id_2))
+		if (tile_1_pointer->exists_node(node_id_1) &&
+			tile_1_pointer->node(node_id_1).is_reachable(node_id_2))
 			return true;
 		else
 			return false;
@@ -151,13 +150,15 @@ namespace mapgeneration
 			tile = _tile_cache->get(new_tile_id);
 		}
 		
-		unsigned int new_node_id_part = (unsigned int)tile.write().nodes().insert(new_node);
+		std::pair<bool, Node::Id> new_node_id = tile.write().add_node(new_node);
+		
+/*		unsigned int new_node_id_part = (unsigned int)tile.write().nodes().insert(new_node);
 		
 		Node::Id new_node_id = Node::merge_id_parts(new_tile_id, new_node_id_part);
-
+*/
 //		_trace_log->new_node(new_node_id, new_node);
 		
-		return new_node_id;
+		return new_node_id.second;
 	}
 	
 	
@@ -206,8 +207,9 @@ namespace mapgeneration
 		TileCache::Pointer tile_1_pointer = _tile_cache->get(Node::tile_id(node_id_1));
 		TileCache::Pointer tile_2_pointer = _tile_cache->get(Node::tile_id(node_id_2));		
 		
-		return (tile_1_pointer->nodes()[Node::local_id(node_id_1)].second.
-			distance(tile_2_pointer->nodes()[Node::local_id(node_id_2)].second));
+		return (tile_1_pointer->node(node_id_1).
+			distance(tile_2_pointer->node(node_id_2))
+			);
 	}
 	
 	
@@ -397,8 +399,7 @@ namespace mapgeneration
 		}*/
 		
 		GeoCoordinate entry_coordinate = _tile_cache->
-			get(Node::tile_id(path_entry._node_id))->
-			nodes()[Node::local_id(path_entry._node_id)].second;
+			get(Node::tile_id(path_entry._node_id))->node(path_entry._node_id);
 		double position = path_entry._position;
 		double previous_distance = 1000000.0;
 		double distance = previous_distance - 1.0;
@@ -528,9 +529,9 @@ namespace mapgeneration
 		
 		TileCache::Pointer tile_pointer = _tile_cache->get(Node::tile_id(current_entry->_node_id));
 		std::vector<Node::Id>::const_iterator next_nodes_iter = 
-			tile_pointer->nodes()[Node::local_id(current_entry->_node_id)].second.next_node_ids().begin();
+			tile_pointer->node(current_entry->_node_id).next_node_ids().begin();
 		std::vector<Node::Id>::const_iterator next_nodes_iter_end =
-			tile_pointer->nodes()[Node::local_id(current_entry->_node_id)].second.next_node_ids().end();
+			tile_pointer->node(current_entry->_node_id).next_node_ids().end();
 		for (; next_nodes_iter != next_nodes_iter_end; ++next_nodes_iter)
 		{
 			std::list<PathEntry>::iterator path_iter = path.begin();
@@ -581,7 +582,7 @@ namespace mapgeneration
 					// distance between point on trace and node in path
 					GPSPoint point_on_trace = _filtered_trace.gps_point_at(path_iter->_position);
 					Node node = _tile_cache->get(Node::tile_id(path_iter->_node_id))->
-						nodes()[Node::local_id(path_iter->_node_id)].second;
+						node(path_iter->_node_id);
 					points -= point_on_trace.distance(node) * 2;
 					
 					// direction difference between point and node

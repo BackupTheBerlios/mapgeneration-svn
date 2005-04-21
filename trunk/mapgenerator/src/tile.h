@@ -41,7 +41,47 @@ namespace mapgeneration
 		public:
 		
 			typedef uint32_t Id;
-		
+			
+			
+			class const_iterator
+			{
+				
+				public:
+					
+					inline
+					const_iterator(FixpointVector<Node>::const_iterator start,
+						FixpointVector<Node>::const_iterator end,
+						FixpointVector<Node>::const_iterator position);
+					
+					inline bool
+					operator==(const const_iterator& iter) const;
+					
+					inline bool
+					operator!=(const const_iterator& iter) const;
+					
+					inline const_iterator
+					operator++();
+					
+					inline const_iterator
+					operator++(int dummy);
+					
+					inline const std::pair<bool, Node>&
+					operator*() const;
+					
+					inline const std::pair<bool, Node>*
+					operator->() const;
+					
+					
+				private:
+					
+					FixpointVector<Node>::const_iterator _start;
+
+					FixpointVector<Node>::const_iterator _end;
+
+					FixpointVector<Node>::const_iterator _position;
+					
+			};
+			
 		
 			/**
 			 * @brief Empty constructor.
@@ -54,6 +94,14 @@ namespace mapgeneration
 			 * @param tile_id the ID
 			 */
 			Tile (unsigned int tile_id);
+			
+			
+			inline std::pair<bool, Node::Id>
+			add_node(const Node& node);
+			
+			
+			inline Tile::const_iterator
+			begin() const;
 			
 			
 			/**
@@ -75,6 +123,14 @@ namespace mapgeneration
 			 */
 			void
 			deserialize(std::istream& i_stream);
+			
+			
+			inline Tile::const_iterator
+			end() const;
+			
+			
+			inline bool
+			exists_node(Node::Id node_id) const;
 
 			
 			/**
@@ -82,6 +138,10 @@ namespace mapgeneration
 			 */
 			inline unsigned int
 			get_id() const;
+			
+			
+//			inline bool
+//			move_node(const Node& from_node, const Node& to_node);
 
 
 			/**
@@ -89,20 +149,32 @@ namespace mapgeneration
 			 * of the specified GeoCoordinate.
 			 * 
 			 * @param geo_coordinate the GeoCoordinate
-			 * @param search_radius the sear radius
+			 * @param search_radius the search radius
 			 * @return the vector of found nodes
 			 */
-			std::vector<unsigned int>
-			nearest_neighbours_search(const GeoCoordinate& geo_coordinate, const double search_radius);
+//			std::vector<unsigned int>
+//			nearest_neighbours_search(const GeoCoordinate& geo_coordinate, const double search_radius);
 
+			
+			inline Node&
+			node(Node::Id);
+			
+			
+			inline const Node&
+			node(Node::Id) const;
+			
+			
+//			inline bool
+//			remove_node(const Node& node);
+			
 			
 			/**
 			 * @brief Return a reference to _nodes.
 			 * 
 			 * @return nodes
 			 */
-			inline FixpointVector<Node>&
-			nodes();
+//			inline FixpointVector<Node>&
+//			nodes();
 			
 			
 			/**
@@ -110,8 +182,8 @@ namespace mapgeneration
 			 * 
 			 * @return const nodes
 			 */
-			inline const FixpointVector<Node>&
-			nodes() const;
+//			inline const FixpointVector<Node>&
+//			nodes() const;
 
 			
 			/**
@@ -119,6 +191,10 @@ namespace mapgeneration
 			 */
 			void
 			serialize (std::ostream& o_stream) const;
+			
+			
+			inline int
+			size_of() const;
 		
 
 		private:
@@ -132,8 +208,120 @@ namespace mapgeneration
 			 * @brief a Fixpointvector of all nodes in the tile
 			 */
 			FixpointVector<Node> _nodes;
+			
+			
+//			rangereporting::Quadtree<Node*> _range_reporting;
 	
 	};
+	
+	
+	//---------------------------------------------------//
+	//--- Iterator --------------------------------------//
+	//---------------------------------------------------//
+	inline
+	Tile::const_iterator::const_iterator(
+		FixpointVector<Node>::const_iterator start,
+		FixpointVector<Node>::const_iterator end,
+		FixpointVector<Node>::const_iterator position)
+	: _start(start), _end(end), _position(position)
+	{
+	}
+	
+	
+	inline bool
+	Tile::const_iterator::operator==(const const_iterator& iter) const
+	{
+		return (_position == iter._position);
+	}
+	
+					
+	inline bool
+	Tile::const_iterator::operator!=(const const_iterator& iter) const
+	{
+		return ( !operator==(iter) );
+	}
+	
+	
+	inline Tile::const_iterator
+	Tile::const_iterator::operator++()
+	{
+		if (_position != _end)
+		{
+			++_position;
+		}
+		
+		return *this;
+	}
+	
+	
+	inline Tile::const_iterator
+	Tile::const_iterator::operator++(int dummy)
+	{
+		return operator++();
+	}
+	
+	
+	inline const std::pair<bool, Node>&
+	Tile::const_iterator::operator*() const
+	{
+		return _position.operator*();
+	}
+	
+	
+	inline const std::pair<bool, Node>*
+	Tile::const_iterator::operator->() const
+	{
+		return _position.operator->();
+	}
+	
+	
+	//---------------------------------------------------//
+	//--- Main class: Tile ------------------------------//
+	//---------------------------------------------------//
+	inline std::pair<bool, Node::Id>
+	Tile::add_node(const Node& node)
+	{
+		Node::LocalId node_local_id
+			= static_cast<Node::LocalId>(_nodes.insert(node));
+		Node::Id node_id = Node::merge_id_parts(_id, node_local_id);
+		
+		return std::make_pair(true, node_id);
+		
+/*		if ( _range_reporting.add_node(&(_nodes[node_local_id])) )
+		{
+			return std::make_pair(true, node_id);
+		} else
+		{
+			_nodes.erase(node_local_id);
+			
+			return std::make_pair(false, 0);
+		}*/
+	}
+	
+	
+	inline Tile::const_iterator
+	Tile::begin() const
+	{
+		FixpointVector<Node>::const_iterator start = _nodes.begin();
+		FixpointVector<Node>::const_iterator end = _nodes.end();
+		return Tile::const_iterator(start, end, start);
+	}
+	
+	
+	inline Tile::const_iterator
+	Tile::end() const
+	{
+		FixpointVector<Node>::const_iterator start = _nodes.begin();
+		FixpointVector<Node>::const_iterator end = _nodes.end();
+		return Tile::const_iterator(start, end, end);
+	}
+	
+	
+	inline bool
+	Tile::exists_node(Node::Id node_id) const
+	{
+		return _nodes[Node::local_id(node_id)].first;
+	}
 	
 	
 	inline unsigned int
@@ -143,20 +331,52 @@ namespace mapgeneration
 	}
 	
 	
-	inline FixpointVector<Node>&
+/*	inline bool
+	Tile::move_node(Node::Id from_node_id, const Node& to_node)
+	{
+		Node& from_node = _nodes[from_node_id].second;
+		Node saved_node = from_node;
+		
+		from_node = to_node;
+		
+		if ( _range_reporting.move_node(
+	}*/
+	
+	
+	inline Node&
+	Tile::node(Node::Id node_id)
+	{
+		return _nodes[Node::local_id(node_id)].second;
+	}
+	
+	
+	inline const Node&
+	Tile::node(Node::Id node_id) const
+	{
+		return _nodes[Node::local_id(node_id)].second;
+	}
+	
+	
+/*	inline FixpointVector<Node>&
 	Tile::nodes()
 	{
 		return _nodes;
-	}
+	}*/
 	
 	
-	inline const FixpointVector<Node>&
+/*	inline const FixpointVector<Node>&
 	Tile::nodes() const
 	{
 		return _nodes;
+	}*/
+	
+	
+	inline int
+	Tile::size_of() const
+	{
+		return _nodes.size_of();
 	}
-
-
+	
 } // namespace mapgeneration
 
 #endif //TILE_H

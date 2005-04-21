@@ -102,10 +102,10 @@ namespace mapgeneration_gui
 		TileCache::Pointer current_tile = _tile_cache->get(tile_id);
 		if (current_tile != 0)
 		{
-			FixpointVector<Node>::iterator node_iter =
-				current_tile.write().nodes().begin();
-			FixpointVector<Node>::iterator node_iter_end =
-				current_tile.write().nodes().end();
+//			Tile::const_iterator node_iter = current_tile.write().begin();
+//			Tile::const_iterator node_iter_end = current_tile.write().end();
+			Tile::const_iterator node_iter = current_tile->begin();
+			Tile::const_iterator node_iter_end = current_tile->end();
 			for (; node_iter != node_iter_end; ++node_iter)
 			{
 				std::vector<Node::Id>::const_iterator next_node_id_iter = 
@@ -126,7 +126,7 @@ namespace mapgeneration_gui
 						TileCache::Pointer op = _tile_cache->get(Node::tile_id(*next_node_id_iter));
 						if (op != 0)
 						{
-							GeoCoordinate nnode=op->nodes()[Node::local_id(*next_node_id_iter)].second;
+							GeoCoordinate nnode = op->node(*next_node_id_iter);
 							MapGenerationDraw::arrow(_gps_draw, node_iter->second, nnode);
 						}
 					}

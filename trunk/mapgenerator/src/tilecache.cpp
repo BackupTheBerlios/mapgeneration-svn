@@ -77,7 +77,7 @@ namespace mapgeneration
 		if (tile == 0)
 			return sizeof(Pointer);
 		else
-			return tile->nodes().size_of();
+			return tile->size_of();
 	}
 
 

@@ -32,8 +32,8 @@ namespace mapgeneration
 	{
 		std::vector<Node::Id> cluster_nodes;
 		
-		FixpointVector<Node>::const_iterator iter = nodes().begin();
-		FixpointVector<Node>::const_iterator iter_end = nodes().end();
+		FixpointVector<Node>::const_iterator iter = _nodes.begin();
+		FixpointVector<Node>::const_iterator iter_end = _nodes.end();
 		for(; iter != iter_end; ++iter)
 		{
 			double distance = iter->second.approximated_distance(gps_point);
@@ -58,7 +58,7 @@ namespace mapgeneration
 	
 	
 	
-	std::vector<unsigned int>
+/*	std::vector<unsigned int>
 	Tile::nearest_neighbours_search(const GeoCoordinate& geo_coordinate, const double search_radius)
 	{	
 		std::vector<unsigned int> nearest_nodes_vector;
@@ -74,7 +74,7 @@ namespace mapgeneration
 		}
 		
 		return nearest_nodes_vector;	
-	}
+	}*/
 
 
 	void

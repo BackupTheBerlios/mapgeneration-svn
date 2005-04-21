@@ -68,11 +68,11 @@ namespace mapgeneration_util
 					
 					const_iterator next_pair();
 				
-					inline bool operator==(const const_iterator& iter);
-					inline bool operator!=(const const_iterator& iter);
+					inline bool operator==(const const_iterator& iter) const;
+					inline bool operator!=(const const_iterator& iter) const;
 					const_iterator operator++();
-					inline const std::pair<bool, T_ElemType>& operator*();
-					inline const std::pair<bool, T_ElemType>* operator->();
+					inline const std::pair<bool, T_ElemType>& operator*() const;
+					inline const std::pair<bool, T_ElemType>* operator->() const;
 				
 					inline int position_number();
 			
@@ -146,7 +146,7 @@ namespace mapgeneration_util
 			
 			
 			/**
-			 * \brief Erases an element from the vector and return an iterator
+			 * \brief Erases an element from the vector and returns an iterator
 			 * that points to the next element behind the erased one.
 			 * @return Iterator that points to the next element behind the 
 			 * erased one.
@@ -154,6 +154,17 @@ namespace mapgeneration_util
 			 */
 			iterator
 			erase(iterator& i);
+			
+			
+			/**
+			 * @brief Erases the element from the vector and returns an iterator
+			 * that points to the next element behind the erased one.
+			 * @return Iterator that points to the next element behind the 
+			 * erased one.
+			 * @param index The index pointing at the element to erase.
+			 */
+//			iterator
+//			erase(int index);
 
 
 			/**
@@ -348,7 +359,8 @@ namespace mapgeneration_util
 
 	template <typename T_ElemType>
 	inline bool 
-	FixpointVector<T_ElemType>::const_iterator::operator==(const const_iterator& a)
+	FixpointVector<T_ElemType>::const_iterator::operator==(
+		const const_iterator& a) const
 	{
 		if (a._position == _position)
 			return true;
@@ -359,7 +371,8 @@ namespace mapgeneration_util
 
 	template <typename T_ElemType>
 	inline bool 
-	FixpointVector<T_ElemType>::const_iterator::operator!=(const const_iterator& a)
+	FixpointVector<T_ElemType>::const_iterator::operator!=(
+		const const_iterator& a) const
 	{
 		return !operator==(a);
 	}
@@ -386,7 +399,7 @@ namespace mapgeneration_util
 
 	template <typename T_ElemType>
 	inline const std::pair<bool, T_ElemType>&
-	FixpointVector<T_ElemType>::const_iterator::operator*()
+	FixpointVector<T_ElemType>::const_iterator::operator*() const
 	{
 		return *_position;
 	}
@@ -394,7 +407,7 @@ namespace mapgeneration_util
 	
 	template <typename T_ElemType>
 	inline const std::pair<bool, T_ElemType>*
-	FixpointVector<T_ElemType>::const_iterator::operator->()
+	FixpointVector<T_ElemType>::const_iterator::operator->() const
 	{
 		return _position;
 	}
@@ -449,18 +462,18 @@ namespace mapgeneration_util
 	}
 	
 	
-	template <typename T_Elem>
+	template <typename T_ElemType>
 	inline void
-	FixpointVector<T_Elem>::clear()
+	FixpointVector<T_ElemType>::clear()
 	{
-		std::vector< std::pair<bool, T_Elem> >::clear();
+		std::vector< std::pair<bool, T_ElemType> >::clear();
 		_free_positions.clear();
 	}
 	
 	
-	template <typename T_Elem>
+	template <typename T_ElemType>
 	void
-	FixpointVector<T_Elem>::deserialize(std::istream& i_stream)
+	FixpointVector<T_ElemType>::deserialize(std::istream& i_stream)
 	{
 		clear();
 
@@ -472,12 +485,12 @@ namespace mapgeneration_util
 			bool used;
 			Serializer::deserialize(i_stream, used);
 			
-			std::pair<bool, T_Elem> p;
+			std::pair<bool, T_ElemType> p;
 			p.first = used;
 			
 			if (used)
 			{
-				T_Elem elem;
+				T_ElemType elem;
 				Serializer::deserialize(i_stream, elem);
 				p.second = elem;
 			}
@@ -529,6 +542,23 @@ namespace mapgeneration_util
 
 		return iter;
 	}
+	
+	
+/*	template<typename T_ElemType>
+	typename FixpointVector<T_Elemype>::iterator
+	FixpointVector<T_ElemType>::erase(int index)
+	{
+		if (index > size_including_holes() - 1)
+		{
+			return end();
+		} else
+		{
+			iterator iter = begin();
+			iter._position = &(operator[](index));
+			
+			return erase(iter);
+		}
+	}*/
 	
 	
 	template <typename T_ElemType>
