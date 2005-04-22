@@ -289,7 +289,7 @@ namespace mapgeneration
 			 * @brief Frees prepared statements.
 			 */			
 			inline void
-			free_prepare_statements();
+			free_prepared_statements();
 
 		
 			/**

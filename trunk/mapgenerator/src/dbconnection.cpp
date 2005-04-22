@@ -82,17 +82,8 @@ namespace mapgeneration
 	
 	bool
 	DBConnection::check_db_structure()
-	{
-		
-		// Defines two vector:
-		// First contains the table names which SHOULD exist.
-		// Second will contain the table names which DO exist.
-		// When these vectors are equal, this method returns true.
-
-		//vector<string> found_tables;	// DO-exist-table-names
-
+	{		
 		std::vector<Table>::iterator search_iterator;
-		//vector<string>::iterator found_iterator;
 		
 		SQLHSTMT statement;
 		SQLRETURN sql_return;
@@ -132,8 +123,7 @@ namespace mapgeneration
 				sql_return = SQLBindCol(statement, 4, SQL_C_CHAR, sql_found_table_type,
 									 MAX_SQL_CHAR_LENGTH, &sql_table_type_pointer);
 				evaluate_sql_return(sql_return, "check_db_structure", "Error binding column to variable!");
-			
-		
+
 				// look in every column and compare it to SHOULD-exist-table-names...
 				sql_return = SQLFetch(statement);
 				evaluate_sql_return(sql_return, "check_db_structure", "Error fetching data from result set!");
@@ -141,14 +131,9 @@ namespace mapgeneration
 				{
 					std::cout << "Found table: " << (char*)sql_found_table_name << "\n";
 					++found_tables;
-/*					found_iterator = find(search_tables.begin(), search_tables.end(), (char*)sql_found_table_name);
-					if (found_iterator != search_tables.end()) 
-					{
-						found_tables.push_back(*found_iterator);
-					}*/
 					sql_return = SQLFetch(statement);
 					evaluate_sql_return(sql_return, "check_db_structure", "Error fetching data from result set!");
-				} // end while
+				}
 			} catch (string error_message)
 			{
 				try
@@ -171,13 +156,11 @@ namespace mapgeneration
 			
 			sql_return = SQLFreeStmt(statement, SQL_CLOSE);
 			evaluate_sql_return(sql_return, "check_db_structure", "Error closing SQL statement cursor");
-		} // end for
+		}
 
 		sql_return = SQLFreeHandle(SQL_HANDLE_STMT, statement);
 		evaluate_sql_return(sql_return, "check_db_structure", "Error freeing SQL statement handle");
 	
-		
-//		if (search_tables != found_tables)
 		if (found_tables != _tables.size())
 		{
 			#ifdef DEBUG
@@ -545,7 +528,7 @@ namespace mapgeneration
 			
 			try
 			{
-				free_prepare_statements();
+				free_prepared_statements();
 			} catch(string level2_error_message)
 			{
 				if (stored_error_messages != "")
@@ -589,7 +572,7 @@ namespace mapgeneration
 	
 	
 	void
-	DBConnection::free_prepare_statements()
+	DBConnection::free_prepared_statements()
 	{
 		SQLRETURN sql_return;
 		string stored_error_messages = "";
@@ -609,7 +592,7 @@ namespace mapgeneration
 				{
 					sql_return = SQLFreeHandle(SQL_HANDLE_STMT,
 														&*statement_iter);
-					evaluate_sql_return(sql_return, "free_prepare_statements",
+					evaluate_sql_return(sql_return, "free_prepared_statements",
 													"Error freeing SQL statement handle!");
 				} catch (string error_message)
 				{
@@ -646,16 +629,6 @@ namespace mapgeneration
 		std::vector<unsigned int> ids;
 
 		sql_statement = _tables[table_id]._prepared_statements[select_ids];
-		/*switch (table)
-		{
-			case _TILES:
-				sql_statement = _prepared_statements[select_tile_ids];
-				break;
-				
-			default:
-				throw ("Unknown table used!");
-				break;
-		}*/
 		
 		sql_return = SQLExecute(sql_statement);
 		evaluate_sql_return(sql_return, "get_all_used_ids", "Error executing prepared SQL command!");
@@ -678,16 +651,7 @@ namespace mapgeneration
 			
 		sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
 		evaluate_sql_return(sql_return, "get_all_used_ids", "Error closing SQL statement cursor");
-		
-		#ifdef DEBUG
-		//	log(MLog::debug, "get_all_used_ids", "Data successfully loaded");
-		#endif
-		
-/*		#ifdef DEBUG
-			for(vector<unsigned int>::iterator ids_iter = ids.begin(); ids_iter != ids.end(); ++ids_iter)
-				std::cout << *ids_iter << ", ";
-		#endif*/
-		
+				
 		return ids;
 	}
 
@@ -703,16 +667,6 @@ namespace mapgeneration
 		std::vector<unsigned int> ids;
 
 		sql_statement = _tables[table_id]._prepared_statements[select_free_ids];
-	/*	switch (table)
-		{
-			case _TILES:
-				sql_statement = _prepared_statements[select_free_tile_ids];
-				break;
-							
-			default:
-				throw ("Unknown table used!");
-				break;
-		}*/
 		
 		sql_return = SQLExecute(sql_statement);
 		evaluate_sql_return(sql_return, "get_free_ids", "Error executing prepared SQL command!");
@@ -736,18 +690,7 @@ namespace mapgeneration
 		sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
 		evaluate_sql_return(sql_return, "get_free_ids", "Error closing SQL statement cursor");
 		
-		#ifdef DEBUG
-		//	log(MLog::debug, "get_free_ids", "Data successfully loaded");
-		#endif
-		
 		ids.push_back(get_next_to_max_id(table_id));
-		
-//		#ifdef DEBUG
-			for(vector<unsigned int>::iterator ids_iter = ids.begin(); ids_iter != ids.end(); ++ids_iter)
-				std::cout << *ids_iter << ", ";
-//		#endif
-		
-		/* now add next to max id... */
 		
 		return ids;
 	}
@@ -763,17 +706,6 @@ namespace mapgeneration
 		unsigned int col_value = 0;
 
 		sql_statement = _tables[table_id]._prepared_statements[select_max_id];
-		/*switch (table)
-		{
-						
-			case _TILES:
-				sql_statement = _prepared_statements[select_max_tile_id];
-				break;
-				
-			default:
-				throw ("Unknown table used!");
-				break;
-		}*/
 		
 		sql_return = SQLExecute(sql_statement);
 		evaluate_sql_return(sql_return, "get_next_to_max_id", "Error executing prepared SQL command!");
@@ -786,9 +718,6 @@ namespace mapgeneration
 		{
 			evaluate_sql_return(sql_return, "get_next_to_max_id", "Error fetching SQL rowset!");
 			++col_value;
-		} else
-		{
-		//	mlog(MLog::debug, "DBConnection") << "no data\n";
 		}
 
 		sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
@@ -799,10 +728,6 @@ namespace mapgeneration
 			
 		sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
 		evaluate_sql_return(sql_return, "get_next_to_max_id", "Error closing SQL statement cursor");
-		
-		#ifdef DEBUG
-		//	log(MLog::debug, "get_next_to_max_id", "Data successfully loaded");
-		#endif
 		
 		std::cout << "XX:" << col_value << "\n";
 		
@@ -823,16 +748,6 @@ namespace mapgeneration
 			SQLHSTMT sql_statement;
 
 			sql_statement = _tables[table_id]._prepared_statements[select];
-/*			switch (table)
-			{
-				case _TILES:
-					sql_statement = _prepared_statements[select_tile];
-					break;
-								
-				default:
-					throw ("Unknown table used!");
-					break;
-			}*/
 			
 			SQLINTEGER sql_id = (SQLINTEGER)id;
 			SQLCHAR sql_buffer[SQL_BINARY_BUFFER];
@@ -850,30 +765,13 @@ namespace mapgeneration
 			sql_return = SQLFetch(sql_statement);
 			evaluate_sql_return(sql_return, "load_blob", "Error fetching data from result set!");
 			if (sql_return == SQL_NO_DATA)
-			{
-	/*			#ifdef DEBUG
-					mlog(MLog::debug, "DBConnection") << "::load_blob : "
-								<< "No data for this id (" << id <<"). "
-								<< "Return NULL.\n";
-				#endif*/
-				
 				return NULL;
-			}
-			
 	
 			sql_return = SQLGetData(sql_statement, 1, SQL_C_BINARY, sql_buffer,
 											sql_buffer_length, &sql_indicator);
 			evaluate_sql_return(sql_return, "load_blob", "Error executing SQLGetData!");
 			if (sql_return == SQL_NO_DATA)
-			{
-	/*			#ifdef DEBUG
-					mlog(MLog::debug, "DBConnection") << "::load_blob : "
-								<< "No data for this id (" << id <<"). "
-								<< "Return NULL.\n";
-				#endif*/
-				
 				return NULL;
-			}
 	
 			string* data_representation = new string();
 			if (sql_indicator == SQL_NO_TOTAL || sql_indicator >= SQL_BINARY_BUFFER)
@@ -916,13 +814,6 @@ namespace mapgeneration
 			sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
 			evaluate_sql_return(sql_return, "load_blob", "Error closing SQL statement cursor");
 			
-	/*		#ifdef DEBUG
-				std::stringstream ss;
-				ss << id;
-				ss.flush();
-				log(MLog::debug, "load_blob", "Data successfully loaded (id=" + ss.str() + ")");
-			#endif */
-			
 			if (*data_representation == "")
 				return 0;
 			else
@@ -942,18 +833,8 @@ namespace mapgeneration
 		// first allocate the statements...
 		SQLRETURN sql_return;
 		string stored_error_messages = "";
-		
-		//bool handle_loaded[NUM_OF_PREPARED_STATEMENTS];
+
 		bool error_occured = false;
-		unsigned int i;
-		
-		// inits handle_loaded to false...
-		//for (i = 0; i < NUM_OF_PREPARED_STATEMENTS; ++i)
-		//{
-		//	handle_loaded[i] = false;
-		//}
-		
-		//i = 0;
 		
 		std::vector<Table>::iterator tables_iter = _tables.begin();
 		std::vector<Table>::iterator tables_iter_end = _tables.end();
@@ -969,7 +850,7 @@ namespace mapgeneration
 					// allocate _prepared_load_tiles_statement...		
 					sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection,
 						&tables_iter->_prepared_statements.back());
-					evaluate_sql_return(sql_return, "prepare_statements",
+					evaluate_sql_return(sql_return, "prepared_statements",
 													"Error allocating SQL statement handle!");
 				} catch (string error_message)
 				{
@@ -982,41 +863,17 @@ namespace mapgeneration
 				}
 			}
 		}
-		
+						
 		// error occured! try to free statement handles!
-		/*if (error_occured == true)
+		if (error_occured)
 		{
-			for (i = 0; i < NUM_OF_PREPARED_STATEMENTS; ++i)
-			{
-				if (handle_loaded[i] == true)
-				{
-					try
-					{
-						sql_return = SQLFreeHandle(SQL_HANDLE_STMT,
-															&_prepared_statements[i]);
-						evaluate_sql_return(sql_return, "prepare_statements",
-														"Error freeing SQL statement handle!");
-					} catch (string error_message)
-					{
-						if (stored_error_messages != "")
-						{
-							stored_error_messages.append(" ");
-						}
-						stored_error_messages.append(error_message);
-					}	
-				}
-			}
-			
-			throw(stored_error_messages);
-		}*/
-		
+			free_prepared_statements();
+			throw("Error preparing statements.");
+		}
 		
 		#ifdef DEBUG
-			log(MLog::debug, "prepare_statements", "Prepared statesments successfully allocated.");
+			log(MLog::debug, "prepared_statements", "Prepared statesments successfully allocated.");
 		#endif
-		// prepared statement handles allocated.
-		
-		// now "prepare" prepared_statements...
 		
 		std::string sql_commands[_NUMBER_OF_STATEMENTS];
 		
@@ -1056,14 +913,14 @@ namespace mapgeneration
 					sql_return = SQLPrepare(tables_iter->_prepared_statements[i],
 													(SQLCHAR*)(sql_commands[i].c_str()),
 													SQL_NTS);
-					evaluate_sql_return(sql_return, "prepare_statements",
+					evaluate_sql_return(sql_return, "prepared_statements",
 											"Error preparing SQL statement!");
 				}
 			} catch (string error_message)
 			{
 				try
 				{
-					free_prepare_statements();
+					free_prepared_statements();
 				} catch (string level2_error_message)
 				{
 					throw (error_message + " " + level2_error_message);
@@ -1074,7 +931,7 @@ namespace mapgeneration
 		}
 
 		#ifdef DEBUG
-		//	log(MLog::debug, "prepare_statements", "Everything successfully done.");
+			log(MLog::debug, "prepare_statements", "Everything successfully done.");
 		#endif
 	}
 	
@@ -1102,75 +959,8 @@ namespace mapgeneration
 
 		try
 		{
-		
 			std::string really_temp;
 			save(table_id, id, really_temp);
-			
-	/*		std::ostringstream stream;
-			stream << "UPDATE ";
-			
-			switch (from_table)
-			{
-				case _TILES:
-					stream << "tiles";
-					break;
-				
-				case _EDGES:
-					stream << "edges";
-					break;
-					
-				default:
-					throw ("Unknown table used!");
-					break;
-			}
-			
-			stream << " SET (data) = ("") WHERE id = ";
-			stream << id;
-			stream << ";";
-			stream.flush();
-			
-			string sql_command = stream.str();		
-	
-			SQLRETURN sql_return;
-			SQLHSTMT sql_statement;
-			SQLINTEGER sql_id = (SQLINTEGER)id;
-			SQLINTEGER sql_indicator;
-			string stored_error_messages = "";
-			
-			sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection, &sql_statement);
-			evaluate_sql_return(sql_return, "delete_entry", "Error allocating SQL statement handle!");
-			
-			try
-			{
-				sql_return = SQLExecDirect(sql_statement, (SQLCHAR*)(sql_command.c_str()), SQL_NTS);
-				evaluate_sql_return(sql_return, "delete_entry", "Error executing SQL command!");
-			} catch (string error_message)
-			{
-				if (stored_error_messages != "")
-				{
-					stored_error_messages.append(" ");
-				}
-				stored_error_messages.append(error_message);
-			}
-			
-			try
-			{
-				sql_return = SQLFreeHandle(SQL_HANDLE_STMT, sql_statement);
-				evaluate_sql_return(sql_return, "delete_entry", "Error freeing SQL statement handle!");
-			} catch (string error_message)
-			{
-				if (stored_error_messages != "")
-				{
-					stored_error_messages.append(" ");
-				}
-				stored_error_messages.append(error_message);
-			}
-			
-			if (stored_error_messages != "")
-			{
-				throw (stored_error_messages);
-			}*/
-
 		} catch (string error_message)
 		{
 			throw_error_message("delete_entry", error_message);
@@ -1191,16 +981,6 @@ namespace mapgeneration
 			SQLHSTMT sql_statement;
 	
 			sql_statement = _tables[table_id]._prepared_statements[update];
-/*			switch (table)
-			{
-				case _TILES:
-					sql_statement = _prepared_statements[update_tile];
-					break;
-				
-				default:
-					throw ("Unknown table used!");
-					break;
-			}*/
 					
 			SQLCHAR* sql_data = (SQLCHAR*)((const char*)data_representation.c_str());
 			SQLINTEGER sql_data_length = data_representation.size();
@@ -1208,29 +988,12 @@ namespace mapgeneration
 			SQLINTEGER sql_id = (SQLINTEGER)id;
 			SQLPOINTER sql_parameter_indicator = (SQLPOINTER)1; 
 			SQLINTEGER sql_execution_indicator;
-			
-	/*		SQLCHAR sql_answer[5];
-			SQLSMALLINT sql_indicator;
-			sql_return = SQLGetInfo(_connection, SQL_NEED_LONG_DATA_LEN, sql_answer,
-									4, &sql_indicator);
-			evaluate_sql_return(MLog::error, "save_blob", "Error getting info!");
-			if (strcmp((char*)sql_answer, "J") == 0)
-			{
-				sql_execution_indicator = SQL_LEN_DATA_AT_EXEC(data_length);
-			} else
-			{
-				sql_execution_indicator = SQL_LEN_DATA_AT_EXEC(0);
-			}*/
-			
+						
 			sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
 											SQL_C_BINARY, SQL_LONGVARBINARY,
 											sql_data_length, 0, sql_data,
 											sql_data_length, &sql_data_length);
 	
-	/*		sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
-													SQL_C_BINARY, SQL_LONGVARBINARY,
-													0, 0, sql_parameter_indicator,
-													0, &sql_execution_indicator);*/
 			evaluate_sql_return(sql_return, "save_blob", "Error binding variable to SQL parameter!");
 			
 			sql_return = SQLBindParameter(sql_statement, 2, SQL_PARAM_INPUT,
@@ -1240,51 +1003,6 @@ namespace mapgeneration
 		
 			sql_return = SQLExecute(sql_statement);
 			evaluate_sql_return(sql_return, "save_blob", "Error executing prepared SQL command (1)!");
-	/*		if (sql_return == SQL_NEED_DATA)
-			{
-				sql_return = SQLParamData(sql_statement, &sql_parameter_indicator);
-				evaluate_sql_return(sql_return, "save_blob", "Error executing SQLParamData!");
-				if (sql_return != SQL_NEED_DATA)
-				{
-					throw ("Something strange happend. SQL command don't need data!");
-				}
-				
-				int left_data_length = data_length;
-				int buffer_length = 0;
-				SQLCHAR* buffer;
-				
-				while (left_data_length > 0)
-				{
-					if (left_data_length >= SQL_BINARY_BUFFER)
-					{
-						buffer_length = SQL_BINARY_BUFFER;
-						left_data_length = left_data_length - SQL_BINARY_BUFFER;
-					} else
-					{
-						buffer_length = left_data_length;
-						left_data_length = 0;
-					}
-					
-					// building the correct substring...
-					string substring = data_representation.substr(
-											data_length - left_data_length,
-											buffer_length);
-					const char* char_substring = substring.c_str();
-					buffer = (SQLCHAR*)(char_substring);
-					// and convert it to SQLCHAR*. Done!
-					
-					sql_return = SQLPutData(sql_statement, buffer, buffer_length);
-					evaluate_sql_return(sql_return, "save_blob", "Error putting data! (1)");
-				}
-	
-				sql_return = SQLParamData(sql_statement, &sql_parameter_indicator);
-				show_error(SQL_HANDLE_STMT, sql_statement);
-				evaluate_sql_return(sql_return, "save_blob", "Error executing SQLParamData! (1)");
-				if (sql_return == SQL_NEED_DATA)
-				{
-					throw ("Something strange happend. SQL command needs too much data!");
-				}
-			}*/
 	
 			// checking, how many rows were affected.
 			// if 0 then try INSERT...
@@ -1309,26 +1027,12 @@ namespace mapgeneration
 				#endif
 	
 				sql_statement = _tables[table_id]._prepared_statements[insert];
-			/*	switch (table_id)
-				{
-					case _TILES:
-						sql_statement = _prepared_statements[insert_tile];
-						break;
-				
-					default:
-						throw ("Unknown table used!");
-						break;
-				}*/
 	
 				sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
 												SQL_C_BINARY, SQL_LONGVARBINARY,
 												sql_data_length, 0, sql_data,
 												sql_data_length, &sql_data_length);
 				
-	/*			sql_return = SQLBindParameter(sql_statement, 1, SQL_PARAM_INPUT,
-													SQL_C_BINARY, SQL_LONGVARBINARY,
-													0, 0, &sql_parameter_indicator,
-													0, &sql_execution_indicator);*/
 				evaluate_sql_return(sql_return, "save_blob", "Error binding variable to SQL parameter!");
 			
 				sql_return = SQLBindParameter(sql_statement, 2, SQL_PARAM_INPUT,
@@ -1377,59 +1081,7 @@ namespace mapgeneration
 					{
 						throw (stored_error_messages);
 					}
-				} else // sql_return != SQL_ERROR
-				{
-	/*				if (sql_return == SQL_NEED_DATA)
-					{
-						sql_return = SQLParamData(sql_statement, &sql_parameter_indicator);
-						evaluate_sql_return(sql_return, "save_blob", "Error executing SQLParamData!");
-						if (sql_return != SQL_NEED_DATA)
-						{
-							throw ("Something strange happend. SQL command don't need data!");
-						}
-				
-						int left_data_length = data_length;
-						int buffer_length = 0;
-						SQLCHAR* buffer;
-				
-						while (left_data_length > 0)
-						{
-							if (left_data_length >= SQL_BINARY_BUFFER)
-							{
-								buffer_length = SQL_BINARY_BUFFER;
-								left_data_length = left_data_length - SQL_BINARY_BUFFER;
-							} else
-							{
-								buffer_length = left_data_length;
-								left_data_length = 0;
-							}
-					
-							// building the correct substring...
-							string substring = data_representation.substr(
-													data_length - left_data_length,
-													buffer_length);
-							const char* char_substring = substring.c_str();
-							buffer = (SQLCHAR*)(char_substring);
-							// and convert it to SQLCHAR*. Done!
-					
-							sql_return = SQLPutData(sql_statement, buffer, buffer_length);
-							evaluate_sql_return(sql_return, "save_blob", "Error putting data! (1)");
-						}
-				
-						sql_return = SQLParamData(sql_statement, &sql_parameter_indicator);
-						show_error(SQL_HANDLE_STMT, sql_statement);
-						evaluate_sql_return(sql_return, "save_blob", "Error executing SQLParamData! (2)");
-						if (sql_return == SQL_NEED_DATA)
-						{
-							throw ("Something strange happend. SQL command needs too much data!");
-						}
-					}*/
-			
-					#ifdef DEBUG
-					//	log(MLog::debug, "save_blob", "INSERT succeed.");
-					#endif
-				} // if
-				
+				}				
 	
 				sql_return = SQLFreeStmt(sql_statement, SQL_RESET_PARAMS);
 				evaluate_sql_return(sql_return, "save_blob", "Error resetting SQL statement parameters");
@@ -1440,11 +1092,6 @@ namespace mapgeneration
 				sql_return = SQLFreeStmt(sql_statement, SQL_CLOSE);
 				evaluate_sql_return(sql_return, "save_blob", "Error closing SQL statement cursor");
 			
-			} else //row_count != 0
-			{
-				#ifdef DEBUG
-			//		log(MLog::debug, "save_blob", "UPDATE succeed.");
-				#endif
 			}
 			
 		} catch (string error_message)
