@@ -85,24 +85,13 @@ namespace mapgeneration
 			
 			
 			/**
-			 * @brief Deletes entry from DB.
-			 * 
-			 * @param from_table the table where the entry is located
-			 * @param id the id
-			 */
-			void
-			remove(size_t table_id, unsigned int id);
-			
-			 
-
-			/**
 			 * @brief Destroy database handles.
 			 * 
 			 * Needed for restarting.
 			 */		
 			void
 			destroy();
-		
+
 
 			/**
 			 * @brief Disconnects from database.
@@ -113,13 +102,13 @@ namespace mapgeneration
 			
 			#ifdef DEBUG
 				/**
-				 * @brief Drops every table.
+				 * @brief Drops all registered tables.
 				 */
 				void
 				dropTables();
 			#endif
 			
-			
+						
 			/**
 			 * @brief Returns a vector containing all used IDs from the specified
 			 * table.
@@ -173,7 +162,17 @@ namespace mapgeneration
 			size_t
 			register_table(std::string name);
 			
-
+			
+			/**
+			 * @brief Removes an entry from the DB.
+			 * 
+			 * @param from_table the table where the entry is located
+			 * @param id the id
+			 */
+			void
+			remove(size_t table_id, unsigned int id);
+		
+			
 			/**
 			 * @brief Save a string as BLOB in DB.
 			 * 
@@ -201,7 +200,11 @@ namespace mapgeneration
 			};
 			
 
-			static const int number_of_statements = 6;
+			/**
+			 * @brief The number of statements. This should usualy fit to
+			 * the number of entries in the above enum.
+			 */
+			static const int _NUMBER_OF_STATEMENTS = 6;
 
 
 			/**
@@ -223,9 +226,9 @@ namespace mapgeneration
 
 		
 			/**
-			 * @brief Flag. Set true when inited.
+			 * @brief Flag. Set true when initialized.
 			 */
-			bool _inited;
+			bool _initialized;
 			
 			
 			/**

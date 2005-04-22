@@ -18,7 +18,7 @@ namespace mapgeneration
 	DBConnection::DBConnection() 
 	{
 		_connected =false;
-		_inited = false;
+		_initialized = false;
 		
 		#ifdef DEBUG
 			log(MLog::debug, "DBConnection", "DBConnection constructed.");
@@ -49,7 +49,7 @@ namespace mapgeneration
 			}
 		
 		
-			if (_inited)
+			if (_initialized)
 			{
 				try 
 				{
@@ -78,198 +78,7 @@ namespace mapgeneration
 			log(MLog::debug, "~DBConnection", "DBConnection destructed.");
 		#endif
 	}
-
-
-	void
-	DBConnection::connect(string dns, string user, string password, bool correct_structure)
-	{
-		//exits when not inited!
-		if(_inited == false) return;
-		
-		//exits when already connected!
-		if (_connected == true) return;
-		
-		
-		string stored_error_messages = "";
-
-		try 
-		{
-			SQLRETURN sql_return;
-			SQLCHAR* sql_dns = (SQLCHAR*)dns.c_str();
-			SQLCHAR* sql_user = (SQLCHAR*)user.c_str();
-			SQLCHAR* sql_password = (SQLCHAR*)password.c_str();
-		
-			sql_return = SQLConnect(_connection,
-														sql_dns, SQL_NTS,
-														sql_user, SQL_NTS,
-														sql_password, SQL_NTS);
-													
-			evaluate_sql_return(sql_return, "connect", "Error connecting to DB \"" + dns + "\"!");
-
-
-			log(MLog::info, "connect", "Connected to DB \"" + dns + "\" with user \"" + user + "\" and password \"*****\"");
-			_connected = true;
-
-			
-			// connected! Now check DB structure...		
-			if (check_db_structure() == false) 
-			{
-				if (correct_structure == true)
-				{
-					log(MLog::warning, "connect", "Wrong DB structure! Try to correct...");
-					correct_db_structure();
-					if (check_db_structure() == false)
-					{
-						log(MLog::error, "connect", "Wrong DB structure!");
-						throw ("Wrong DB structure!");
-					}
-				
-				} else
-				{
-					log(MLog::error, "connect", "Wrong DB structure!");
-					throw ("Wrong DB structure!");
-				}
-			}
-
-			// successfully checked! Now prepare statements...
-			prepare_statements();
-		} catch (string error_message)
-		{
-			if (_connected ==true)
-			{
-				try
-				{
-					disconnect(true);
-				} catch (string level2_error_message)
-				{
-					if (stored_error_messages != "")
-					{
-						stored_error_messages.append("  ");
-					}
-					stored_error_messages.append(level2_error_message);
-				}
-			}
-
-			if (stored_error_messages != "")
-			{
-				stored_error_messages.append("  ");
-			}
-			stored_error_messages.append(error_message);
-			throw_error_message("connect", stored_error_messages);
-		}
-	}
 	
-	
-	void
-	DBConnection::destroy()
-	{
-		destroy(false);
-	}
-	
-	
-	void
-	DBConnection::disconnect()
-	{
-		disconnect(false);
-	}
-
-	
-	#ifdef DEBUG
-		void
-		DBConnection::dropTables()
-		{
-			SQLRETURN sql_return;
-			SQLHSTMT sql_statement;
-			SQLCHAR* sql_text;
-		
-			sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection, &sql_statement);
-			evaluate_sql_return(sql_return, "destroy", "Error allocating SQL statement handle!");
-		
-			std::vector<Table>::iterator tables_iter = _tables.begin();
-			std::vector<Table>::iterator tables_iter_end = _tables.end();
-			for (; tables_iter != tables_iter_end; ++tables_iter)
-			{
-				std::string command_start = "DROP TABLE ";
-				std::string command_end = ";";				
-				int command_length = command_start.length() + 
-					command_end.length() + tables_iter->_name.length() + 128;					
-				char* buffer = new char[command_length];
-				sprintf(buffer, "%s%s%s;", command_start.c_str(),
-					tables_iter->_name.c_str(), command_end.c_str());
-					
-				//sql_text = (SQLCHAR*)"DROP TABLE tiles;";
-				sql_text = (SQLCHAR*)buffer;
-				sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
-				evaluate_sql_return(sql_return, "destroy", "Error executing \"DROP TABLE\" statement! (1)");
-				
-				delete buffer;
-			}
-
-			log(MLog::debug, "dropTables", "Tables destroyed!");
-		}
-	#endif
-	
-	
-	void
-	DBConnection::init()
-	{
-		// exits when already inited!
-		if (_inited == true) return;
-		
-		
-		try
-		{
-			#ifdef DEBUG
-				log(MLog::debug, "DBConnection", "Starting...");
-			#endif
-		
-			SQLRETURN sql_return;
-
-			#ifdef DEBUG
-				log(MLog::debug, "DBConnection", "Allocate environment handle...");
-			#endif
-			sql_return = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &_environment);
-			evaluate_sql_return(sql_return, "DBConnection", "Error allocating SQL environment handle!");
-
-			try
-			{
-				#ifdef DEBUG		
-					log(MLog::debug, "DBConnection", "Set ODBC version...");
-				#endif
-				sql_return = SQLSetEnvAttr(_environment, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
-				evaluate_sql_return(sql_return, "DBConnection", "Error setting ODBC version!");
-		
-				#ifdef DEBUG		
-					log(MLog::debug, "DBConnection", "Allocating connection handle...");
-				#endif
-				sql_return = SQLAllocHandle(SQL_HANDLE_DBC, _environment, &_connection);
-				evaluate_sql_return(sql_return, "DBConnection", "Error allocating SQL connection!");
-
-			} catch (string level2_error_message)
-			{
-				try
-				{
-					sql_return = SQLFreeHandle(SQL_HANDLE_ENV, _environment);
-					evaluate_sql_return(sql_return,
-											"DBConnection",
-											"Error freeing SQL environment handle!");
-				} catch (string level3_error_message)
-				{
-					throw (level2_error_message + " " + level3_error_message);
-				} // level 3 try-catch
-											
-				throw (level2_error_message);
-			} // level 2 try-catch
-		} catch(string error_message)
-		{
-			throw_error_message("DBConnection", error_message);
-		} // level 1 try-catch
-
-
-		_inited =true;
-		log(MLog::notice, "init", "Init DBConnection... successful finished.");
-	}
-
 	
 	bool
 	DBConnection::check_db_structure()
@@ -384,7 +193,87 @@ namespace mapgeneration
 		
 		return true;
 	}
+	
+	
+	void
+	DBConnection::connect(string dns, string user, string password, bool correct_structure)
+	{
+		//exits when not initialized!
+		if(_initialized == false) return;
+		
+		//exits when already connected!
+		if (_connected == true) return;
+		
+		
+		string stored_error_messages = "";
 
+		try 
+		{
+			SQLRETURN sql_return;
+			SQLCHAR* sql_dns = (SQLCHAR*)dns.c_str();
+			SQLCHAR* sql_user = (SQLCHAR*)user.c_str();
+			SQLCHAR* sql_password = (SQLCHAR*)password.c_str();
+		
+			sql_return = SQLConnect(_connection,
+														sql_dns, SQL_NTS,
+														sql_user, SQL_NTS,
+														sql_password, SQL_NTS);
+													
+			evaluate_sql_return(sql_return, "connect", "Error connecting to DB \"" + dns + "\"!");
+
+
+			log(MLog::info, "connect", "Connected to DB \"" + dns + "\" with user \"" + user + "\" and password \"*****\"");
+			_connected = true;
+
+			
+			// connected! Now check DB structure...		
+			if (check_db_structure() == false) 
+			{
+				if (correct_structure == true)
+				{
+					log(MLog::warning, "connect", "Wrong DB structure! Try to correct...");
+					correct_db_structure();
+					if (check_db_structure() == false)
+					{
+						log(MLog::error, "connect", "Wrong DB structure!");
+						throw ("Wrong DB structure!");
+					}
+				
+				} else
+				{
+					log(MLog::error, "connect", "Wrong DB structure!");
+					throw ("Wrong DB structure!");
+				}
+			}
+
+			// successfully checked! Now prepare statements...
+			prepare_statements();
+		} catch (string error_message)
+		{
+			if (_connected ==true)
+			{
+				try
+				{
+					disconnect(true);
+				} catch (string level2_error_message)
+				{
+					if (stored_error_messages != "")
+					{
+						stored_error_messages.append("  ");
+					}
+					stored_error_messages.append(level2_error_message);
+				}
+			}
+
+			if (stored_error_messages != "")
+			{
+				stored_error_messages.append("  ");
+			}
+			stored_error_messages.append(error_message);
+			throw_error_message("connect", stored_error_messages);
+		}
+	}
+	
 	
 	void
 	DBConnection::correct_db_structure()
@@ -455,95 +344,120 @@ namespace mapgeneration
 	
 	
 	void
-	DBConnection::remove(size_t table_id, unsigned int id)
+	DBConnection::destroy()
 	{
-		if ((_inited != true) || (_connected != true))
-			throw_error_message("delete_entry", "Not inited and/or connected!");
-
-		try
-		{
-		
-			std::string really_temp;
-			save(table_id, id, really_temp);
-			
-	/*		std::ostringstream stream;
-			stream << "UPDATE ";
-			
-			switch (from_table)
-			{
-				case _TILES:
-					stream << "tiles";
-					break;
-				
-				case _EDGES:
-					stream << "edges";
-					break;
-					
-				default:
-					throw ("Unknown table used!");
-					break;
-			}
-			
-			stream << " SET (data) = ("") WHERE id = ";
-			stream << id;
-			stream << ";";
-			stream.flush();
-			
-			string sql_command = stream.str();		
-	
-			SQLRETURN sql_return;
-			SQLHSTMT sql_statement;
-			SQLINTEGER sql_id = (SQLINTEGER)id;
-			SQLINTEGER sql_indicator;
-			string stored_error_messages = "";
-			
-			sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection, &sql_statement);
-			evaluate_sql_return(sql_return, "delete_entry", "Error allocating SQL statement handle!");
-			
-			try
-			{
-				sql_return = SQLExecDirect(sql_statement, (SQLCHAR*)(sql_command.c_str()), SQL_NTS);
-				evaluate_sql_return(sql_return, "delete_entry", "Error executing SQL command!");
-			} catch (string error_message)
-			{
-				if (stored_error_messages != "")
-				{
-					stored_error_messages.append(" ");
-				}
-				stored_error_messages.append(error_message);
-			}
-			
-			try
-			{
-				sql_return = SQLFreeHandle(SQL_HANDLE_STMT, sql_statement);
-				evaluate_sql_return(sql_return, "delete_entry", "Error freeing SQL statement handle!");
-			} catch (string error_message)
-			{
-				if (stored_error_messages != "")
-				{
-					stored_error_messages.append(" ");
-				}
-				stored_error_messages.append(error_message);
-			}
-			
-			if (stored_error_messages != "")
-			{
-				throw (stored_error_messages);
-			}*/
-
-		} catch (string error_message)
-		{
-			throw_error_message("delete_entry", error_message);
-		}
-		
+		destroy(false);
 	}
 	
 	
 	void
+	DBConnection::disconnect()
+	{
+		disconnect(false);
+	}
+
+	
+	#ifdef DEBUG
+		void
+		DBConnection::dropTables()
+		{
+			SQLRETURN sql_return;
+			SQLHSTMT sql_statement;
+			SQLCHAR* sql_text;
+		
+			sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection, &sql_statement);
+			evaluate_sql_return(sql_return, "destroy", "Error allocating SQL statement handle!");
+		
+			std::vector<Table>::iterator tables_iter = _tables.begin();
+			std::vector<Table>::iterator tables_iter_end = _tables.end();
+			for (; tables_iter != tables_iter_end; ++tables_iter)
+			{
+				std::string command_start = "DROP TABLE ";
+				std::string command_end = ";";				
+				int command_length = command_start.length() + 
+					command_end.length() + tables_iter->_name.length() + 128;					
+				char* buffer = new char[command_length];
+				sprintf(buffer, "%s%s%s;", command_start.c_str(),
+					tables_iter->_name.c_str(), command_end.c_str());
+					
+				//sql_text = (SQLCHAR*)"DROP TABLE tiles;";
+				sql_text = (SQLCHAR*)buffer;
+				sql_return = SQLExecDirect(sql_statement, sql_text, SQL_NTS);
+				evaluate_sql_return(sql_return, "destroy", "Error executing \"DROP TABLE\" statement! (1)");
+				
+				delete buffer;
+			}
+
+			log(MLog::debug, "dropTables", "Tables destroyed!");
+		}
+	#endif
+	
+	
+	void
+	DBConnection::init()
+	{
+		// exits when already initialized!
+		if (_initialized == true) return;
+			
+		try
+		{
+			#ifdef DEBUG
+				log(MLog::debug, "DBConnection", "Starting...");
+			#endif
+		
+			SQLRETURN sql_return;
+
+			#ifdef DEBUG
+				log(MLog::debug, "DBConnection", "Allocate environment handle...");
+			#endif
+			sql_return = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &_environment);
+			evaluate_sql_return(sql_return, "DBConnection", "Error allocating SQL environment handle!");
+
+			try
+			{
+				#ifdef DEBUG		
+					log(MLog::debug, "DBConnection", "Set ODBC version...");
+				#endif
+				sql_return = SQLSetEnvAttr(_environment, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
+				evaluate_sql_return(sql_return, "DBConnection", "Error setting ODBC version!");
+		
+				#ifdef DEBUG		
+					log(MLog::debug, "DBConnection", "Allocating connection handle...");
+				#endif
+				sql_return = SQLAllocHandle(SQL_HANDLE_DBC, _environment, &_connection);
+				evaluate_sql_return(sql_return, "DBConnection", "Error allocating SQL connection!");
+
+			} catch (string level2_error_message)
+			{
+				try
+				{
+					sql_return = SQLFreeHandle(SQL_HANDLE_ENV, _environment);
+					evaluate_sql_return(sql_return,
+											"DBConnection",
+											"Error freeing SQL environment handle!");
+				} catch (string level3_error_message)
+				{
+					throw (level2_error_message + " " + level3_error_message);
+				} // level 3 try-catch
+											
+				throw (level2_error_message);
+			} // level 2 try-catch
+		} catch(string error_message)
+		{
+			throw_error_message("DBConnection", error_message);
+		} // level 1 try-catch
+
+
+		_initialized =true;
+		log(MLog::notice, "init", "Init DBConnection... successful finished.");
+	}
+
+	
+	void
 	DBConnection::destroy(bool internal_call)
 	{
-		//exits when not inited!
-		if (_inited == false) return;
+		//exits when not initialized!
+		if (_initialized == false) return;
 		
 		
 		string stored_error_messages = "";
@@ -613,7 +527,7 @@ namespace mapgeneration
 			}
 		} // level 1 try-catch
 
-		_inited = false;
+		_initialized = false;
 		log(MLog::notice, "destroy", "Destroy DBConnection... successful finished.");
 	}
 	
@@ -623,7 +537,6 @@ namespace mapgeneration
 	{
 		//exits when not connected
 		if (_connected == false) return;
-		
 		
 		try
 		{
@@ -672,6 +585,53 @@ namespace mapgeneration
 
 		_connected = false;
 		log(MLog::info, "disconnect", "Disconnected from DB.");
+	}
+	
+	
+	void
+	DBConnection::free_prepare_statements()
+	{
+		SQLRETURN sql_return;
+		string stored_error_messages = "";
+		bool error_occured = false;
+		
+		std::vector<Table>::iterator tables_iter = _tables.begin();
+		std::vector<Table>::iterator tables_iter_end = _tables.end();
+		for(; tables_iter != tables_iter_end; ++tables_iter)
+		{
+			std::vector<SQLHSTMT>::iterator statement_iter = 
+				tables_iter->_prepared_statements.begin();
+			std::vector<SQLHSTMT>::iterator statement_iter_end = 
+				tables_iter->_prepared_statements.end();
+			for(; statement_iter != statement_iter_end; ++statement_iter)
+			{
+				try
+				{
+					sql_return = SQLFreeHandle(SQL_HANDLE_STMT,
+														&*statement_iter);
+					evaluate_sql_return(sql_return, "free_prepare_statements",
+													"Error freeing SQL statement handle!");
+				} catch (string error_message)
+				{
+					if (stored_error_messages != "")
+					{
+						stored_error_messages.append(" ");
+					}
+					stored_error_messages.append(error_message);
+					error_occured = true;
+				}
+			}
+		}
+
+		
+		if (error_occured == true)
+		{
+			throw (stored_error_messages);
+		}
+		
+		#ifdef DEBUG
+			log(MLog::debug, "free_prepared_statements", "Prepared statements freed.");
+		#endif
 	}
 
 
@@ -849,59 +809,13 @@ namespace mapgeneration
 		return col_value;
 		
 	}
-
-	void
-	DBConnection::free_prepare_statements()
-	{
-		SQLRETURN sql_return;
-		string stored_error_messages = "";
-		bool error_occured = false;
-		
-		std::vector<Table>::iterator tables_iter = _tables.begin();
-		std::vector<Table>::iterator tables_iter_end = _tables.end();
-		for(; tables_iter != tables_iter_end; ++tables_iter)
-		{
-			std::vector<SQLHSTMT>::iterator statement_iter = 
-				tables_iter->_prepared_statements.begin();
-			std::vector<SQLHSTMT>::iterator statement_iter_end = 
-				tables_iter->_prepared_statements.end();
-			for(; statement_iter != statement_iter_end; ++statement_iter)
-			{
-				try
-				{
-					sql_return = SQLFreeHandle(SQL_HANDLE_STMT,
-														&*statement_iter);
-					evaluate_sql_return(sql_return, "free_prepare_statements",
-													"Error freeing SQL statement handle!");
-				} catch (string error_message)
-				{
-					if (stored_error_messages != "")
-					{
-						stored_error_messages.append(" ");
-					}
-					stored_error_messages.append(error_message);
-					error_occured = true;
-				}
-			}
-		}
-
-		
-		if (error_occured == true)
-		{
-			throw (stored_error_messages);
-		}
-		
-		#ifdef DEBUG
-			log(MLog::debug, "free_prepared_statements", "Prepared statements freed.");
-		#endif
-	}
 	
 	
 	string*
 	DBConnection::load(size_t table_id, unsigned int id)
 	{
-		if ((_inited != true) || (_connected != true))
-			throw_error_message("load_blob", "Not inited and/or connected!");
+		if ((_initialized != true) || (_connected != true))
+			throw_error_message("load_blob", "Not initialized and/or connected!");
 		
 		try
 		{				
@@ -1047,7 +961,7 @@ namespace mapgeneration
 			++tables_iter)
 		{
 			for (int i = 0; (error_occured == false) && 
-				(i < number_of_statements); ++i)
+				(i < _NUMBER_OF_STATEMENTS); ++i)
 			{
 				tables_iter->_prepared_statements.push_back(SQLHSTMT());
 				try
@@ -1104,7 +1018,7 @@ namespace mapgeneration
 		
 		// now "prepare" prepared_statements...
 		
-		std::string sql_commands[number_of_statements];
+		std::string sql_commands[_NUMBER_OF_STATEMENTS];
 		
 		tables_iter = _tables.begin();
 		tables_iter_end = _tables.end();
@@ -1137,7 +1051,7 @@ namespace mapgeneration
 		
 			try
 			{
-				for (int i = 0; i < number_of_statements; ++i)
+				for (int i = 0; i < _NUMBER_OF_STATEMENTS; ++i)
 				{
 					sql_return = SQLPrepare(tables_iter->_prepared_statements[i],
 													(SQLCHAR*)(sql_commands[i].c_str()),
@@ -1168,7 +1082,7 @@ namespace mapgeneration
 	size_t
 	DBConnection::register_table(std::string name)
 	{
-		if (_inited || _connected)
+		if (_initialized || _connected)
 			throw_error_message("DBConnection", 
 				"Cannot register table when inizialized or connected!");
 		
@@ -1179,12 +1093,97 @@ namespace mapgeneration
 		return (_tables.size() - 1);
 	}
 	
+	
+	void
+	DBConnection::remove(size_t table_id, unsigned int id)
+	{
+		if ((_initialized != true) || (_connected != true))
+			throw_error_message("delete_entry", "Not initialized and/or connected!");
+
+		try
+		{
+		
+			std::string really_temp;
+			save(table_id, id, really_temp);
+			
+	/*		std::ostringstream stream;
+			stream << "UPDATE ";
+			
+			switch (from_table)
+			{
+				case _TILES:
+					stream << "tiles";
+					break;
+				
+				case _EDGES:
+					stream << "edges";
+					break;
+					
+				default:
+					throw ("Unknown table used!");
+					break;
+			}
+			
+			stream << " SET (data) = ("") WHERE id = ";
+			stream << id;
+			stream << ";";
+			stream.flush();
+			
+			string sql_command = stream.str();		
+	
+			SQLRETURN sql_return;
+			SQLHSTMT sql_statement;
+			SQLINTEGER sql_id = (SQLINTEGER)id;
+			SQLINTEGER sql_indicator;
+			string stored_error_messages = "";
+			
+			sql_return = SQLAllocHandle(SQL_HANDLE_STMT, _connection, &sql_statement);
+			evaluate_sql_return(sql_return, "delete_entry", "Error allocating SQL statement handle!");
+			
+			try
+			{
+				sql_return = SQLExecDirect(sql_statement, (SQLCHAR*)(sql_command.c_str()), SQL_NTS);
+				evaluate_sql_return(sql_return, "delete_entry", "Error executing SQL command!");
+			} catch (string error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(error_message);
+			}
+			
+			try
+			{
+				sql_return = SQLFreeHandle(SQL_HANDLE_STMT, sql_statement);
+				evaluate_sql_return(sql_return, "delete_entry", "Error freeing SQL statement handle!");
+			} catch (string error_message)
+			{
+				if (stored_error_messages != "")
+				{
+					stored_error_messages.append(" ");
+				}
+				stored_error_messages.append(error_message);
+			}
+			
+			if (stored_error_messages != "")
+			{
+				throw (stored_error_messages);
+			}*/
+
+		} catch (string error_message)
+		{
+			throw_error_message("delete_entry", error_message);
+		}
+		
+	}
+	
 
 	void
 	DBConnection::save(size_t table_id, unsigned int id, string& data_representation)
 	{
-		if ((_inited != true) || (_connected  != true))
-			throw_error_message("save_blob", "Not inited and/or connected!");
+		if ((_initialized != true) || (_connected  != true))
+			throw_error_message("save_blob", "Not initialized and/or connected!");
 		try
 		{		
 			
