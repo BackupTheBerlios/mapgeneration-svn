@@ -8,6 +8,7 @@
 
 #include "mapmodule.h"
 
+#include "dbconnection/odbcdbconnection.h"
 #include "gui/eventmacros.h"
 
 #include <wx/xrc/xmlres.h>

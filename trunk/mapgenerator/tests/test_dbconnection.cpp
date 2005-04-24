@@ -6,7 +6,7 @@
 *******************************************************************************/
 
 
-#include "dbconnection.h"
+#include "dbconnection/odbcdbconnection.h"
 
 #include <istream>
 #include <string>
@@ -25,8 +25,9 @@ int main()
 	bool stop = false;
 
 	// construct...
+	mlog(MLog::debug, "test_dbconnection") << "Testing ODBCDBConnection!\n";
 	mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::DBConnection.\n";		
-	DBConnection dbc;	
+	ODBCDBConnection dbc;	
 	size_t test_table_id = dbc.register_table("test");
 	// constructor called.
 
@@ -34,17 +35,18 @@ int main()
 	{
 		// connect...
 		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::connect.\n";
-		dbc.connect("MapGeneration", "mapgeneration", "mg");
+		dbc.set_parameters("MapGeneration", "mapgeneration", "mg");
+		dbc.connect();
 		// connected.
 
 		// init...
-		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::init.\n";		
-		dbc.init();
+//		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::init.\n";		
+//		dbc.init();
 		//inited.
 		
 		// connect...
-		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::connect.\n";
-		dbc.connect("MapGeneration", "mapgeneration", "mg", true);
+//		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::connect.\n";
+//		dbc.connect();
 		// connected.
 	
 		// build some input...
@@ -135,7 +137,7 @@ int main()
 		
 		// drop tables
 		mlog(MLog::debug, "test_dbconnection") << "Delete tables.\n";
-		dbc.dropTables();
+		dbc.drop_tables();
 	}
 	catch (string error_message)
 	{
@@ -143,6 +145,6 @@ int main()
 
 		// drop tables
 		mlog(MLog::debug, "test_dbconnection") << "Delete tables.\n";
-		dbc.dropTables();
+		dbc.drop_tables();
 	}
 }

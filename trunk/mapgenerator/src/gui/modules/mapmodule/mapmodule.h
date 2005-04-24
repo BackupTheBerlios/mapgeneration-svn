@@ -9,7 +9,7 @@
 #ifndef MAPMODULE_H
 #define MAPMODULE_H
 
-#include "dbconnection.h"
+#include "dbconnection/dbconnection.h"
 #include "tilecache.h"
 #include "util/mlog.h"
 #include "gui/module.h"

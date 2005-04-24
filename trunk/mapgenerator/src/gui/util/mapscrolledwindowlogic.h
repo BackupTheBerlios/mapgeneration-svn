@@ -17,7 +17,7 @@
 #include "gui/util/gpsdraw.h"
 #include "mapdrawer.h"
 #include "geocoordinate.h"
-#include "dbconnection.h"
+#include "dbconnection/dbconnection.h"
 #include "tilecache.h"
 #include "util/pubsub/asynchronousproxy.h"
 #include "util/pubsub/classcallsubscriber.h"

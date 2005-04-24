@@ -6,7 +6,7 @@
 *******************************************************************************/
 
 
-#include "dbconnection.h"
+#include "odbcdbconnection.h"
 
 #include <iostream>
 #include <sstream>
@@ -15,18 +15,18 @@
 namespace mapgeneration
 {
 	
-	DBConnection::DBConnection() 
+	ODBCDBConnection::ODBCDBConnection() 
 	{
 		_connected =false;
 		_initialized = false;
 		
 		#ifdef DEBUG
-			log(MLog::debug, "DBConnection", "DBConnection constructed.");
+			log(MLog::debug, "ODBCDBConnection", "ODBCDBConnection constructed.");
 		#endif
 	}
 	
 	
-	DBConnection::~DBConnection()
+	ODBCDBConnection::~ODBCDBConnection()
 	{
 		try 
 		{
@@ -71,17 +71,17 @@ namespace mapgeneration
 			}
 		} catch (string error_message)
 		{
-			throw_error_message("~DBConnection", error_message);
+			throw_error_message("~ODBCDBConnection", error_message);
 		} // level 1 try-catch
 
 		#ifdef DEBUG
-			log(MLog::debug, "~DBConnection", "DBConnection destructed.");
+			log(MLog::debug, "~ODBCDBConnection", "ODBCDBConnection destructed.");
 		#endif
 	}
 	
 	
 	bool
-	DBConnection::check_db_structure()
+	ODBCDBConnection::check_db_structure()
 	{		
 		std::vector<Table>::iterator search_iterator;
 		
@@ -179,8 +179,15 @@ namespace mapgeneration
 	
 	
 	void
-	DBConnection::connect(string dns, string user, string password, bool correct_structure)
+	ODBCDBConnection::connect()
 	{
+		if (!_dns.length() || !_user.length() || !_password.length())
+		{
+			throw ("Parameters missing when calling connect!");
+		}
+		
+		init();
+		
 		//exits when not initialized!
 		if(_initialized == false) return;
 		
@@ -193,26 +200,26 @@ namespace mapgeneration
 		try 
 		{
 			SQLRETURN sql_return;
-			SQLCHAR* sql_dns = (SQLCHAR*)dns.c_str();
-			SQLCHAR* sql_user = (SQLCHAR*)user.c_str();
-			SQLCHAR* sql_password = (SQLCHAR*)password.c_str();
+			SQLCHAR* sql_dns = (SQLCHAR*)_dns.c_str();
+			SQLCHAR* sql_user = (SQLCHAR*)_user.c_str();
+			SQLCHAR* sql_password = (SQLCHAR*)_password.c_str();
 		
 			sql_return = SQLConnect(_connection,
 														sql_dns, SQL_NTS,
 														sql_user, SQL_NTS,
 														sql_password, SQL_NTS);
 													
-			evaluate_sql_return(sql_return, "connect", "Error connecting to DB \"" + dns + "\"!");
+			evaluate_sql_return(sql_return, "connect", "Error connecting to DB \"" + _dns + "\"!");
 
 
-			log(MLog::info, "connect", "Connected to DB \"" + dns + "\" with user \"" + user + "\" and password \"*****\"");
+			log(MLog::info, "connect", "Connected to DB \"" + _dns + "\" with user \"" + _user + "\" and password \"*****\"");
 			_connected = true;
 
 			
 			// connected! Now check DB structure...		
 			if (check_db_structure() == false) 
 			{
-				if (correct_structure == true)
+				if (_correct_structure == true)
 				{
 					log(MLog::warning, "connect", "Wrong DB structure! Try to correct...");
 					correct_db_structure();
@@ -259,7 +266,7 @@ namespace mapgeneration
 	
 	
 	void
-	DBConnection::correct_db_structure()
+	ODBCDBConnection::correct_db_structure()
 	{
 		// Simple tries to create the necessary tables.
 
@@ -327,14 +334,14 @@ namespace mapgeneration
 	
 	
 	void
-	DBConnection::destroy()
+	ODBCDBConnection::destroy()
 	{
 		destroy(false);
 	}
 	
 	
 	void
-	DBConnection::disconnect()
+	ODBCDBConnection::disconnect()
 	{
 		disconnect(false);
 	}
@@ -342,7 +349,7 @@ namespace mapgeneration
 	
 	#ifdef DEBUG
 		void
-		DBConnection::dropTables()
+		ODBCDBConnection::drop_tables()
 		{
 			SQLRETURN sql_return;
 			SQLHSTMT sql_statement;
@@ -377,7 +384,7 @@ namespace mapgeneration
 	
 	
 	void
-	DBConnection::init()
+	ODBCDBConnection::init()
 	{
 		// exits when already initialized!
 		if (_initialized == true) return;
@@ -385,30 +392,30 @@ namespace mapgeneration
 		try
 		{
 			#ifdef DEBUG
-				log(MLog::debug, "DBConnection", "Starting...");
+				log(MLog::debug, "ODBCDBConnection", "Starting...");
 			#endif
 		
 			SQLRETURN sql_return;
 
 			#ifdef DEBUG
-				log(MLog::debug, "DBConnection", "Allocate environment handle...");
+				log(MLog::debug, "ODBCDBConnection", "Allocate environment handle...");
 			#endif
 			sql_return = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &_environment);
-			evaluate_sql_return(sql_return, "DBConnection", "Error allocating SQL environment handle!");
+			evaluate_sql_return(sql_return, "ODBCDBConnection", "Error allocating SQL environment handle!");
 
 			try
 			{
 				#ifdef DEBUG		
-					log(MLog::debug, "DBConnection", "Set ODBC version...");
+					log(MLog::debug, "ODBCDBConnection", "Set ODBC version...");
 				#endif
 				sql_return = SQLSetEnvAttr(_environment, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0);
-				evaluate_sql_return(sql_return, "DBConnection", "Error setting ODBC version!");
+				evaluate_sql_return(sql_return, "ODBCDBConnection", "Error setting ODBC version!");
 		
 				#ifdef DEBUG		
-					log(MLog::debug, "DBConnection", "Allocating connection handle...");
+					log(MLog::debug, "ODBCDBConnection", "Allocating connection handle...");
 				#endif
 				sql_return = SQLAllocHandle(SQL_HANDLE_DBC, _environment, &_connection);
-				evaluate_sql_return(sql_return, "DBConnection", "Error allocating SQL connection!");
+				evaluate_sql_return(sql_return, "ODBCDBConnection", "Error allocating SQL connection!");
 
 			} catch (string level2_error_message)
 			{
@@ -416,7 +423,7 @@ namespace mapgeneration
 				{
 					sql_return = SQLFreeHandle(SQL_HANDLE_ENV, _environment);
 					evaluate_sql_return(sql_return,
-											"DBConnection",
+											"ODBCDBConnection",
 											"Error freeing SQL environment handle!");
 				} catch (string level3_error_message)
 				{
@@ -427,17 +434,17 @@ namespace mapgeneration
 			} // level 2 try-catch
 		} catch(string error_message)
 		{
-			throw_error_message("DBConnection", error_message);
+			throw_error_message("ODBCDBConnection", error_message);
 		} // level 1 try-catch
 
 
 		_initialized =true;
-		log(MLog::notice, "init", "Init DBConnection... successful finished.");
+		log(MLog::notice, "init", "Init ODBCDBConnection... successful finished.");
 	}
 
 	
 	void
-	DBConnection::destroy(bool internal_call)
+	ODBCDBConnection::destroy(bool internal_call)
 	{
 		//exits when not initialized!
 		if (_initialized == false) return;
@@ -511,12 +518,12 @@ namespace mapgeneration
 		} // level 1 try-catch
 
 		_initialized = false;
-		log(MLog::notice, "destroy", "Destroy DBConnection... successful finished.");
+		log(MLog::notice, "destroy", "Destroy ODBCDBConnection... successful finished.");
 	}
 	
 
 	void
-	DBConnection::disconnect(bool internal_call)
+	ODBCDBConnection::disconnect(bool internal_call)
 	{
 		//exits when not connected
 		if (_connected == false) return;
@@ -567,12 +574,15 @@ namespace mapgeneration
 		}
 
 		_connected = false;
+		
 		log(MLog::info, "disconnect", "Disconnected from DB.");
+		
+		destroy();
 	}
 	
 	
 	void
-	DBConnection::free_prepared_statements()
+	ODBCDBConnection::free_prepared_statements()
 	{
 		SQLRETURN sql_return;
 		string stored_error_messages = "";
@@ -619,7 +629,7 @@ namespace mapgeneration
 
 
 	std::vector<unsigned int>
-	DBConnection::get_all_used_ids(size_t table_id)
+	ODBCDBConnection::get_all_used_ids(size_t table_id)
 	{
 		SQLRETURN sql_return;
 		SQLHSTMT sql_statement;
@@ -657,7 +667,7 @@ namespace mapgeneration
 
 
 	std::vector<unsigned int>
-	DBConnection::get_free_ids(size_t table_id)
+	ODBCDBConnection::get_free_ids(size_t table_id)
 	{
 		SQLRETURN sql_return;
 		SQLHSTMT sql_statement;
@@ -697,7 +707,7 @@ namespace mapgeneration
 	
 	
 	unsigned int
-	DBConnection::get_next_to_max_id(size_t table_id)
+	ODBCDBConnection::get_next_to_max_id(size_t table_id)
 	{
 		SQLRETURN sql_return;
 		SQLHSTMT sql_statement;
@@ -737,7 +747,7 @@ namespace mapgeneration
 	
 	
 	string*
-	DBConnection::load(size_t table_id, unsigned int id)
+	ODBCDBConnection::load(size_t table_id, unsigned int id)
 	{
 		if ((_initialized != true) || (_connected != true))
 			throw_error_message("load_blob", "Not initialized and/or connected!");
@@ -828,7 +838,7 @@ namespace mapgeneration
 	
 	
 	void 
-	DBConnection::prepare_statements()
+	ODBCDBConnection::prepare_statements()
 	{
 		// first allocate the statements...
 		SQLRETURN sql_return;
@@ -937,10 +947,10 @@ namespace mapgeneration
 	
 	
 	size_t
-	DBConnection::register_table(std::string name)
+	ODBCDBConnection::register_table(std::string name)
 	{
 		if (_initialized || _connected)
-			throw_error_message("DBConnection", 
+			throw_error_message("ODBCDBConnection", 
 				"Cannot register table when inizialized or connected!");
 		
 		Table new_table;
@@ -952,7 +962,7 @@ namespace mapgeneration
 	
 	
 	void
-	DBConnection::remove(size_t table_id, unsigned int id)
+	ODBCDBConnection::remove(size_t table_id, unsigned int id)
 	{
 		if ((_initialized != true) || (_connected != true))
 			throw_error_message("delete_entry", "Not initialized and/or connected!");
@@ -970,7 +980,7 @@ namespace mapgeneration
 	
 
 	void
-	DBConnection::save(size_t table_id, unsigned int id, string& data_representation)
+	ODBCDBConnection::save(size_t table_id, unsigned int id, string& data_representation)
 	{
 		if ((_initialized != true) || (_connected  != true))
 			throw_error_message("save_blob", "Not initialized and/or connected!");
@@ -1099,6 +1109,17 @@ namespace mapgeneration
 			throw_error_message("save_blob", error_message);
 		}		
 		
+	}
+	
+	
+	void
+	ODBCDBConnection::set_parameters(string dns, string user, string password, 
+		bool correct_structure)
+	{
+		_dns = dns;
+		_user = user;
+		_password = password;
+		_correct_structure = correct_structure;
 	}
 
 } // namespace mapgeneration

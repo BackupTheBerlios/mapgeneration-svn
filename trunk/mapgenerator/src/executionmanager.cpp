@@ -9,6 +9,7 @@
 #include "executionmanager.h"
 
 #include "traceserver.h"
+#include "dbconnection/odbcdbconnection.h"
 #include "util/configuration.h"
 #include "util/mlog.h"
 
@@ -45,10 +46,11 @@ namespace mapgeneration
 		mlog(MLog::info, "ExecutionManager") << "Configuration loaded.\n";
 		
 		mlog(MLog::info, "ExecutionManager") << "Initializing DBConnection.\n";
-		_db_connection = new DBConnection();
-		size_t tiles_table_id = _db_connection->register_table("tiles");		
-		_db_connection->init();
-		_db_connection->connect("MapGeneration", "mapgeneration", "mg", true);
+		ODBCDBConnection* odbc_db_connection = new ODBCDBConnection();		
+		odbc_db_connection->set_parameters("MapGeneration", "mapgeneration", "mg", true);
+		_db_connection = odbc_db_connection;
+		size_t tiles_table_id = _db_connection->register_table("tiles");
+		_db_connection->connect();
 		mlog(MLog::info, "ExecutionManager") << "DBConnection initialized.\n";
 		
 		mlog(MLog::info, "ExecutionManager") << "Starting TileCache.\n";
@@ -114,14 +116,13 @@ namespace mapgeneration
 			if (delete_db == true)
 			{
 				mlog(MLog::info, "ExecutionManager") << "Deleting DB ...\n";
-				_db_connection->dropTables();
+				_db_connection->drop_tables();
 				mlog(MLog::info, "ExecutionManager") << "DB deleted.\n";
 			}
 		#endif
 
 		mlog(MLog::info, "ExecutionManager") << "Disconnecting DBConnection...\n";
-		_db_connection->disconnect();
-		_db_connection->destroy();
+		_db_connection->disconnect();		
 		delete _db_connection;
 		mlog(MLog::info, "ExecutionManager") << "DBConnection deleted.\n";
 		

@@ -9,7 +9,7 @@
 #ifndef TILECACHE_H
 #define TILECACHE_H
 
-#include "dbconnection.h"
+#include "dbconnection/dbconnection.h"
 #include "tile.h"
 #include "util/cache.h"
 

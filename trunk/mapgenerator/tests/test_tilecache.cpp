@@ -7,7 +7,7 @@
 
 
 #include <vector>
-#include "dbconnection.h"
+#include "dbconnection/odbcdbconnection.h"
 #include "tile.h"
 #include "tilecache.h"
 #include "util/mlog.h"
@@ -49,10 +49,10 @@ int main()
 		<< " It will just add some empty tiles.\n";
 		
 	mlog(MLog::debug, "test_tilecache") << "Creating DBConnection\n";
-	DBConnection* db_connection = new DBConnection();
+	ODBCDBConnection* db_connection = new ODBCDBConnection();
 	size_t test_table_id = db_connection->register_table("test");
-	db_connection->init();
-	db_connection->connect("MapGeneration", "mapgeneration", "mg", true);
+	db_connection->set_parameters("MapGeneration", "mapgeneration", "mg", true);
+	db_connection->connect();
 	
 	mlog(MLog::debug, "test_tilecache") << "Generating a cache with some content...\n";	
 	TileCache* tile_cache = new TileCache(db_connection, test_table_id, 

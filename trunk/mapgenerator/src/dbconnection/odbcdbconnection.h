@@ -6,8 +6,8 @@
 *******************************************************************************/
 
 
-#ifndef DBCONNECTION_H
-#define DBCONNECTION_H
+#ifndef ODBCDBCONNECTION_H
+#define ODBCDBCONNECTION_H
 
 #ifdef CYGWIN
 	#include <windows.h>
@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "dbconnection.h"
 #include "util/mlog.h"
 
 #define MAX_SQL_CHAR_LENGTH (255)
@@ -36,35 +37,21 @@ namespace mapgeneration
 	 * @todo save_filteredtrace schreiben!
 	 * 
 	 */
-	class DBConnection
+	class ODBCDBConnection : public DBConnection
 	{
 
 		public:
-		
-		
-			class Table
-			{
-				public:
-				
-					std::string _name;
-					
-					/**
-					 * @brief Prepared SQL statement handles.
-					 */
-					std::vector<SQLHSTMT> _prepared_statements;
-			};
-
 	
 			/**
 			 * @brief Empty constructor. Allocated handles.
 			 */
-			DBConnection ();
+			ODBCDBConnection ();
 		
 
 			/**
 			 * @brief Destructor. Frees handles.
 			 */
-			~DBConnection();
+			~ODBCDBConnection();
 
 
 			/**
@@ -81,16 +68,7 @@ namespace mapgeneration
 			 * @see correct_db_structure()
 			 */
 			void
-			connect(string dns, string user, string password, bool correct_structure = false);
-			
-			
-			/**
-			 * @brief Destroy database handles.
-			 * 
-			 * Needed for restarting.
-			 */		
-			void
-			destroy();
+			connect();
 
 
 			/**
@@ -105,7 +83,7 @@ namespace mapgeneration
 				 * @brief Drops all registered tables.
 				 */
 				void
-				dropTables();
+				drop_tables();
 			#endif
 			
 						
@@ -136,13 +114,6 @@ namespace mapgeneration
 			 */
 			unsigned int
 			get_next_to_max_id(size_t table_id);
-			
-			
-			/**
-			 * @brief Inits database handles.
-			 */
-			void 
-			init();
 			
 			
 			/**
@@ -182,9 +153,33 @@ namespace mapgeneration
 			 */
 			void 
 			save(size_t table_id, unsigned int id, string& data);
-		
+			
+			
+			/**
+			 * @brief Sets the parameters for the connection.
+			 * 
+			 * This method has to be called before a connection can be 
+			 * established.
+			 */
+			void
+			set_parameters(string dns, string user, string password, 
+				bool correct_structure = false);		
 		
 		private:
+
+
+			class Table
+			{
+				public:
+				
+					std::string _name;
+					
+					/**
+					 * @brief Prepared SQL statement handles.
+					 */
+					std::vector<SQLHSTMT> _prepared_statements;
+			};
+		
 
 			/**
 			 * @brief Simple enumeration to code the prepared statements.
@@ -218,6 +213,14 @@ namespace mapgeneration
 			 */
 			SQLHDBC _connection;
 			
+			
+			bool
+			_correct_structure;
+			
+			
+			std::string
+			_dns;
+			
 		
 			/**
 			 * @brief Handle for SQL environment.
@@ -231,11 +234,19 @@ namespace mapgeneration
 			bool _initialized;
 			
 			
+			std::string
+			_password;
+			
+			
 			/**
 			 * @brief Collection of all registered tables.
 			 */
 			std::vector<Table>
 			_tables;
+			
+			
+			std::string
+			_user;
 			
 		
 			/**
@@ -254,7 +265,16 @@ namespace mapgeneration
 			 */
 			inline void
 			correct_db_structure();
-			 
+			
+			
+			/**
+			 * @brief Destroy database handles.
+			 * 
+			 * Needed for restarting.
+			 */		
+			void
+			destroy();
+						 
 	
 			/**
 			 * @see destroy()
@@ -290,6 +310,13 @@ namespace mapgeneration
 			 */			
 			inline void
 			free_prepared_statements();
+			
+			
+			/**
+			 * @brief Inits database handles.
+			 */
+			void 
+			init();
 
 		
 			/**
@@ -342,7 +369,7 @@ namespace mapgeneration
 
 
 	inline void
-	DBConnection::evaluate_sql_return(SQLRETURN sqlReturn, string caller, string message)
+	ODBCDBConnection::evaluate_sql_return(SQLRETURN sqlReturn, string caller, string message)
 	{
 		if (sqlReturn == SQL_ERROR) 
 		{
@@ -358,9 +385,9 @@ namespace mapgeneration
 
 
 	inline void
-	DBConnection::log(MLog::Level level, string caller, string message)
+	ODBCDBConnection::log(MLog::Level level, string caller, string message)
 	{
-		mlog(level, "DBConnection")
+		mlog(level, "ODBCDBConnection")
 		#ifdef DEBUG
 			<< "::" << caller << " : "
 		#endif
@@ -369,7 +396,7 @@ namespace mapgeneration
 
 
 	inline void
-	DBConnection::show_error(SQLSMALLINT sql_handle_type, SQLHANDLE& sql_handle)
+	ODBCDBConnection::show_error(SQLSMALLINT sql_handle_type, SQLHANDLE& sql_handle)
 	{
 		SQLCHAR stat[10];
 		SQLCHAR msg[501];
@@ -382,10 +409,10 @@ namespace mapgeneration
 		while (SQLGetDiagRec(sql_handle_type, sql_handle, i, stat, &err,
 					msg, 500, &mlen) != SQL_NO_DATA)
 		{
-			mlog(MLog::debug, "DBConnection") <<" ::show_error : stat = \"" << stat << "\"\n";
-			mlog(MLog::debug, "DBConnection") <<" ::show_error : err = \"" << err << "\"\n";
-			mlog(MLog::debug, "DBConnection") << " ::show_error : msg = \"" << msg << "\"\n";
-			mlog(MLog::debug, "DBConnection") << " ::show_error: mlen = \"" << mlen << "\"\n";
+			mlog(MLog::debug, "ODBCDBConnection") <<" ::show_error : stat = \"" << stat << "\"\n";
+			mlog(MLog::debug, "ODBCDBConnection") <<" ::show_error : err = \"" << err << "\"\n";
+			mlog(MLog::debug, "ODBCDBConnection") << " ::show_error : msg = \"" << msg << "\"\n";
+			mlog(MLog::debug, "ODBCDBConnection") << " ::show_error: mlen = \"" << mlen << "\"\n";
 			mlog(MLog::debug, "") << "_\n";
 			i++;
 		}
@@ -393,7 +420,7 @@ namespace mapgeneration
 
 
 	inline void
-	DBConnection::show_error()
+	ODBCDBConnection::show_error()
 	{
 		SQLCHAR stat[10];
 		SQLCHAR msg[501];
@@ -404,10 +431,10 @@ namespace mapgeneration
 		while (SQLGetDiagRec(SQL_HANDLE_DBC, _connection, i, stat, &err,
 					msg, 500, &mlen) != SQL_NO_DATA)
 		{
-			mlog(MLog::debug, "DBConnection") <<" ::show_error : stat = \"" << stat << "\"\n";
-			mlog(MLog::debug, "DBConnection") <<" ::show_error : err = \"" << err << "\"\n";
-			mlog(MLog::debug, "DBConnection") << " ::show_error : msg = \"" << msg << "\"\n";
-			mlog(MLog::debug, "DBConnection") << " ::show_error: mlen = \"" << mlen << "\"\n";
+			mlog(MLog::debug, "ODBCDBConnection") <<" ::show_error : stat = \"" << stat << "\"\n";
+			mlog(MLog::debug, "ODBCDBConnection") <<" ::show_error : err = \"" << err << "\"\n";
+			mlog(MLog::debug, "ODBCDBConnection") << " ::show_error : msg = \"" << msg << "\"\n";
+			mlog(MLog::debug, "ODBCDBConnection") << " ::show_error: mlen = \"" << mlen << "\"\n";
 			mlog(MLog::debug, "") << "_\n";
 			i++;
 		}
@@ -415,11 +442,11 @@ namespace mapgeneration
 
 
 	inline void
-	DBConnection::throw_error_message(string caller, string error_message)
+	ODBCDBConnection::throw_error_message(string caller, string error_message)
 	{	
 		string throw_message = "";
 		
-		throw_message.append("DBConnection::");
+		throw_message.append("ODBCDBConnection::");
 		throw_message.append(caller);
 		throw_message.append(" : ");
 		throw_message.append(error_message);
@@ -430,4 +457,4 @@ namespace mapgeneration
 
 } // namespace mapgeneration_util
 
-#endif //DBCONNECTION_H
+#endif //ODBCDBCONNECTION_H

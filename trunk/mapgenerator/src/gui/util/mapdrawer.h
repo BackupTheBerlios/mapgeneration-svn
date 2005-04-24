@@ -17,7 +17,7 @@
 
 #include "gpsdraw.h"
 #include "geocoordinate.h"
-#include "dbconnection.h"
+#include "dbconnection/dbconnection.h"
 #include "tilecache.h"
 #include "util/controlledthread.h"
 #include "util/pubsub/asynchronousproxy.h"

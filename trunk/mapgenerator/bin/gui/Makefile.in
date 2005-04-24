@@ -28,7 +28,7 @@ mainobjects := util/configuration.o util/pubsub/servicelist.o \
 	util/pubsub/genericservice.o \
 	util/mlog.o util/controlledthread.o tile.o node.o \
 	geocoordinate.o tracelog.o \
-	dbconnection.o tilecache.o
+	dbconnection/odbcdbconnection.o tilecache.o
 
 # Directory definitions
 top_builddir := @top_builddir@

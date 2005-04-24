@@ -11,7 +11,8 @@
 objects := util/configuration.o \
 	util/controlledthread.o util/mlog.o \
 	util/pubsub/genericservice.o util/pubsub/servicelist.o \
-	dbconnection.o geocoordinate.o gpspoint.o node.o edge.o \
+	dbconnection/odbcdbconnection.o \
+	geocoordinate.o gpspoint.o node.o edge.o \
 	tile.o tilecache.o \
 	tracelog.o tracelogwriter.o \
 	filteredtrace.o traceprocessor.o \
@@ -89,6 +90,7 @@ clean:
 	$(MAKE) -C ./gpstrans clean
 	-rm -f *.o *.lo *.d ./main@EXEEXT@ ./util/*.o ./util/*.lo ./util/*.d
 	-rm -f ./util/pubsub/*.o ./util/pubsub/*.lo ./util/pubsub/*.d
+	-rm -f ./dbconnection/*.o ./dbconnection/*.lo ./dbconnection/*.d
 	-rm -f -r .libs
 	-rm -f -r ./util/.libs
 	-rm -f -r ./util/pubsub/.libs

@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <set>
+#include "dbconnection/odbcdbconnection.h"
 #include "util/mlog.h"
 
 
@@ -22,10 +23,11 @@ namespace mapgeneration_gui
 	{
 		mlog(MLog::info, "MapPanelLogic") 
 			<< "Initializing DBConnection and caches.\n";
-		_db_connection = new DBConnection();
+		ODBCDBConnection* odbc_db_connection = new ODBCDBConnection;
+		odbc_db_connection->set_parameters("MapGeneration", "mapgeneration", "mg");		
+		_db_connection = odbc_db_connection;
 		size_t tiles_table_id = _db_connection->register_table("tiles");
-		_db_connection->init();
-		_db_connection->connect("MapGeneration", "mapgeneration", "mg");
+		_db_connection->connect();
 
 		TileCache* tile_cache = new TileCache(_db_connection, tiles_table_id,
 			TileCache::_FIFO, TileCache::_NO_WRITEBACK, 20000000, 18000000);
@@ -43,7 +45,6 @@ namespace mapgeneration_gui
 		delete _tile_cache;
 		
 		_db_connection->disconnect();
-		_db_connection->destroy();
 		delete _db_connection;
 	}
 

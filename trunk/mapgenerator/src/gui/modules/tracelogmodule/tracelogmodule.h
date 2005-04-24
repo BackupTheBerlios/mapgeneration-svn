@@ -9,7 +9,7 @@
 #ifndef TRACELOGMODULE_H
 #define TRACELOGMODULE_H
 
-#include "dbconnection.h"
+#include "dbconnection/dbconnection.h"
 #include "tilecache.h"
 #include "util/mlog.h"
 #include "gui/module.h"
