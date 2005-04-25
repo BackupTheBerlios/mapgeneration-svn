@@ -16,12 +16,17 @@ namespace mapgeneration_util
 
 	Configuration::Configuration(std::string filename, 
 		pubsub::ServiceList* service_list,
+		std::string entry_header,
 		std::vector<Parameter>* default_parameter_vector)
-	: _default_parameter_map(),	_filename(filename), _service_list(service_list)
+	: _default_parameter_map(),	
+		_default_parameters_given(false),
+		_filename(filename), 
+		_service_list(service_list), _entry_header(entry_header)
 	{
-		
 		if (default_parameter_vector)
 		{
+			_default_parameters_given = true;
+			
 			std::vector<Parameter>::iterator defaults_iter = 
 				default_parameter_vector->begin();
 			std::vector<Parameter>::iterator defaults_iter_end = 
@@ -79,30 +84,34 @@ namespace mapgeneration_util
 			
 			parameter_iter->second._type = type;
 			
-			D_ParameterMap::iterator default_parameter_iter =
-				_default_parameter_map.find(parameter_iter->first);
-			if (default_parameter_iter == _default_parameter_map.end())
+			if (_default_parameters_given)
 			{
-				mlog(MLog::warning, "Configuration")
-					<< "Unknown parameter:\n" << parameter_iter->first
-					<< ", " << parameter_iter->second._type << ", "
-					<< parameter_iter->second._value << "\n";
-			} else 
-			{
-				if (default_parameter_iter->second._type != 
-				parameter_iter->second._type)
+				D_ParameterMap::iterator default_parameter_iter =
+					_default_parameter_map.find(parameter_iter->first);
+				if (default_parameter_iter == _default_parameter_map.end())
 				{
-					mlog(MLog::error, "Configuration")
-						<< "Parameter " << parameter_iter->first << " has wrong "
-						<< "type:\nIs: " << parameter_iter->second._type
-						<< "  Should be: " << default_parameter_iter->second._type
-						<< "\n";
+					mlog(MLog::warning, "Configuration")
+						<< "Unknown parameter:\n" << parameter_iter->first
+						<< ", " << parameter_iter->second._type << ", "
+						<< parameter_iter->second._value << "\n";
+				} else 
+				{
+					if (default_parameter_iter->second._type != 
+					parameter_iter->second._type)
+					{
+						mlog(MLog::error, "Configuration")
+							<< "Parameter " << parameter_iter->first << " has wrong "
+							<< "type:\nIs: " << parameter_iter->second._type
+							<< "  Should be: " << default_parameter_iter->second._type
+							<< "\n";
+						
+						parse_result = false;
+					}
 					
-					parse_result = false;
+					_default_parameter_map.erase(default_parameter_iter);
 				}
-				
-				_default_parameter_map.erase(default_parameter_iter);
 			}
+			
 		}
 
 
@@ -114,7 +123,7 @@ namespace mapgeneration_util
 			++default_parameter_iter)
 		{
 			mlog(MLog::warning, "Configuration")
-				<< "Parameter " << default_parameter_iter->first << "not "
+				<< "Parameter " << default_parameter_iter->first << " not "
 				<< "found in configuration file. Will insert default of "
 				<< default_parameter_iter->second._value << "("
 				<< default_parameter_iter->second._type << ")\n";
@@ -160,7 +169,7 @@ namespace mapgeneration_util
 			_service_list->add(generic_service);
 		}
 		
-//		std::cout << *_service_list << std::endl;		
+		//std::cout << *_service_list << std::endl;
 
 		return parse_result;
 	}

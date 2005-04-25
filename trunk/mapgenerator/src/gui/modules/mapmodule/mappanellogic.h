@@ -14,6 +14,7 @@
 #include <vector>
 #include <wx/wx.h>
 
+#include "util/pubsub/servicesystem.h"
 #include "gui/util/mapscrolledwindowlogic.h"
 
 
@@ -29,7 +30,8 @@ namespace mapgeneration_gui
 		public:
 		
 			MapPanelLogic
-				(wxScrolledWindow* map_scrolled_window);
+				(wxScrolledWindow* map_scrolled_window, 
+					pubsub::ServiceList* service_list);
 				
 			~MapPanelLogic();
 

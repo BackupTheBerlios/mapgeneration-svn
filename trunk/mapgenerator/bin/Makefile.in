@@ -12,6 +12,7 @@ objects := util/configuration.o \
 	util/controlledthread.o util/mlog.o \
 	util/pubsub/genericservice.o util/pubsub/servicelist.o \
 	dbconnection/odbcdbconnection.o \
+	dbconnection/filedbconnection.o \
 	geocoordinate.o gpspoint.o node.o edge.o \
 	tile.o tilecache.o \
 	tracelog.o tracelogwriter.o \

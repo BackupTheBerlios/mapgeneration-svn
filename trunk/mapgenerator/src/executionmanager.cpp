@@ -9,6 +9,7 @@
 #include "executionmanager.h"
 
 #include "traceserver.h"
+#include "dbconnection/filedbconnection.h"
 #include "dbconnection/odbcdbconnection.h"
 #include "util/configuration.h"
 #include "util/mlog.h"
@@ -40,15 +41,41 @@ namespace mapgeneration
 		DefaultConfiguration default_configuration;
 		std::vector< Configuration::Parameter > dc = 
 			default_configuration.get();
-		Configuration configuration(CONFIGURATION_PATH, _service_list,
+		Configuration configuration(CONFIGURATION_PATH, _service_list, "",
 			&dc);
 		configuration.read_configuration();
 		mlog(MLog::info, "ExecutionManager") << "Configuration loaded.\n";
 		
 		mlog(MLog::info, "ExecutionManager") << "Initializing DBConnection.\n";
-		ODBCDBConnection* odbc_db_connection = new ODBCDBConnection();		
-		odbc_db_connection->set_parameters("MapGeneration", "mapgeneration", "mg", true);
-		_db_connection = odbc_db_connection;
+		
+		std::string db_type;
+		if (!_service_list->get_service_value("db.type", db_type))
+			throw("Configuration for db type not found.");
+		if (db_type == "file")
+		{
+			FileDBConnection* file_db_connection = new FileDBConnection();
+			std::string db_directory;
+			if (!_service_list->get_service_value("db.file.directory",
+				db_directory))
+				throw("DB directory not configured!");
+			file_db_connection->set_parameters(db_directory);
+			_db_connection = file_db_connection;
+		} else if (db_type == "odbc")
+		{
+			ODBCDBConnection* odbc_db_connection = new ODBCDBConnection();
+			std::string dns, user, password;
+			if (!_service_list->get_service_value("db.odbc.dns",
+				dns) ||
+				!_service_list->get_service_value("db.odbc.user",
+				user) ||
+				!_service_list->get_service_value("db.odbc.password",
+				password))
+				throw("Missing parameters for db connection!");
+			odbc_db_connection->set_parameters(dns, user, password, true);
+			_db_connection = odbc_db_connection;
+		} else
+			throw("Unknown db type!");
+			
 		size_t tiles_table_id = _db_connection->register_table("tiles");
 		_db_connection->connect();
 		mlog(MLog::info, "ExecutionManager") << "DBConnection initialized.\n";

@@ -8,7 +8,6 @@
 
 #include "mapmodule.h"
 
-#include "dbconnection/odbcdbconnection.h"
 #include "gui/eventmacros.h"
 
 #include <wx/xrc/xmlres.h>
@@ -44,7 +43,7 @@ namespace mapgeneration_gui
 		wxScrolledWindow* map_panel = XRCCTRL(*_content_panel, "map_panel",
 			wxScrolledWindow);
 		
-		_map_panel_logic = new MapPanelLogic(map_panel);
+		_map_panel_logic = new MapPanelLogic(map_panel, _service_list);
 
 		MGG_XRC_EVT_PAINT(_content_panel, "map_panel",
 			MapPanelLogic::on_paint, _map_panel_logic);

@@ -47,39 +47,39 @@ namespace mapgeneration_gui
 		/** @todo Change paths (xml configuration file)
 		 *  and give responsibility for loading xrcs to corresponding
 		 *  components or to ModuleManager (probably better!) */
-		if (wxXmlResource::Get()->Load(wxT("xrcs/mainframe.xrc")) == false)
+		if (wxXmlResource::Get()->Load(wxT("bin/gui/xrcs/mainframe.xrc")) == false)
 		{
-			mlog(MLog::error, "MGG") << "Problem with \"xrcs/mainframe.xrc\"!\n";
+			mlog(MLog::error, "MGG") << "Problem with \"bin/gui/xrcs/mainframe.xrc\"!\n";
 			return false;
 		}
-		if (wxXmlResource::Get()->Load(wxT("xrcs/openconnectiondialog.xrc")) == false)
+		if (wxXmlResource::Get()->Load(wxT("bin/gui/xrcs/openconnectiondialog.xrc")) == false)
 		{
-			mlog(MLog::error, "MGG") << "Problem with \"xrcs/openconnectiondialog.xrc\"!\n";
+			mlog(MLog::error, "MGG") << "Problem with \"bin/gui/xrcs/openconnectiondialog.xrc\"!\n";
 			return false;
 		}
-		if (wxXmlResource::Get()->Load(wxT("xrcs/preferencesdialog.xrc")) == false)
+		if (wxXmlResource::Get()->Load(wxT("bin/gui/xrcs/preferencesdialog.xrc")) == false)
 		{
-			mlog(MLog::error, "MGG") << "Problem with \"xrcs/preferencesdialog.xrc\"!\n";
+			mlog(MLog::error, "MGG") << "Problem with \"bin/gui/xrcs/preferencesdialog.xrc\"!\n";
 			return false;
 		}
-		if (wxXmlResource::Get()->Load(wxT("xrcs/preferencesgeneralpanel.xrc")) == false)
+		if (wxXmlResource::Get()->Load(wxT("bin/gui/xrcs/preferencesgeneralpanel.xrc")) == false)
 		{
-			mlog(MLog::error, "MGG") << "Problem with \"xrcs/preferencesgeneralpanel.xrc\"!\n";
+			mlog(MLog::error, "MGG") << "Problem with \"bin/gui/xrcs/preferencesgeneralpanel.xrc\"!\n";
 			return false;
 		}
-		if (wxXmlResource::Get()->Load(wxT("xrcs/testmodule.xrc")) == false)
+		if (wxXmlResource::Get()->Load(wxT("bin/gui/xrcs/testmodule.xrc")) == false)
 		{
-			mlog(MLog::error, "MGG") << "Problem with \"xrcs/testmodule.xrc\"!\n";
+			mlog(MLog::error, "MGG") << "Problem with \"bin/gui/xrcs/testmodule.xrc\"!\n";
 			return false;
 		}
-		if (wxXmlResource::Get()->Load(wxT("xrcs/mappanel.xrc")) == false)
+		if (wxXmlResource::Get()->Load(wxT("bin/gui/xrcs/mappanel.xrc")) == false)
 		{
-			mlog(MLog::error, "MGG") << "Problem with \"xrcs/mappanel.xrc\"!\n";
+			mlog(MLog::error, "MGG") << "Problem with \"bin/gui/xrcs/mappanel.xrc\"!\n";
 			return true;
 		}
-		if (wxXmlResource::Get()->Load(wxT("xrcs/tracelogpanel.xrc")) == false)
+		if (wxXmlResource::Get()->Load(wxT("bin/gui/xrcs/tracelogpanel.xrc")) == false)
 		{
-			mlog(MLog::error, "MGG") << "Problem with \"xrcs/tracelogpanel.xrc\"!\n";
+			mlog(MLog::error, "MGG") << "Problem with \"bin/gui/xrcs/tracelogpanel.xrc\"!\n";
 			return true;
 		}
 		

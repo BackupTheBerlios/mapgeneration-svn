@@ -44,6 +44,7 @@ namespace mapgeneration_util
 	
 			Configuration(std::string filename, 
 				pubsub::ServiceList* service_list,
+				std::string entry_header = "config.",
 				std::vector<Parameter>* default_parameter_vector = 0);
 
 
@@ -66,6 +67,10 @@ namespace mapgeneration_util
 
 
 			D_ParameterMap _default_parameter_map;
+			
+			bool _default_parameters_given;
+			
+			std::string _entry_header;
 
 			std::string _filename;
 			

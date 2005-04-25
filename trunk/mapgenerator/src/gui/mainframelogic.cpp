@@ -308,8 +308,8 @@ namespace mapgeneration_gui
 
 			_registered_modules.push_back(module);
 			
-			module->load_content_panel(_notebook);
 			module->load_preferences_tree_item(&_service_list);
+			module->load_content_panel(_notebook);			
 			
 			_dialog_preferences_logic.add_tree_item(module->preferences_tree_item());
 			_notebook->AddPage(module->content_panel(), module->label());
