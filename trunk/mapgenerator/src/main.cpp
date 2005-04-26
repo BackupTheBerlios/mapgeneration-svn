@@ -5,6 +5,7 @@
 * Licensed under the Academic Free License version 2.1                         *
 *******************************************************************************/
 
+#include "config.h"
 
 #include <iostream>
 
@@ -24,6 +25,9 @@ using namespace mapgeneration_util;
  */
 int main()
 {
+	std::cout << PACKAGE_STRING << "\n";
+	std::cout << "Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz\n"
+	          << "Licensed under the Academic Free License version 2.1\n\n";
 	mlog(MLog::notice, "main") << "MapGenerator startet!\n";
 	mlog(MLog::debug, "main") << "Instantiating ExecutionManager.\n";
 	ExecutionManager execution_manager;

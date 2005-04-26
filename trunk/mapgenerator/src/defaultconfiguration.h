@@ -28,6 +28,8 @@ namespace mapgeneration
 		
 			DefaultConfiguration()
 			{
+				v.push_back(Parameter("accepted_licence", "string", "no"));
+				
 				v.push_back(Parameter("db.type", "string", "file"));
 				v.push_back(Parameter("db.file.directory", "string", "filedb"));
 				v.push_back(Parameter("db.odbc.dns", "string", "MapGeneration"));

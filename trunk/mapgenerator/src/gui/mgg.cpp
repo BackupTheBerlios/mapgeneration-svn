@@ -12,6 +12,9 @@
 
 #include "mgg.h"
 
+#include "config.h"
+
+#include <iostream>
 #include <wx/xrc/xmlres.h>
 
 #include "mainframelogic.h"
@@ -44,6 +47,9 @@ namespace mapgeneration_gui
 	bool
 	MGG::OnInit()
 	{
+		std::cout << PACKAGE_STRING << " - GUI\n";
+		std::cout << "Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz\n"
+		          << "Licensed under the Academic Free License version 2.1\n\n";
 		/** @todo Change paths (xml configuration file)
 		 *  and give responsibility for loading xrcs to corresponding
 		 *  components or to ModuleManager (probably better!) */
