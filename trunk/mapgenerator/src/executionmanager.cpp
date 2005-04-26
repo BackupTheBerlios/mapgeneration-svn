@@ -5,14 +5,18 @@
 * Licensed under the Academic Free License version 2.1                         *
 *******************************************************************************/
 
-
 #include "executionmanager.h"
+
+#include "config.h"
 
 #include "traceserver.h"
 #include "dbconnection/filedbconnection.h"
-#include "dbconnection/odbcdbconnection.h"
 #include "util/configuration.h"
 #include "util/mlog.h"
+
+#ifdef HAVE_ODBC
+	#include "dbconnection/odbcdbconnection.h"
+#endif
 
 
 using namespace mapgeneration_util;
@@ -62,6 +66,7 @@ namespace mapgeneration
 			_db_connection = file_db_connection;
 		} else if (db_type == "odbc")
 		{
+#ifdef HAVE_ODBC
 			ODBCDBConnection* odbc_db_connection = new ODBCDBConnection();
 			std::string dns, user, password;
 			if (!_service_list->get_service_value("db.odbc.dns",
@@ -73,6 +78,11 @@ namespace mapgeneration
 				throw("Missing parameters for db connection!");
 			odbc_db_connection->set_parameters(dns, user, password, true);
 			_db_connection = odbc_db_connection;
+#else
+			mlog(MLog::error, "ExecutionManager") << "ODBC support not " <<
+				"compiled. Please set db type to file in mapgenerator.conf.\n";
+			throw("ODBC not supported.");			
+#endif
 		} else
 			throw("Unknown db type!");
 			

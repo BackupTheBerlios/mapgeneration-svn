@@ -16,6 +16,14 @@
 #include <dirent.h>
 #include <unistd.h>
 
+#include <cc++/thread.h>
+
+#include "util/mlog.h"
+
+
+using namespace mapgeneration_util;
+
+
 namespace mapgeneration
 {
 	
@@ -52,7 +60,27 @@ namespace mapgeneration
 				std::string directory_name = _db_directory;
 				directory_name += "/";
 				directory_name += tables_iter->_name;
+				
+				DIR *dir;
+				struct dirent *direntp;
+				dir = opendir (directory_name.c_str());
+				if (dir == NULL)
+					continue;
+
+				readdir(dir); readdir(dir);
+				while ((direntp = readdir(dir)) != NULL)
+				{
+					std::string file_name = directory_name;
+					file_name += "/";
+					file_name += direntp->d_name;
+					unlink(file_name.c_str());
+				}
+				closedir (dir);
+				
 				rmdir(directory_name.c_str());
+				
+				// We also delete the db directory. Is this a good idea?
+				rmdir(_db_directory.c_str());
 			}
 		}
 	#endif
@@ -116,8 +144,7 @@ namespace mapgeneration
 	std::string*
 	FileDBConnection::load(size_t table_id, unsigned int id)
 	{
-		std::ifstream if_stream;
-		
+		std::ifstream if_stream;		
 		std::string fname = filename(table_id, id);
 		
 		if_stream.open(fname.c_str(), std::ios::in| std::ios::binary);
@@ -161,6 +188,8 @@ namespace mapgeneration
 	void
 	FileDBConnection::remove(size_t table_id, unsigned int id)
 	{
+		std::string fname = filename(table_id, id);
+		unlink(fname.c_str());
 	}
 	
 	

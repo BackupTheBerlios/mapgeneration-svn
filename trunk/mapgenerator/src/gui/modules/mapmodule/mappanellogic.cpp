@@ -8,11 +8,16 @@
 
 #include "mappanellogic.h"
 
+#include "config.h"
+
 #include <iostream>
 #include <set>
 #include "dbconnection/filedbconnection.h"
-#include "dbconnection/odbcdbconnection.h"
 #include "util/mlog.h"
+
+#ifdef HAVE_ODBC
+	#include "dbconnection/odbcdbconnection.h"
+#endif
 
 
 namespace mapgeneration_gui
@@ -40,6 +45,7 @@ namespace mapgeneration_gui
 			_db_connection = file_db_connection;
 		} else if (db_type == "odbc")
 		{
+#ifdef HAVE_ODBC			
 			ODBCDBConnection* odbc_db_connection = new ODBCDBConnection();
 			std::string dns, user, password;
 			if (!service_list->get_service_value("db.odbc.dns",
@@ -51,6 +57,11 @@ namespace mapgeneration_gui
 				throw("Missing parameters for db connection!");
 			odbc_db_connection->set_parameters(dns, user, password, true);
 			_db_connection = odbc_db_connection;
+#else
+			mlog(MLog::error, "ExecutionManager") << "ODBC support not " <<
+				"compiled. Please set db type to file in mgg.conf.\n";
+			throw("ODBC not supported.");			
+#endif
 		} else
 			throw("Unknown db type!");
 			
@@ -58,23 +69,11 @@ namespace mapgeneration_gui
 		_db_connection->connect();
 		mlog(MLog::info, "MapPanelLogic") << "DBConnection initialized.\n";
 		
-/*		ODBCDBConnection* odbc_db_connection = new ODBCDBConnection;
-		odbc_db_connection->set_parameters("MapGeneration", "mapgeneration", "mg");		*/
-//		FileDBConnection* file_db_connection = new FileDBConnection();
-//		file_db_connection->set_parameters("filedb");
-//		_db_connection = file_db_connection;
-//		_db_connection = odbc_db_connection;
-//		size_t tiles_table_id = _db_connection->register_table("tiles");
-//		_db_connection->connect();
-		
 		mlog(MLog::info, "MapPanelLogic") << "Initializing cache.\n";
-
 		TileCache* tile_cache = new TileCache(_db_connection, tiles_table_id,
 			TileCache::_FIFO, TileCache::_NO_WRITEBACK, 20000000, 18000000);
 		tile_cache->start();
-
 		set_tile_cache(tile_cache);
-		
 		mlog(MLog::info, "MapPanelLogic") << "Cache initialized.\n";
 	}
 	

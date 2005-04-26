@@ -116,7 +116,10 @@ AC_LANG([C++])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_MAKE_SET
+
+AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
+
 
 #### Checks for libraries. ####
 # Common C++
@@ -151,11 +154,12 @@ AC_ARG_WITH(odbc32-dll,
 		ODBC32_DLL="$withval")
 if test "$host_os" = "cygwin" ; then
 	if test -z $ODBC32_DLL; then
-		AC_MSG_ERROR([You have to define --with-odbc32-dll=FILE on cygwin!])
-	fi	
+		AC_MSG_NOTICE([To use ODBC on cygwin you have to define --with-odbc32-dll=FILE!])
+	fi
+	AC_MSG_CHECKING([for odbc32.dll])
 	AC_CHECK_FILE([$ODBC32_DLL],
-		,
-		AC_MSG_ERROR([ODBC32-DLL not found!]))
+		AC_MSG_RESULT([$ODBC32_DLL]),
+		AC_MSG_RESULT([not found]))
 fi
 
 # ODBC: ODBC directory
@@ -180,21 +184,32 @@ if test "$host_os" = "cygwin"; then
 	AC_MSG_RESULT([Cygwin])
 else
 	ODBC_NAME="odbc"
-	AC_MSG_RESULT([default])
+	AC_MSG_RESULT([unixODBC])
 fi
-#LIBS="-l$ODBC_NAME $LIBS"
 
 # ODBC: sql.h Header
-AC_CHECK_HEADERS(sql.h,
-	,
-	[ AC_MSG_ERROR([ODBC-Header (sql.h) not found!])],
+AC_CHECK_HEADER(sql.h,
+	[sql_h=yes],
+	[sql_h=no],
 	[$SQL_INCLUDES])
 
 # ODBC: Library	
 AC_CHECK_LIB($ODBC_NAME, main,
-	,
-	[ AC_MSG_ERROR([ODBC-Library ($ODBC_NAME) not found!])],
+	[sql_header=yes],
+	[sql_header=no]
 	)
+
+if test "$sql_h" = "yes" -a "$sql_header" = "yes"
+then
+	LIBS="-l$ODBC_NAME $LIBS"
+	have_odbc=yes
+	AC_DEFINE(HAVE_ODBC, [1], [Define to 1 if odbc support was found.])
+	AC_MSG_NOTICE([ODBC support enabled])
+else
+	have_odbc=no
+	AC_MSG_NOTICE([ODBC support disabled])
+fi
+AC_SUBST(have_odbc)
 
 
 # WxWidgets	
@@ -216,9 +231,7 @@ if test "x$enable_gui" = "xyes"; then
 			$WX_CONFIG_PATH)
 
 	if test $WX_CONFIG; then
-#		WX_LIBS="`$WX_CONFIG --libs`"
 		LIBS="$LIBS `$WX_CONFIG --libs`"
-#		WX_CPPFLAGS="`$WX_CONFIG --cxxflags`"
 		CPPFLAGS="$CPPFLAGS `$WX_CONFIG --cxxflags`"
 	else
 		AC_MSG_ERROR([wx-config not found!])

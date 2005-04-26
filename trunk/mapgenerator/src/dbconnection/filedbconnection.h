@@ -146,6 +146,7 @@ namespace mapgeneration
 				
 					std::string _name;
 					std::string _directory;
+					
 			};
 			
 		

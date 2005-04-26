@@ -18,19 +18,15 @@ General:
 	- wxWindows/wxWidgets: xrc-support is required, this is always 
 	  compiled in version 2.5 and optionally available in 2.4
 
-Linux:
-	- unixODBC
-
-
-Cygwin:
-	- ODBC: I'm not sure in the moment, if you have to install 
-	  something. :-/
+The optional ODBC backend requires unixODBC on Linux systems.
 
 
 Compilation
 ###########
 
-The configure script and the config.h.in template file are not included in the subversion repository. If you have a repository version you have to create these files by executing 
+The configure script and the config.h.in template file are not included in the 
+subversion repository. If you have a repository version you have to create 
+these files by executing 
 
 # autoconf
 # autoheader
@@ -41,49 +37,51 @@ After that you can give configure a try, just run
 
 # ./configure
 
-if it complains about missing libraries, have a look at the configure options with
+if it complains about missing libraries, have a look at the configure options 
+with
 
 # ./configure --help
 
-Especially --with-wx-config-path, --with-ccgnu2-config-path and --with-odbc-dir
-are interesting. On cygwin you will always need to supply the complete name,
-including the path, to odbc32.dll with --with-odbc32-dll.
+Especially --with-wx-config-path and --with-ccgnu2-config-path interesting. 
+On cygwin you will always need to supply the complete name, including the path, to odbc32.dll with --with-odbc32-dll.
 
 After configure finished, run
 
 # ./make
 # ./make gui
 
-to compile the main program and the gui. make all will try to compile the exporter and tests, but these do not work at the moment...
+to compile the main program and the gui. make all will try to compile the 
+exporter and tests, but these do not work at the moment...
 
 
 Installation
 ############
 
-...is not yet supported. In the future this will probably work with make install...
+...is not yet supported. In the future this will probably work with make 
+install...
 
 
 Running
 #######
 
-As all data is stored into a database we need to create a database and register it with unixODBC. The following entry in the file ~/.odbc.ini works for me. You have to use exactly these names for the odbc entry (MapGeneration), database (mapgeneration), user (mapgeneration) and password (mg) at the moment. (At least if you do not want to edit the source code... :-) Instead of manually editing the config file you can also use a odbc gui, of course.
- 
- [MapGeneration]
- Description = MySQL MapGeneration Database
- Driver = /usr/lib/libmyodbc3.so
- SERVER = localhost
- USER = mapgeneration
- PASSWORD = mg
- DATABASE = mapgeneration
- SOCKET = /var/run/mysqld/mysqld.sock
- PORT = 3306
+Since version 0.2.0 the database is no longer required. In the default setup
+a simple file backend is used to store the data in the directory filedb below
+you current working directory. The db backend and it's parameters are configured
+via the mapgeneration.conf and mgg.conf files. Changing the db type from 
+'file' to 'odbc' yields the old program behaviour. Other parameters change the 
+used directory or database connection.
+We recommend to use a database for important or big maps, because the odbc 
+backend is tested a much longer time and probably more secure.
 
-After the database is started type
+In short: Use
 
 # bin/main	to run the main program
 
-# cd bin/gui
-# ./mgg		to run the gui
+and
 
-Further information about using the program and a set of example traces is available online at the MapGeneration Project homepage at mapgeneration.berlios.de.
+# bin/gui/mgg	to run the gui
+
+Further information about using the program and a set of example traces is 
+available online at the MapGeneration Project homepage at 
+mapgeneration.berlios.de.
 
