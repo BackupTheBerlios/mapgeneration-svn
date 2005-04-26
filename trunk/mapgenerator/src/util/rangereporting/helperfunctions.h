@@ -9,9 +9,6 @@
 #ifndef HELPERFUNCTIONS_H
 #define HELPERFUNCTIONS_H
 
-#include "rectangle.h"
-#include "segment.h"
-
 namespace rangereporting
 {
 	
@@ -63,7 +60,7 @@ namespace rangereporting
 				- segment_point_1[0] * test_point[1]
 				- segment_point_1[1] * segment_point_2[0];
 		
-		if (abs(determinant) < EPSILON)
+		if ((-EPSILON < determinant) && (determinant < EPSILON))
 			return 0;
 		
 		if (determinant < 0)

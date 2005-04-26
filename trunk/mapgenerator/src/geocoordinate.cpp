@@ -15,33 +15,29 @@
 #include "util/constants.h"
 #include "util/mlog.h"
 
-
 namespace mapgeneration
 {
-
-  /**
-   * Constructors/Destructors
-   */
-  GeoCoordinate::GeoCoordinate()
-  : _latitude(0.0), _longitude(0.0), _altitude(0.0)
-  {
-  }
-  
-  
-  GeoCoordinate::GeoCoordinate(double latitude, double longitude, double altitude)
-  : _latitude(latitude), _longitude(longitude), _altitude(altitude)
-  {
-  }
-  
-  
-  /* operates in 2D!!! */
-  double
-  GeoCoordinate::abs() const
-  {
-  	return sqrt(_latitude * _latitude + _longitude * _longitude);
-  }
-  
-  
+	
+	std::ostream&
+	operator<<(std::ostream& out, const GeoCoordinate& geo_coordinate)
+	{
+		std::ios::fmtflags original_flags = out.flags();
+		std::streamsize original_precision = out.precision();
+		
+		out.setf(std::ios::fixed);
+		out.precision(10);
+		
+		out << "GeoCoordinate: (" << geo_coordinate[0] << ", "
+			<< geo_coordinate[1] << ", "
+			<< geo_coordinate[2] << ") [lat, lon, alt]";
+		
+		out.flags(original_flags);
+		out.precision(original_precision);
+		
+		return out;
+	}
+	
+	
   	double
 	GeoCoordinate::calculate_direction(const GeoCoordinate& geo_coordinate) const
 	{		
@@ -65,7 +61,7 @@ namespace mapgeneration
 	double
 	GeoCoordinate::approximated_distance(GeoCoordinate geo_coordinate) const
 	{
-		double EARTH_UMFANG = 40010000.0;
+/*		double EARTH_UMFANG = 40010000.0;
 		
 		double longitude_difference = _longitude - geo_coordinate.get_longitude();
 		double latitude_difference = _latitude - geo_coordinate.get_latitude();
@@ -73,29 +69,47 @@ namespace mapgeneration
 		double dlat = latitude_difference / 360.0 * EARTH_UMFANG;
 		double dlong = longitude_difference / 360.0 * EARTH_UMFANG * cos(_latitude * PI / 180);
 
-		return sqrt(dlat * dlat + dlong * dlong);
+		return sqrt(dlat * dlat + dlong * dlong);*/
+		
+		double dmf = (EARTH_RADIUS_M * PI) / 180.0; // degree to meter factor
+
+		double lat_diff_in_degree
+			= (_latitude - geo_coordinate.get_latitude());
+		double lon_diff_in_degree
+			= (_longitude - geo_coordinate.get_longitude())
+				 * cos(_latitude * PI / 180.0);
+		
+		return dmf * sqrt(lat_diff_in_degree * lat_diff_in_degree
+			+ lon_diff_in_degree * lon_diff_in_degree);
 	}
-  
-  
+	
+	
 	double
 	GeoCoordinate::distance(GeoCoordinate geo_coordinate) const
 	{
-		double EARTH_RADIUS = 6371.0;
-		
-		double longitude_difference = _longitude - geo_coordinate.get_longitude();
-		double latitude2 = geo_coordinate.get_latitude();
+		double drf = PI / 180; // degree to radian factor
+		double latitude_in_rad = _latitude * drf;
+		double latitude2_in_rad = geo_coordinate.get_latitude() * drf;
+		double longitude_difference_in_rad
+			= (_longitude - geo_coordinate.get_longitude()) * drf;
 	  
 		/* calculates the distance between two GeoCoordinates with the
 		 * following formula */
 
 		/* might be 0 before division: ask Rene! */		
+		return EARTH_RADIUS_M * acos(
+			(sin(latitude_in_rad) * sin(latitude2_in_rad))
+			+ (cos(latitude_in_rad) * cos(latitude2_in_rad)
+				* cos(longitude_difference_in_rad)));
+		
+/*		double latitude2 = geo_coordinate.get_latitude();
 		return (1852 * 60 * acos(
 			(sin(_latitude * PI / 180) * sin(latitude2 * PI / 180))
 			+ (cos(_latitude * PI / 180) * cos(latitude2 * PI / 180) * cos(longitude_difference * PI / 180))
-			) * 180 /PI);
+			) * 180 /PI);*/
 	}
-
-
+	
+	
 	double
 	GeoCoordinate::distance_to_tile_border(Heading heading) const
 	{
@@ -135,14 +149,13 @@ namespace mapgeneration
 				compare_point.set_longitude(ceil(get_longitude() * 100) / 100);
 				break;
 		}
-		/*
-		 *  calculation  of the distance between  the current GeoCoordinate 
-		 *  and the calculated tile border coordinate
-		 */
+		
+		/* calculation  of the distance between  the current GeoCoordinate 
+		 * and the calculated tile border coordinate */
 		return approximated_distance(compare_point);
 	}
-  
-
+	
+	
  	std::vector<unsigned int>
 	GeoCoordinate::get_needed_tile_ids(const double radius_threshold) const
 	{				
@@ -575,144 +588,6 @@ namespace mapgeneration
 		
 		/* Did you forget the beer. ME NOT. Cheers! */
 	}
- 
-  
-	unsigned int 
-	GeoCoordinate::get_tile_id() const
-	{
-		return get_tile_id(_latitude, _longitude);
-	}
 	
 	
-	unsigned int
-	GeoCoordinate::get_tile_id(const double latitude, const double longitude)
-	{
-		int northing = (int)((latitude + 90) * 100);
-		int easting = (int)((longitude + 180) * 100);		
-	   
-		return merge_tile_id_parts(northing, easting);
-	}
-	
-	
-	GeoCoordinate
-	GeoCoordinate::interpolate(const GeoCoordinate& gc_1, const GeoCoordinate& gc_2, const double weight_on_first)
-	{
-		double weight_on_second = 1.0 - weight_on_first;
-		/*	interpolation of 2 geocoordinates by means of  the weight on 
-		 *	the first  geocoordinate
-		 */
-		return GeoCoordinate(gc_1.get_latitude() * weight_on_first + gc_2.get_latitude() * weight_on_second, 
-				gc_1.get_longitude() * weight_on_first + gc_2.get_longitude() * weight_on_second,
-				gc_1.get_altitude() * weight_on_first + gc_2.get_altitude() * weight_on_second);
-	}
-	
-	
-	GeoCoordinate&
-	GeoCoordinate::operator=(const GeoCoordinate& geo_coordinate)
-	{
-		_altitude = geo_coordinate._altitude;
-		_latitude = geo_coordinate._latitude;
-		_longitude = geo_coordinate._longitude;
-	}
- 
-
-	bool
-	GeoCoordinate::operator==(const GeoCoordinate& geo_coordinate) const
-	{
-		return (
-			(_altitude == geo_coordinate._altitude) &&
-			(_latitude == geo_coordinate._latitude) &&
-			(_longitude == geo_coordinate._longitude)
-		);
-	}
- 
-
-	GeoCoordinate&
-	GeoCoordinate::operator+(const GeoCoordinate& geo_coordinate)
-	{
-		std::cout << "operator+: Class-member!" << std::endl;
-		_altitude += geo_coordinate._altitude;
-		_latitude += geo_coordinate._latitude;
-		_longitude += geo_coordinate._longitude;
-	}
-	
-	
-	GeoCoordinate&
-	GeoCoordinate::operator-(const GeoCoordinate& geo_coordinate)
-	{
-		std::cout << "operator-: Class-member!" << std::endl;
-		_altitude -= geo_coordinate._altitude;
-		_latitude -= geo_coordinate._latitude;
-		_longitude -= geo_coordinate._longitude;
-	}
-
-	
-	/* scalar produkt!!! */
-	/* operates in 2D!!! */
-	double
-	GeoCoordinate::operator*(const GeoCoordinate& geo_coordinate)
-	{
-		std::cout << "operator*: Class-member!" << std::endl;
-
-		return _latitude * geo_coordinate._latitude
-			+ _longitude * geo_coordinate._longitude;
-	}
-
-
-	GeoCoordinate
-	operator+(const GeoCoordinate& geo_coordinate_1,
-		const GeoCoordinate& geo_coordinate_2)
-	{
-		std::cout << "operator+: Namespace-member! Call class method..." << std::endl;
-		GeoCoordinate gc = geo_coordinate_1;
-
-		return gc.operator+(geo_coordinate_2);
-	}
-	
-	
-	GeoCoordinate
-	operator-(const GeoCoordinate& geo_coordinate_1,
-		const GeoCoordinate& geo_coordinate_2)
-	{
-		std::cout << "operator+: Namespace-member! Call class method..." << std::endl;
-		GeoCoordinate gc = geo_coordinate_1;
-
-		return gc.operator-(geo_coordinate_2);
-	}
-	
-	
-	/* scalar product!!! */
-	double
-	operator*(const GeoCoordinate& geo_coordinate_1,
-		const GeoCoordinate& geo_coordinate_2)
-	{
-		std::cout << "operator+: Namespace-member! Call class method..." << std::endl;
-		GeoCoordinate gc = geo_coordinate_1;
-
-		return gc.operator*(geo_coordinate_2);
-	}
-
-	GeoCoordinate
-	operator*(const GeoCoordinate& geo_coordinate, const double scalar)
-	{
-		GeoCoordinate gc = geo_coordinate;
-		gc.set_altitude(gc.get_altitude() * scalar);
-		gc.set_latitude(gc.get_latitude() * scalar);
-		gc.set_longitude(gc.get_longitude() * scalar);
-		
-		return gc;
-	}
-
-
-	GeoCoordinate
-	operator*(const double scalar, const GeoCoordinate& geo_coordinate)
-	{
-		GeoCoordinate gc = geo_coordinate;
-		gc.set_altitude(gc.get_altitude() * scalar);
-		gc.set_latitude(gc.get_latitude() * scalar);
-		gc.set_longitude(gc.get_longitude() * scalar);
-		
-		return gc;
-	}
-
 } // namespace mapgeneration

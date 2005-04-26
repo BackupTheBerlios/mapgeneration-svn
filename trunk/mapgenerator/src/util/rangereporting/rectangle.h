@@ -11,7 +11,24 @@
 
 #include <ostream>
 
-#include "rangereportingsystem.h"
+namespace rangereporting
+{
+	
+	//-------------------------------------------------------------------------//
+	//--- Declaration section -------------------------------------------------//
+	//-------------------------------------------------------------------------//
+	
+	template<typename T_Point_2D>
+	class Rectangle;
+	
+	
+	template<typename T_Point_2D>
+	std::ostream&
+	operator<<(std::ostream& out, const Rectangle<T_Point_2D>& segment);
+	
+}
+
+#include "trapezoid.h"
 
 #define _llc _lower_left_corner
 #define _urc _upper_right_corner
@@ -27,25 +44,15 @@ namespace rangereporting
 	class Rectangle
 	{
 		
-		friend class Quadtree<T_Point_2D>;
-		
 		friend class Trapezoid<T_Point_2D>;
 		
 		friend std::ostream& operator<< <> (std::ostream& out,
-			const Quadtree<T_Point_2D>& segment);
-		
-		friend std::ostream& operator<< <> (std::ostream& out,
-			const Rectangle<T_Point_2D>& segment);
+			const Rectangle<T_Point_2D>& rectangle);
 		
 		
 		public:
 			
 			Rectangle();
-			
-			
-			Rectangle(const T_Point_2D& lower_left_corner,
-				const T_Point_2D& upper_right_corner,
-				bool please_verify_corners = false);
 			
 			
 			inline bool
@@ -60,6 +67,26 @@ namespace rangereporting
 			intersects(const Rectangle<T_Point_2D>& rectangle) const;
 			
 			
+			inline T_Point_2D&
+			lower_left_corner();
+			
+			
+			inline const T_Point_2D&
+			lower_left_corner() const;
+			
+			
+			inline void
+			set_corners(const T_Point_2D& llc, const T_Point_2D& urc);
+			
+			
+			inline T_Point_2D&
+			upper_right_corner();
+			
+			
+			inline const T_Point_2D&
+			upper_right_corner() const;
+			
+			
 		protected:
 			
 			T_Point_2D _lower_left_corner;
@@ -69,7 +96,8 @@ namespace rangereporting
 			
 			
 			void
-			verify_corners();
+			verify_and_correct_corners();
+			
 	};
 	
 	
@@ -82,8 +110,8 @@ namespace rangereporting
 	operator<<(std::ostream& out, const Rectangle<T_Point_2D>& rectangle)
 	{
 		out << "Rectangle:" << std::endl
-			<< "\t_upper_right_corner=" << rectangle._upper_right_corner << std::endl
-			<< "\t _lower_left_corner=" << rectangle._lower_left_corner;
+			<< "\t_upper_right_corner=" << rectangle._urc << std::endl
+			<< "\t _lower_left_corner=" << rectangle._llc;
 		
 		return out;
 	}
@@ -93,17 +121,6 @@ namespace rangereporting
 	Rectangle<T_Point_2D>::Rectangle()
 	: _lower_left_corner(), _upper_right_corner()
 	{
-	}
-	
-	
-	template<typename T_Point_2D>
-	Rectangle<T_Point_2D>::Rectangle(const T_Point_2D& lower_left_corner,
-		const T_Point_2D& upper_right_corner, bool please_verify_corners)
-	: _lower_left_corner(lower_left_corner),
-		_upper_right_corner(upper_right_corner)
-	{
-		if (please_verify_corners)
-			verify_corners();
 	}
 	
 	
@@ -121,10 +138,10 @@ namespace rangereporting
 	Rectangle<T_Point_2D>::contains(
 		const Rectangle<T_Point_2D>& rectangle) const
 	{
-		return (_llc[0] <= rectangle._llc[0]) && (rectangle._llc[0] < _urc[0])
-			&& (_llc[0] <= rectangle._urc[0]) && (rectangle._urc[0] < _urc[0])
-			&& (_llc[1] <= rectangle._llc[1]) && (rectangle._llc[1] < _urc[1])
-			&& (_llc[1] <= rectangle._urc[1]) && (rectangle._urc[1] < _urc[1]);
+		return (_llc[0] <= rectangle._llc[0]) && (rectangle._llc[0] <= _urc[0])
+			&& (_llc[0] <= rectangle._urc[0]) && (rectangle._urc[0] <= _urc[0])
+			&& (_llc[1] <= rectangle._llc[1]) && (rectangle._llc[1] <= _urc[1])
+			&& (_llc[1] <= rectangle._urc[1]) && (rectangle._urc[1] <= _urc[1]);
 	}
 	
 	
@@ -146,25 +163,69 @@ namespace rangereporting
 	
 	
 	template<typename T_Point_2D>
-	void
-	Rectangle<T_Point_2D>::verify_corners()
+	inline T_Point_2D&
+	Rectangle<T_Point_2D>::lower_left_corner()
 	{
-		if (_lower_left_corner[0] > _upper_right_corner[0])
+		return _llc;
+	}
+	
+	
+	template<typename T_Point_2D>
+	inline T_Point_2D&
+	Rectangle<T_Point_2D>::upper_right_corner()
+	{
+		return _urc;
+	}
+	
+	
+	template<typename T_Point_2D>
+	inline const T_Point_2D&
+	Rectangle<T_Point_2D>::lower_left_corner() const
+	{
+		return _llc;
+	}
+	
+	
+	template<typename T_Point_2D>
+	inline const T_Point_2D&
+	Rectangle<T_Point_2D>::upper_right_corner() const
+	{
+		return _urc;
+	}
+	
+	
+	template<typename T_Point_2D>
+	inline void
+	Rectangle<T_Point_2D>::set_corners(const T_Point_2D& llc,
+		const T_Point_2D& urc)
+	{
+		_llc = llc;
+		_urc = urc;
+		verify_and_correct_corners();
+	}
+	
+	
+	template<typename T_Point_2D>
+	void
+	Rectangle<T_Point_2D>::verify_and_correct_corners()
+	{
+		if (_llc[0] > _urc[0])
 		{
 			T_Point_2D temp;
-			temp[0] = _lower_left_corner[0];
-			_lower_left_corner[0] = _upper_right_corner[0];
-			_upper_right_corner[0] = temp[0];
+			temp[0] = _llc[0];
+			_llc[0] = _urc[0];
+			_urc[0] = temp[0];
 		}
 		
-		if (_lower_left_corner[1] > _upper_right_corner[1])
+		if (_llc[1] > _urc[1])
 		{
 			T_Point_2D temp;
-			temp[1] = _lower_left_corner[1];
-			_lower_left_corner[1] = _upper_right_corner[1];
-			_upper_right_corner[1] = temp[1];
+			temp[1] = _llc[1];
+			_llc[1] = _urc[1];
+			_urc[1] = temp[1];
 		}
 	}
+	
 }
 
 #endif //RECTANGLE_H

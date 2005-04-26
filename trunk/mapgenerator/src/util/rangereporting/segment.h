@@ -9,8 +9,6 @@
 #ifndef SEGMENT_H
 #define SEGMENT_H
 
-#include <ostream>
-
 #include "rangereportingsystem.h"
 
 namespace rangereporting

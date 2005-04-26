@@ -18,6 +18,7 @@ namespace mapgeneration
 #include <cc++/thread.h>
 #include "filteredtrace.h"
 #include "node.h"
+#include "tile.h"
 #include "tilemanager.h"
 #include "tracelogwriter.h"
 #include "util/constants.h"
@@ -69,7 +70,7 @@ namespace mapgeneration
 					{
 					}
 					
-					PathEntry(const double position,const Node::Id node_id)
+					PathEntry(const double position, const Node::Id node_id)
 					: _position(position), _node_id(node_id), _connection(0), _time_stamp(0)
 					{
 					}
@@ -222,7 +223,7 @@ namespace mapgeneration
 			 */
 			void
 			calculate_cluster_nodes(GPSPoint gps_point,
-				std::list<Node::Id>& result_vector);
+				std::list<D_RangeReporting::Id>& result_vector);
 			
 
 			/**
@@ -299,8 +300,7 @@ namespace mapgeneration
 			 * @return The distance between the nodes.
 			 */
 			double
-			TraceProcessor::distance_from_to(Node::Id node_id_1, 
-				Node::Id node_id_2);
+			distance_from_to(Node::Id node_id_1, Node::Id node_id_2);
 
 			
 			/**

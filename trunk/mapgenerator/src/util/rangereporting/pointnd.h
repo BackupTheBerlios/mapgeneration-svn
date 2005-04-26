@@ -6,6 +6,11 @@
 *******************************************************************************/
 
 
+/*
+ * Reference implementation for a n-dimensional Point.
+ * You can also specify the data type.
+ */
+
 #ifndef POINTND_H
 #define POINTND_H
 

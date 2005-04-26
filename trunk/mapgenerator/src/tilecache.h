@@ -9,17 +9,15 @@
 #ifndef TILECACHE_H
 #define TILECACHE_H
 
-#include "dbconnection/dbconnection.h"
 #include "tile.h"
+#include "dbconnection/dbconnection.h"
 #include "util/cache.h"
-
 
 using namespace mapgeneration_util;
 
-
 namespace mapgeneration
 {
-
+	
 	/**
 	 * \brief TileCache is an implementation of a Cache that uses the 
 	 * database table for tiles as storage.

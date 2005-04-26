@@ -15,10 +15,27 @@
 
 using namespace mapgeneration_util;
 
+#define _altitude _values[_ALTITUDE]
+#define _latitude _values[_LATITUDE]
+#define _longitude _values[_LONGITUDE]
 
 namespace mapgeneration
 {
-
+	
+	class GeoCoordinate;
+	
+	
+	/**
+	 * @brief Output operator (for a GeoCoodinate object)
+	 * 
+	 * @param out the ostream
+	 * @param geo_coordinate the GeoCoordinate
+	 * @param the ostream
+	 */
+	std::ostream&
+	operator<<(std::ostream& out, const GeoCoordinate& geo_coordinate);
+	
+	
 	/**
 	 * @brief GeoCoordinate implements a 3D coordinate based on geodatic data.
 	 * 
@@ -30,10 +47,20 @@ namespace mapgeneration
 	 * </ul>
 	 * and provides methods to calculate corresponding tile ID, etc.
 	 */
-	class GeoCoordinate {
-
-		public:
+	class GeoCoordinate
+	{
 		
+		friend std::ostream& operator<<(std::ostream& out,
+			const GeoCoordinate& geo_goordinate);
+		
+		
+		public:
+			
+			static const int _LATITUDE = 0;
+			static const int _LONGITUDE = 1;
+			static const int _ALTITUDE = 2;
+			
+			
 			/**
 			 * @brief Simple enumeration to code the heading.
 			 */
@@ -48,11 +75,12 @@ namespace mapgeneration
 				_SOUTHWEST,
 				_SOUTHEAST
 			};
-		
+			
+			
 			/**
 			 * @brief Empty Constructor.
 			 */
-			GeoCoordinate() ;
+			inline GeoCoordinate() ;
 			
 			
 			/**
@@ -62,24 +90,21 @@ namespace mapgeneration
 			 * @param longitude a value for the longitude
 			 * @param altitude a value for the altitude (default: 0)
 			 */
-			GeoCoordinate(double latitude, double longitude, double altitude = 0);
-			
-			
-			double
-			abs() const;
+			inline GeoCoordinate(double latitude, double longitude,
+				double altitude = 0);
 			
 			
 			double
 			approximated_distance(GeoCoordinate geo_coordinate) const;
-
-
+			
+			
 			/**
 			 * @brief Calculates the direction of the GeoCoordinate.
 			 */
 			double
 			calculate_direction(const GeoCoordinate& geo_coordinate) const;
-		
-		
+			
+			
 			/**
 			 * @see mapgeneration_util::Serializer
 			 */
@@ -112,15 +137,15 @@ namespace mapgeneration
 			 */
 			inline double
 			get_altitude() const;
-
-
+			
+			
 			/**
 			 * @return the value of the latitude
 			 */
 			inline double
 			get_latitude() const;
-
-
+			
+			
 			/**
 			 * @return the value of the longitude
 			 */
@@ -138,8 +163,8 @@ namespace mapgeneration
 			 */
 			std::vector<unsigned int>
 			get_needed_tile_ids(const double radius_threshold) const;
-
-
+			
+			
 			/**
 			 * @brief Calculates the needed tile IDs for the line between two
 			 * GeoCoordinates.
@@ -154,15 +179,15 @@ namespace mapgeneration
 			static std::vector<unsigned int>
 			get_needed_tile_ids(const GeoCoordinate& gc_1, const GeoCoordinate& gc_2,
 				const double radius_threshold);
-
-
+			
+			
 			/**
 			 * @brief A wrapper to call static get_tile_id for the object 
 			 * itself.
 			 * 
 			 * @return the tile ID
 			 */
-			unsigned int
+			inline unsigned int
 			get_tile_id() const;
 			
 			
@@ -171,7 +196,7 @@ namespace mapgeneration
 			 * 
 			 * @return the tile ID
 			 */
-			static unsigned int
+			inline static unsigned int
 			get_tile_id(const double latitude, const double longitude);
 			
 			
@@ -188,45 +213,10 @@ namespace mapgeneration
 			 * weight_on_first)
 			 * @return the new GeoCoordinate
 			 */
-			static GeoCoordinate
+			inline static GeoCoordinate
 			interpolate(const GeoCoordinate& gc_1, const GeoCoordinate& gc_2, const double weight_on_first);
 			
 			
-			/**
-			 * @brief Assignment operator.
-			 * 
-			 * Assigns a GeoCoordinate to this.
-			 * 
-			 * @param geo_coordinate a reference to a GeoCoordinate
-			 * @return (new) this
-			 */
-			GeoCoordinate&
-			operator=(const GeoCoordinate& geo_coordinate);
-	
-	
-			/**
-			 * @brief Equality operator.
-			 * 
-			 * @param geo_coordinate a reference to a GeoCoordinate
-			 * @return true if *this == geo_coordinate
-			 */
-			bool
-			operator==(const GeoCoordinate& geo_coordinate) const;
-
-
-			GeoCoordinate&
-			operator+(const GeoCoordinate& geo_coordinate);
-			
-			
-			GeoCoordinate&
-			operator-(const GeoCoordinate& geo_coordinate);
-			
-			
-			/* scalar product!!! */
-			double
-			operator*(const GeoCoordinate& geo_coordinate);
-	
-
 			/**
 			 * @brief Merges the northing part and the easting part to one
 			 * unsigned int
@@ -237,8 +227,60 @@ namespace mapgeneration
 			 * 
 			 * @todo Explain the algorithm of tile ID generation.
 			 */
-			static inline unsigned int
+			inline static unsigned int
 			merge_tile_id_parts(const int northing, const int easting);
+			
+			
+			/**
+			 * @brief Assignment operator.
+			 * 
+			 * Assigns a GeoCoordinate to this.
+			 * 
+			 * @param geo_coordinate a reference to a GeoCoordinate
+			 * @return (new) this
+			 */
+			inline GeoCoordinate&
+			operator=(const GeoCoordinate& geo_coordinate);
+			
+			
+			/**
+			 * @brief Equality operator.
+			 * 
+			 * @param geo_coordinate a reference to a GeoCoordinate
+			 * @return true if *this == geo_coordinate
+			 */
+			inline bool
+			operator==(const GeoCoordinate& geo_coordinate) const;
+			
+			
+			/**
+			 * @brief Inequality operator.
+			 * 
+			 * @param geo_coordinate a reference to a GeoCoordinate
+			 * @return true if *this != geo_coordinate
+			 */
+			inline bool
+			operator!=(const GeoCoordinate& geo_coordinate) const;
+			
+			
+			/**
+			 * @brief Index operator (const version).
+			 * 
+			 * @param dimension the dimension (use Dimension enum values!)
+			 * @return the corresponding value
+			 */
+			inline double
+			operator[](int dimension) const;
+			
+			
+			/**
+			 * @brief Index operator.
+			 * 
+			 * @param dimension the dimension (use Dimension enum values!)
+			 * @return the corresponding value
+			 */
+			inline double&
+			operator[](int dimension);
 			
 			
 			/**
@@ -257,7 +299,7 @@ namespace mapgeneration
 			inline void
 			set(double latitude, double longitude);
 			
-
+			
 			/**
 			 * @brief Sets the values for latitude, longitude and altitude.
 			 * 
@@ -267,8 +309,8 @@ namespace mapgeneration
 			 */
 			inline void
 			set(double latitude, double longitude, double altitude);
-	
-
+			
+			
 			/**
 			 * @brief Sets the values for altitude.
 			 * 
@@ -276,8 +318,8 @@ namespace mapgeneration
 			 */
 			inline void
 			set_altitude(double value);
-	
-
+			
+			
 			/**
 			 * @brief Sets the values for latitude.
 			 * 
@@ -285,8 +327,8 @@ namespace mapgeneration
 			 */
 			inline void
 			set_latitude(double value);
-	
-
+			
+			
 			/**
 			 * @brief Sets the values for longitude.
 			 * 
@@ -306,52 +348,32 @@ namespace mapgeneration
 			 */
 			static inline void
 			split_tile_id(const unsigned int tile_id, int& northing_part, int& easting_part);
-	
-
+			
+			
 		protected:
-
-			/**
-			 * @brief the value for the altitude
-			 */
-			double _altitude;
-	 
-
-			/**
-			 * @brief the value for the latitude
-			 */
-			double _latitude;
-	 
-
-			/**
-			 * @brief the value for the longitude
-			 */
-			double _longitude;
-
+			
+			double _values[3];
+			
 	};
 	
 	
-	GeoCoordinate
-	operator+(const GeoCoordinate& geo_coordinate_1,
-		const GeoCoordinate& geo_coordinate_2);
+	inline
+	GeoCoordinate::GeoCoordinate()
+	{
+		_values[_LATITUDE] = 0.0;
+		_values[_LONGITUDE] = 0.0;
+		_values[_ALTITUDE] = 0.0;
+	}
 	
 	
-	GeoCoordinate
-	operator-(const GeoCoordinate& geo_coordinate_1,
-		const GeoCoordinate& geo_coordinate_2);
-	
-	
-	/* scalar product!!! */
-	double
-	operator*(const GeoCoordinate& geo_coordinate_1,
-		const GeoCoordinate& geo_coordinate_2);
-
-
-	GeoCoordinate
-	operator*(const GeoCoordinate& geo_coordinate, const double scalar);
-
-
-	GeoCoordinate
-	operator*(const double scalar, const GeoCoordinate& geo_coordinate);
+	inline
+	GeoCoordinate::GeoCoordinate(double latitude, double longitude,
+		double altitude)
+	{
+		_values[_LATITUDE] = latitude;
+		_values[_LONGITUDE] = longitude;
+		_values[_ALTITUDE] = altitude;
+	}
 	
 	
 	inline void
@@ -368,27 +390,58 @@ namespace mapgeneration
 	{
 		return _altitude;
 	}
-
+	
 	
 	inline double
 	GeoCoordinate::get_latitude() const
 	{
 		return _latitude;
 	}
-
+	
 	
 	inline double
 	GeoCoordinate::get_longitude()const
 	{
 		return _longitude;
 	}
-
+	
+	
+	inline unsigned int 
+	GeoCoordinate::get_tile_id() const
+	{
+		return get_tile_id(_latitude, _longitude);
+	}
+	
+	
+	inline unsigned int
+	GeoCoordinate::get_tile_id(const double latitude, const double longitude)
+	{
+		int northing = (int)((latitude + 90) * 100);
+		int easting = (int)((longitude + 180) * 100);		
+	   
+		return merge_tile_id_parts(northing, easting);
+	}
+	
+	
+	inline GeoCoordinate
+	GeoCoordinate::interpolate(const GeoCoordinate& gc_1,
+		const GeoCoordinate& gc_2, const double weight_on_first)
+	{
+		double weight_on_second = 1.0 - weight_on_first;
+		/*	interpolation of 2 geocoordinates by means of  the weight on 
+		 *	the first  geocoordinate
+		 */
+		return GeoCoordinate(gc_1.get_latitude() * weight_on_first + gc_2.get_latitude() * weight_on_second, 
+				gc_1.get_longitude() * weight_on_first + gc_2.get_longitude() * weight_on_second,
+				gc_1.get_altitude() * weight_on_first + gc_2.get_altitude() * weight_on_second);
+	}
+	
 	
 	inline unsigned int
 	GeoCoordinate::merge_tile_id_parts(int northing, int easting)
 	{
 		if (northing < 0 || northing > 18000) throw ("Pole regions are not supported!!! (merge_tile_id_parts)");
-
+		
 		easting = easting % 36000;
 		if (easting < 0) easting += 36000;
 		
@@ -396,38 +449,82 @@ namespace mapgeneration
 	}
 	
 	
+	inline GeoCoordinate&
+	GeoCoordinate::operator=(const GeoCoordinate& geo_coordinate)
+	{
+		_altitude = geo_coordinate._altitude;
+		_latitude = geo_coordinate._latitude;
+		_longitude = geo_coordinate._longitude;
+		
+		return *this;
+	}
+	
+	
+	inline bool
+	GeoCoordinate::operator==(const GeoCoordinate& geo_coordinate) const
+	{
+		return (
+			(_altitude == geo_coordinate._altitude) &&
+			(_latitude == geo_coordinate._latitude) &&
+			(_longitude == geo_coordinate._longitude)
+		);
+	}
+	
+	
+	inline bool
+	GeoCoordinate::operator!=(const GeoCoordinate& geo_coordinate) const
+	{
+		return ( !operator==(geo_coordinate) );
+	}
+	
+	
+	inline double
+	GeoCoordinate::operator[](int index) const
+	{
+		return _values[index];
+	}
+	
+	
+	inline double&
+	GeoCoordinate::operator[](int index)
+	{
+		return _values[index];
+	}
+	
+	
 	inline void
 	GeoCoordinate::set(double latitude, double longitude)
 	{
-		_latitude = latitude;
-		_longitude = longitude;
+		set_latitude(latitude);
+		set_longitude(longitude);
 	}
 	
 			
 	inline void
 	GeoCoordinate::set(double latitude, double longitude, double altitude)
 	{
-		set(latitude, longitude);
-		_altitude = altitude;
+		set_altitude(altitude);
+		set_latitude(latitude);
+		set_longitude(longitude);
 	}
 	
 	
 	inline void
-	GeoCoordinate::set_altitude (double value )
+	GeoCoordinate::set_altitude (double value)
 	{
 		_altitude = value;
 	}
-
+	
 	
 	inline void
-	GeoCoordinate::set_latitude (double value )
+	GeoCoordinate::set_latitude (double value)
 	{
 		_latitude = value;
 	}
-
+	
 	
  	inline void 
-	GeoCoordinate::set_longitude (double value )
+	GeoCoordinate::set_longitude (double value)
 	{
 		_longitude = value;
 	}
@@ -448,7 +545,7 @@ namespace mapgeneration
 		northing_part = tile_id >> 16;
 		easting_part = tile_id % (1 << 16);
 	}
-
+	
 }  //namespace mapgeneration
 
 #endif //GEOCOORDINATE_H

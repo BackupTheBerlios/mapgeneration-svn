@@ -38,6 +38,9 @@ namespace mapgeneration_util
 			 */
 			class iterator
 			{
+				
+				friend class FixpointVector<T_ElemType>;
+				
 				public:
 					iterator (std::pair<bool, T_ElemType>* start_position, int size);
 					
@@ -163,8 +166,8 @@ namespace mapgeneration_util
 			 * erased one.
 			 * @param index The index pointing at the element to erase.
 			 */
-//			iterator
-//			erase(int index);
+			iterator
+			erase(int index);
 
 
 			/**
@@ -544,8 +547,8 @@ namespace mapgeneration_util
 	}
 	
 	
-/*	template<typename T_ElemType>
-	typename FixpointVector<T_Elemype>::iterator
+	template<typename T_ElemType>
+	typename FixpointVector<T_ElemType>::iterator
 	FixpointVector<T_ElemType>::erase(int index)
 	{
 		if (index > size_including_holes() - 1)
@@ -558,7 +561,7 @@ namespace mapgeneration_util
 			
 			return erase(iter);
 		}
-	}*/
+	}
 	
 	
 	template <typename T_ElemType>

@@ -11,11 +11,27 @@
 
 #include <ostream>
 
-#include "rangereportingsystem.h"
-#include "helperfunctions.h"
-
 namespace rangereporting
 {
+	
+	//-------------------------------------------------------------------------//
+	//--- Declaration section -------------------------------------------------//
+	//-------------------------------------------------------------------------//
+
+	template<typename T_Point_2D>
+	class Trapezoid;
+	
+	
+	template<typename T_Point_2D>
+	std::ostream&
+	operator<<(std::ostream& out, const Trapezoid<T_Point_2D>& segment);
+	
+}
+
+#include "rectangle.h"
+
+namespace rangereporting
+{	
 	
 	//-------------------------------------------------------------------------//
 	//--- Definition section --------------------------------------------------//
@@ -25,20 +41,23 @@ namespace rangereporting
 	class Trapezoid
 	{
 		
-		friend class Quadtree<T_Point_2D>;
-		
 		friend std::ostream& operator<< <> (std::ostream& out,
 			const Trapezoid<T_Point_2D>& segment);
 		
 		
 		public:
 			
-			Trapezoid();
-			
-		
 			Trapezoid(const T_Point_2D& point_1, const T_Point_2D& point_2,
 				const T_Point_2D& point_3, const T_Point_2D& point_4,
 				bool please_verify_point_order = false);
+			
+			
+			inline const Rectangle<T_Point_2D>&
+			bounding_rectangle() const;
+			
+			
+			inline const T_Point_2D&
+			operator[](int point_count) const;
 			
 			
 		protected:
@@ -51,7 +70,7 @@ namespace rangereporting
 			
 			
 			void
-			verify_point_order();
+			verify_and_correct_point_order();
 	};
 
 
@@ -74,13 +93,6 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Point_2D>
-	Trapezoid<T_Point_2D>::Trapezoid()
-	: _bounding_rectangle(), _points()
-	{
-	}
-	
-
 	template<typename T_Point_2D>
 	Trapezoid<T_Point_2D>::Trapezoid(const T_Point_2D& point_1,
 		const T_Point_2D& point_2, const T_Point_2D& point_3,
@@ -112,13 +124,29 @@ namespace rangereporting
 		
 
 		if (please_verify_point_order)
-			verify_point_order();
+			verify_and_correct_point_order();
+	}
+	
+	
+	template<typename T_Point_2D>
+	inline const Rectangle<T_Point_2D>&
+	Trapezoid<T_Point_2D>::bounding_rectangle() const
+	{
+		return _bounding_rectangle;
+	}
+
+
+	template<typename T_Point_2D>
+	inline const T_Point_2D&
+	Trapezoid<T_Point_2D>::operator[](int point_count) const
+	{
+		return _points[point_count];
 	}
 
 
 	template<typename T_Point_2D>
 	void
-	Trapezoid<T_Point_2D>::verify_point_order()
+	Trapezoid<T_Point_2D>::verify_and_correct_point_order()
 	{
 		for (int i = 0; i < 4; ++i)
 		{

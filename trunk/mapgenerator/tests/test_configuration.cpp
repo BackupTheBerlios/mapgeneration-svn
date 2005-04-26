@@ -21,8 +21,6 @@ using namespace std;
 using namespace pubsub;
 using namespace mapgeneration_util;
 
-
-
 void
 show_all(ServiceList& service_list)
 {
@@ -65,4 +63,3 @@ int main()
 	
 	return 0;
 }
-

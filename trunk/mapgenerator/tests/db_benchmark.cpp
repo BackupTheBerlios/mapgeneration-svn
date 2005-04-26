@@ -6,17 +6,19 @@
 *******************************************************************************/
 
 
-#include "dbconnection.h"
+/** @todo Repair db_benchmark.cpp. */
 
-#include <cstdlib>
-#include <string>
+//#include "dbconnection.h"
 
-using namespace std;
-using namespace mapgeneration;
+//#include <cstdlib>
+//#include <string>
+
+//using namespace std;
+//using namespace mapgeneration;
 
 int main() 
 {
-	cout << "Starte DB-Benchmark." << endl;
+/*	cout << "Starte DB-Benchmark." << endl;
 	
 	char char_data[20001];
 	for (int i = 0; i < 20000; ++i)
@@ -71,6 +73,6 @@ int main()
 		++j;
 	}
 	cout << j << " Eintraege aus der DB gelesen." << endl;
-	
+	*/
 	return 0;
 }

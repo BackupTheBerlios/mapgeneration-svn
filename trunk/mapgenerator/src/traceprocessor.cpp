@@ -58,9 +58,9 @@ namespace mapgeneration
 
 	void
 	TraceProcessor::calculate_cluster_nodes(GPSPoint gps_point,
-		std::list<Node::Id>& result_vector)
+		std::list<D_RangeReporting::Id>& result_list)
 	{
-		result_vector.clear();
+		result_list.clear();
 		
 		std::vector<unsigned int> needed_tile_ids  = gps_point.get_needed_tile_ids(_search_radius_m * 2.0);
 		std::vector<unsigned int>::iterator needed_tile_ids_iter = needed_tile_ids.begin();
@@ -78,11 +78,12 @@ namespace mapgeneration
 					<< " (SHOULD NOT HAPPEN HERE!)\n";
 			}
 			
-			std::vector<Node::Id> new_cluster_nodes = 
-				tile->cluster_nodes_search(gps_point, _search_radius_m, _search_max_angle_difference_pi * PI);
-						
-			result_vector.insert(result_vector.end(), 
-				new_cluster_nodes.begin(), new_cluster_nodes.end());
+			std::vector<D_RangeReporting::Id> new_cluster_nodes_fast;
+			tile->fast_cluster_nodes_search(gps_point, _search_radius_m,
+				_search_max_angle_difference_pi * PI, new_cluster_nodes_fast);
+			
+			result_list.insert(result_list.end(), 
+				new_cluster_nodes_fast.begin(), new_cluster_nodes_fast.end());
 		}
 	}
 	
@@ -151,11 +152,6 @@ namespace mapgeneration
 		}
 		
 		std::pair<bool, Node::Id> new_node_id = tile.write().add_node(new_node);
-		
-/*		unsigned int new_node_id_part = (unsigned int)tile.write().nodes().insert(new_node);
-		
-		Node::Id new_node_id = Node::merge_id_parts(new_tile_id, new_node_id_part);
-*/
 //		_trace_log->new_node(new_node_id, new_node);
 		
 		return new_node_id.second;
@@ -745,17 +741,18 @@ namespace mapgeneration
 		bool walk_on = true;
 		while (scan_position_m < _filtered_trace.length_m())
 		{
-			std::list<Node::Id> cluster_nodes;
+			std::list<D_RangeReporting::Id> cluster_nodes;
 			calculate_cluster_nodes(
 				_filtered_trace.gps_point_at(scan_position_m),
 				cluster_nodes
 			);
 			
 			new_path_entries.clear();	
-			std::list<Node::Id>::iterator new_node_iter = cluster_nodes.begin();
+			std::list<D_RangeReporting::Id>::iterator new_node_iter
+				= cluster_nodes.begin();
 			while (new_node_iter != cluster_nodes.end())
 			{
-				PathEntry new_entry(scan_position_m, *new_node_iter);
+				PathEntry new_entry(scan_position_m, **new_node_iter);
 				std::list<PathEntry>::iterator path_iter = path.end();
 				std::list<PathEntry>::iterator path_iter_begin = path.begin();
 

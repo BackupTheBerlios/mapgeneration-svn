@@ -146,7 +146,7 @@ namespace mapgeneration
 			
 			
 			static inline Id
-			merge_id_parts(uint32_t tile_id, uint32_t local_node_id);
+			merge_id_parts(uint32_t tile_id, LocalId local_node_id);
 			
 			
 			/**
@@ -274,7 +274,7 @@ namespace mapgeneration
 	inline Node::Id
 	Node::merge_id_parts(uint32_t tile_id, LocalId local_id)
 	{
-		return ((((Node::Id)tile_id) << 32) + local_id);
+		return ( (static_cast<Node::Id>(tile_id) << 32) + local_id );
 	}
 	
 	

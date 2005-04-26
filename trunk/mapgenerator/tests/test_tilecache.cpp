@@ -116,10 +116,10 @@ int main()
 	mlog(MLog::debug, "test_tilecache") << "Same procedure again with tile " << used_tiles[1] << " using a writeable pointer: \n";
 	{
 		TileCache::Pointer writeable_pointer = tile_cache->get(used_tiles[1]);
-		mlog(MLog::debug, "test_tilecache") << "Size of the tile: " << writeable_pointer->nodes().size() << "\n";
+		mlog(MLog::debug, "test_tilecache") << "Size of the tile: " << writeable_pointer->size_of() << "\n";
 		mlog(MLog::debug, "test_tilecache") << "Also adding a node to the tile.\n";
 		Node node;
-		writeable_pointer.write().nodes().insert(node);
+		writeable_pointer.write().add_node(node);
 		show_state(*tile_cache, used_tiles);
 		mlog(MLog::debug, "test_tilecache") << "Writeback wrote " << tile_cache->write_back() << " elements.\n";
 	}
@@ -142,10 +142,10 @@ int main()
 	mlog(MLog::debug, "test_tilecache") << "Accessing tile " << used_tiles[1] << "\n";
 	{
 		TileCache::Pointer writeable_pointer = tile_cache->get(used_tiles[1]);
-		mlog(MLog::debug, "test_tilecache") << "Size of the tile: " << writeable_pointer->nodes().size() << "\n";
+		mlog(MLog::debug, "test_tilecache") << "Size of the tile: " << writeable_pointer->size_of() << "\n";
 		mlog(MLog::debug, "test_tilecache") << "Also adding a node to the tile.\n";
 		Node node;
-		writeable_pointer.write().nodes().insert(node);
+		writeable_pointer.write().add_node(node);
 		show_state(*tile_cache, used_tiles);
 		mlog(MLog::debug, "test_tilecache") << "Writeback wrote " << tile_cache->write_back() << " elements.\n";
 	}
@@ -167,7 +167,7 @@ int main()
 	mlog << "\n";
 	
 	mlog(MLog::debug, "test_tilecache") << "And deleting the test table: ";
-	db_connection->dropTables();
+	db_connection->drop_tables();
 	mlog << "Ok\n";
 
 	mlog(MLog::debug, "test_tilecache") << "Deleting TileCache!\n";

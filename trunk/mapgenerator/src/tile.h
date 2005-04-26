@@ -21,13 +21,19 @@
 #include "node.h"
 #include "util/fixpointvector.h"
 #include "util/serializer.h"
-
+#include "util/rangereporting/quadtree.h"
 
 using namespace mapgeneration_util;
+using rangereporting::Quadtree;
 
 namespace mapgeneration
 {
 
+	class Tile;
+	
+	typedef Quadtree<Node::Id, GeoCoordinate, Tile> D_RangeReporting;
+	
+	
 	/**
 	 * @brief Tile implements a tile containing Nodes.
 	 * 
@@ -82,18 +88,19 @@ namespace mapgeneration
 					
 			};
 			
-		
+			
 			/**
 			 * @brief Empty constructor.
 			 */
 			Tile();
-
+			
+			
 			/**
 			 * @brief Constructor that inits the Tile with specified ID.
 			 * 
 			 * @param tile_id the ID
 			 */
-			Tile (unsigned int tile_id);
+			Tile(unsigned int tile_id);
 			
 			
 			inline std::pair<bool, Node::Id>
@@ -102,6 +109,10 @@ namespace mapgeneration
 			
 			inline Tile::const_iterator
 			begin() const;
+			
+			
+			void
+			build_range_reporting_system();
 			
 			
 			/**
@@ -114,8 +125,16 @@ namespace mapgeneration
 			 * 
 			 * @return the vector
 			 */
-			std::vector<Node::Id>
-			cluster_nodes_search(const GPSPoint& gps_point, const double search_radius, const double search_angle) const;
+			void
+			cluster_nodes_search(const GPSPoint& in_gps_point,
+				const double in_search_radius, const double in_search_angle,
+				std::vector<D_RangeReporting::Id>& query_result) const;
+			
+			
+			void
+			fast_cluster_nodes_search(const GPSPoint& in_gps_point,
+				const double in_search_radius, const double in_search_angle,
+				std::vector<D_RangeReporting::Id>& query_result) const;
 			
 		
 			/**
@@ -133,6 +152,10 @@ namespace mapgeneration
 			exists_node(Node::Id node_id) const;
 
 			
+			inline bool
+			exists_node(Node::LocalId node_local_id) const;
+
+			
 			/**
 			 * @return the id
 			 */
@@ -140,51 +163,45 @@ namespace mapgeneration
 			get_id() const;
 			
 			
-//			inline bool
-//			move_node(const Node& from_node, const Node& to_node);
+			inline bool
+			move_node(D_RangeReporting::Id& from_node_id, const Node& to_node);
 
 
-			/**
-			 * @brief Searches for all nodes which are inside the search_radius
-			 * of the specified GeoCoordinate.
-			 * 
-			 * @param geo_coordinate the GeoCoordinate
-			 * @param search_radius the search radius
-			 * @return the vector of found nodes
-			 */
-//			std::vector<unsigned int>
-//			nearest_neighbours_search(const GeoCoordinate& geo_coordinate, const double search_radius);
-
-			
 			inline Node&
-			node(Node::Id);
+			node(Node::Id node_id);
 			
 			
 			inline const Node&
-			node(Node::Id) const;
+			node(Node::Id node_id) const;
 			
 			
-//			inline bool
-//			remove_node(const Node& node);
+			inline Node&
+			node(Node::LocalId node_local_id);
 			
 			
-			/**
-			 * @brief Return a reference to _nodes.
-			 * 
-			 * @return nodes
-			 */
-//			inline FixpointVector<Node>&
-//			nodes();
+			inline const Node&
+			node(Node::LocalId node_local_id) const;
 			
 			
-			/**
-			 * @brief Return a const reference to _nodes.
-			 * 
-			 * @return const nodes
-			 */
-//			inline const FixpointVector<Node>&
-//			nodes() const;
-
+			inline Node&
+			operator[](Node::Id node_id);
+			
+			
+			inline const Node&
+			operator[](Node::Id node_id) const;
+			
+			
+			inline Node&
+			operator[](Node::LocalId node_local_id);
+			
+			
+			inline const Node&
+			operator[](Node::LocalId node_local_id) const;
+			
+			
+			inline bool
+			remove_node(D_RangeReporting::Id& node_id);
+			
 			
 			/**
 			 * @see mapgeneration_util::Serializer
@@ -210,8 +227,8 @@ namespace mapgeneration
 			FixpointVector<Node> _nodes;
 			
 			
-//			rangereporting::Quadtree<Node*> _range_reporting;
-	
+			D_RangeReporting _range_reporting;
+			
 	};
 	
 	
@@ -285,9 +302,7 @@ namespace mapgeneration
 			= static_cast<Node::LocalId>(_nodes.insert(node));
 		Node::Id node_id = Node::merge_id_parts(_id, node_local_id);
 		
-		return std::make_pair(true, node_id);
-		
-/*		if ( _range_reporting.add_node(&(_nodes[node_local_id])) )
+		if ( _range_reporting.add_point(node_id) )
 		{
 			return std::make_pair(true, node_id);
 		} else
@@ -295,7 +310,7 @@ namespace mapgeneration
 			_nodes.erase(node_local_id);
 			
 			return std::make_pair(false, 0);
-		}*/
+		}
 	}
 	
 	
@@ -320,7 +335,18 @@ namespace mapgeneration
 	inline bool
 	Tile::exists_node(Node::Id node_id) const
 	{
-		return _nodes[Node::local_id(node_id)].first;
+		Tile::Id tile_id;
+		Node::LocalId node_local_id;
+		Node::split_id(node_id, tile_id, node_local_id);
+		
+		return exists_node(node_local_id);
+	}
+	
+	
+	inline bool
+	Tile::exists_node(Node::LocalId node_local_id) const
+	{
+		return _nodes[static_cast<int>(node_local_id)].first;
 	}
 	
 	
@@ -334,41 +360,71 @@ namespace mapgeneration
 /*	inline bool
 	Tile::move_node(Node::Id from_node_id, const Node& to_node)
 	{
-		Node& from_node = _nodes[from_node_id].second;
-		Node saved_node = from_node;
-		
-		from_node = to_node;
-		
-		if ( _range_reporting.move_node(
 	}*/
 	
 	
 	inline Node&
 	Tile::node(Node::Id node_id)
 	{
-		return _nodes[Node::local_id(node_id)].second;
+		return operator[](node_id);
 	}
 	
 	
 	inline const Node&
 	Tile::node(Node::Id node_id) const
 	{
-		return _nodes[Node::local_id(node_id)].second;
+		return operator[](node_id);
 	}
 	
 	
-/*	inline FixpointVector<Node>&
-	Tile::nodes()
+	inline Node&
+	Tile::node(Node::LocalId node_local_id)
 	{
-		return _nodes;
-	}*/
+		return operator[](node_local_id);
+	}
 	
 	
-/*	inline const FixpointVector<Node>&
-	Tile::nodes() const
+	inline const Node&
+	Tile::node(Node::LocalId node_local_id) const
 	{
-		return _nodes;
-	}*/
+		return operator[](node_local_id);
+	}
+	
+	
+	inline Node&
+	Tile::operator[](Node::Id node_id)
+	{
+		Tile::Id tile_id;
+		Node::LocalId node_local_id;
+		Node::split_id(node_id, tile_id, node_local_id);
+		
+		return operator[](node_local_id);
+	}
+	
+	
+	inline const Node&
+	Tile::operator[](Node::Id node_id) const
+	{
+		Tile::Id tile_id;
+		Node::LocalId node_local_id;
+		Node::split_id(node_id, tile_id, node_local_id);
+		
+		return operator[](node_local_id);
+	}
+	
+	
+	inline Node&
+	Tile::operator[](Node::LocalId node_local_id)
+	{
+		return _nodes[static_cast<int>(node_local_id)].second;
+	}
+	
+	
+	inline const Node&
+	Tile::operator[](Node::LocalId node_local_id) const
+	{
+		return _nodes[static_cast<int>(node_local_id)].second;
+	}
 	
 	
 	inline int

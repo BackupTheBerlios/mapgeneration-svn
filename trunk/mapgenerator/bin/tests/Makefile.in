@@ -27,7 +27,7 @@ test_pubsub := util/pubsub/genericservice.o util/pubsub/servicelist.o
 test_cache := util/mlog.o  util/controlledthread.o
 test_configuration := util/mlog.o util/configuration.o util/pubsub/servicelist.o util/pubsub/genericservice.o
 test_thread := util/mlog.o
-test_rangereporting := util/mlog.o geocoordinate.o
+test_rangereporting := util/mlog.o geocoordinate.o node.o
 
 # Directory definitions
 top_builddir := @top_builddir@
