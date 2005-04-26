@@ -102,7 +102,7 @@ namespace mapgeneration_gui
 		if (!conf.read_configuration())
 		{
 			mlog(MLog::warning, "MainFrameLogic") << "Cannot read configration!\n";
-			return false;
+			throw("Cannot read configuration!");
 		}
 		
 		std::string licence_accepted;

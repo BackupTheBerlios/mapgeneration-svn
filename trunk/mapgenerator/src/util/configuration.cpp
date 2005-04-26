@@ -54,7 +54,7 @@ namespace mapgeneration_util
 		if (parse_result == false)
 		{
 			mlog(MLog::warning, "Configuration")
-				<< "Could not parse configuration from file. Consequences indistinct!\n";
+				<< "Could not parse configuration from file.\n";
 			return false;
 		}
 
