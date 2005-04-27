@@ -6,7 +6,7 @@
 *******************************************************************************/
 
 
-#include "dbconnection/odbcdbconnection.h"
+#include "dbconnection/filedbconnection.h"
 
 #include <istream>
 #include <string>
@@ -25,17 +25,17 @@ int main()
 	bool stop = false;
 
 	// construct...
-	mlog(MLog::debug, "test_dbconnection") << "Testing ODBCDBConnection!\n";
+	mlog(MLog::debug, "test_dbconnection") << "Testing FileDBConnection!\n";
 	mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::DBConnection.\n";		
-	ODBCDBConnection dbc;	
-	size_t test_table_id = dbc.register_table("test");
+	FileDBConnection dbc;	
 	// constructor called.
 
 	try
 	{
 		// connect...
 		mlog(MLog::debug, "test_dbconnection") << "Call DBConnection::connect.\n";
-		dbc.set_parameters("MapGeneration", "mapgeneration", "mg");
+		dbc.set_parameters("testdb1234");
+		size_t test_table_id = dbc.register_table("test");
 		dbc.connect();
 		// connected.
 
