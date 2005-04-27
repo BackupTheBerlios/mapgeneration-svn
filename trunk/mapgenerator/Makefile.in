@@ -24,10 +24,6 @@ main:
 gui:
 	$(MAKE) -C $(bindir) gui
 
-#Compile the export
-.PHONY: export
-export:
-	$(MAKE) -C $(bindir) export
 
 # Compiles the tests
 .PHONY: tests
