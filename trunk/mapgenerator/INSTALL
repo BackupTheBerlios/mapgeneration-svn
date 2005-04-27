@@ -32,7 +32,6 @@ these files by executing
 # autoheader
 
 in the program directory. The releases already include these files.
-
 After that you can give configure a try, just run
 
 # ./configure
@@ -42,16 +41,16 @@ with
 
 # ./configure --help
 
-Especially --with-wx-config-path and --with-ccgnu2-config-path interesting. 
-On cygwin you will always need to supply the complete name, including the path, to odbc32.dll with --with-odbc32-dll.
+Especially --with-wx-config-path and --with-ccgnu2-config-path are interesting.
+If you need odbc support under cygwin you will always need to supply the 
+complete name, including the path, to odbc32.dll with --with-odbc32-dll.
 
 After configure finished, run
 
-# ./make
-# ./make gui
+# ./make all
 
-to compile the main program and the gui. make all will try to compile the 
-exporter and tests, but these do not work at the moment...
+to compile the main program, the gui and all tests. If one of the tests fails,
+just ignore it. They are not really important. 
 
 
 Installation
@@ -64,12 +63,16 @@ install...
 Running
 #######
 
+The programs are configured using xml configuration files: mapgenerator.conf
+for the server and mgg.conf for the gui. In most cases the default setup
+will work for you. If you have downloaded a svn snapshot of the program the
+configuration files are included as .conf.release files. Just copy them to
+.conf files to get the default configuration.
 Since version 0.2.0 the database is no longer required. In the default setup
 a simple file backend is used to store the data in the directory filedb below
-you current working directory. The db backend and it's parameters are configured
-via the mapgeneration.conf and mgg.conf files. Changing the db type from 
-'file' to 'odbc' yields the old program behaviour. Other parameters change the 
-used directory or database connection.
+your current working directory. Changing the db type from 'file' to 'odbc' in
+the configuration files yields the old program behaviour. Other parameters 
+change the used directory or database connection.
 We recommend to use a database for important or big maps, because the odbc 
 backend is tested a much longer time and probably more secure.
 
