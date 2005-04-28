@@ -1,0 +1,93 @@
+/*******************************************************************************
+* MapGeneration Project - Creating a road map for the world.                   *
+*                                                                              *
+* Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+* Licensed under the Academic Free License version 2.1                         *
+*******************************************************************************/
+
+
+This program is not intended for the end users and therefore installation 
+_may be_ a bit tricky.
+
+
+Requirements
+############
+
+General:
+	- commoncpp2: Most versions work. :-)
+	- wxWindows/wxWidgets: xrc-support is required, this is always 
+	  compiled in version 2.5 and optionally available in 2.4
+
+The optional ODBC backend requires unixODBC on Linux systems.
+
+
+Compilation
+###########
+
+The configure script and the config.h.in template file are not included in the 
+subversion repository. If you have a repository version you have to create 
+these files by executing 
+
+# autoconf
+# autoheader
+
+in the program directory. The releases already include these files.
+After that you can give configure a try, just run
+
+# ./configure
+
+if it complains about missing libraries, have a look at the configure options 
+with
+
+# ./configure --help
+
+Especially --with-wx-config-path and --with-ccgnu2-config-path are interesting.
+If you need odbc support under cygwin you will always need to supply the 
+complete name, including the path, to odbc32.dll with --with-odbc32-dll.
+
+After configure finished, run
+
+# ./make all
+
+to compile the main program, the gui and all tests. If one of the tests fails,
+just ignore it. They are not really important. 
+
+
+Installation
+############
+
+...is not yet supported. In the future this will probably work with make 
+install...
+
+
+Running
+#######
+
+The programs are configured using xml configuration files: mapgenerator.conf
+for the server and mgg.conf for the gui. In most cases the default setup
+will work for you. If you have downloaded a svn snapshot of the program the
+configuration files are included as .conf.release files. Just copy them to
+.conf files to get the default configuration.
+Since version 0.2.0 the database is no longer required. In the default setup
+a simple file backend is used to store the data in the directory filedb below
+your current working directory. Changing the db type from 'file' to 'odbc' in
+the configuration files yields the old program behaviour. Other parameters 
+change the used directory or database connection.
+We recommend to use a database for important or big maps, because the odbc 
+backend is tested a much longer time and probably more secure.
+
+In short: Use
+
+# bin/main	to run the main program
+
+and
+
+# bin/gui/mgg	to run the gui
+
+To stop the server enter 'x'. If debugging is enabled you may also leave the
+server with 'y' to delete the database.
+
+
+Further information about using the program and a set of example traces is 
+available online at the MapGeneration Project homepage at 
+mapgeneration.berlios.de.
