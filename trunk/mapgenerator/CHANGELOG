@@ -5,80 +5,91 @@
 * Licensed under the Academic Free License version 2.1                         *
 *******************************************************************************/
 
+
 CHANGELOG:
 ==========
 
-version 0.2.0 (?????)
+version 0.2.0 (2005-04-28)
 ---------------------
 
-FEATURE: DB   | Table names can be chosen freely
-FEATURE: DB   | DBConnection is now an interface
-              |  - ODBCDBConnection adopts functions from old DBConnection
-              |  - Introduced FileDBConnection
-              |  - Some changes to the configuration system
-FEATURE: DB   | ODBC is now optional
-              |  - Reduces installation effort: unixODBC now optional!
-FEATURE: Core | Added EARTH_RADIUS_M to constants.h
-FEATURE: Misc | Displays licence information at program startup
-FEATURE: Misc | Added .conf.release files
-FEATURE: Misc | Added CHANGELOG
+New features
 
-CHANGE:  Core | New range reporting system: approx. 6-7 times faster
-              |  - Added erase(index) to FixpointVector
-              |  - Added range query support to Tile
-              |  - TraceProcessor: Integrated it into cluster node search
-CHANGE:  Core | Tile: changed access methods for nodes (e.g. operator[])
-CHANGE:  Core | GeoCoordinate (speed it up)
-              |  - Stores geographical coordinates in double[3]
-              |  - Added operator[], operator<<
-              |  - Made some methods inline
-CHANGE:  Core | Node: uses static_cast<Node::Id>() instead of (Node::ID)()
-CHANGE:  GUI  | Starts from mapgenerator root directory now
-CHANGE:  DB   | Removed unused code and debug output from DBConnection
-CHANGE:  Misc | Updated INSTALL file
-CHANGE:  Misc | Throws exception when parsing of the configuration file failed
-CHANGE:  Misc | Removed exporter
-
-BUGFIX:  Core | Adjusted and improved path finding parameters
-BUGFIX:  Test | Applied changes and feature to the tests
+* (DB) Table names can be chosen freely.
+* (DB) DBConnection is now an interface.
+  * ODBCDBConnection adopts functions from old DBConnection.
+  * Introduced FileDBConnection.
+* (DB) ODBC is now optional
+* (Misc) Licence information is displayed at program start.
+* (Misc) Added .conf.release files.
+* (Misc) Added CHANGELOG.
 
 
-version 0.1.0 (2005-04-19 17:50)
--------------------------------
-FEATURE: Core | Added filters (new class TraceFilter)
-FEATURE: Core | Added fast access method to FilteredTrace
-FEATURE: Core | Added invalid flag to GPSPoint
-FEATURE: Core | Added operator<< to ServiceList
-FEATURE: Core | Added new methods to Cache: is_prefetching & get_if_in_cache
-FEATURE: Core | Added range reporting system (experimental and not yet used)
-FEATURE: Core | Implemented interpolation of direction
-FEATURE: GUI  | Added Reload-button
-FEATURE: GUI  | Implemented automatic screen update if new Tiles arrive
-FEATURE: Misc | Added warning when parsing of the configuration file failed
+Changes
 
-CHANGE:  Core | Re-wrote the core algorithm (large change!)
-              |  - Simplify
-              |  - SeekConnectionMode(TM)
-              |  - smooth connect
-              |  - smooth disconnect (experimental)
-              |  - ...
-CHANGE:  Core | Introduced config.h and stdint.h
-CHANGE:  Core | Replaced node ids :std::pair<int, int> by uint64_t
-CHANGE:  Core | Moved filtering methods from TraceProcessor to TraceFilter
-CHANGE:  Core | Calculation of angle_difference allows negative points
-CHANGE:  Core | calculate_direction moved from GPSPoint to GeoCoordinate
-CHANGE:  Core | Nodes have mupliple directions now
-CHANGE:  Core | Cache writes back periodically
-CHANGE:  Core | TraceServer: ServiceList value changed from trace_server
-              | to traceserver
-CHANGE:  GUI  | Removed not used methods from MapDrawer*
-CHANGE:  Misc | Set compiler option "-O3" when optimization is enabled	      
-CHANGE:  Misc | Updated INSTALL file
+* (Server) New cluster node search using quadtrees: approx. 6-7 times faster!
+* (GUI) Starts from mapgenerator root directory now.
+* (General) Tile: changed access methods for nodes (e.g. operator[]).
+* (General) GeoCoordinate speed up:
+  * Stores geographical coordinates in double[3].
+  * Added operator[], operator<<.
+  * Made some methods inline.
+* (Misc) Updated INSTALL file.
+* (Misc) Removed exporter.
 
-BUGFIX:  Core | Removed many debug output (not really a bugfix, but useful!)
-BUGFIX:  Core | Fixes for gcc 3.4, 4.0 and 4.1
-BUGFIX:  Test | Applied changes and feature to the tests
+
+Bugfixes
+
+* (Server) Adjusted and improved path finding parameters.
+* (GUI) Throws exception when parsing of the configuration file fails.
+* (General) Node: uses static_cast<Node::Id>() instead of (Node::ID)().
+* (Tests) Applied changes and feature to the tests.
+
+
+
+version 0.1.0 (2005-04-19)
+--------------------------------
+
+New features
+
+* (Server) Added filters (new class TraceFilter).
+* (Server) Added fast access method to FilteredTrace -> speedup!
+* (Server) Implemented interpolation of direction.
+* (Server) Added warning when parsing of the configuration file failed.
+* (GUI) Added Reload-button.
+* (GUI) Implemented automatic screen update if new Tiles arrive.
+* (General) Added invalid flag to GPSPoint.
+* (General) Added operator<< to ServiceList.
+* (General) Added new methods to Cache: is_prefetching & get_if_in_cache.
+
+
+Changes
+
+* (Server) Re-wrote the core algorithm (large change!).
+  * Simplify
+  * SeekConnectionMode(TM) ;-);-)
+  * smooth connect
+  * smooth disconnect (experimental)
+* (Server) Moved filtering methods from TraceProcessor to TraceFilter.
+* (Server) TraceServer: ServiceList value changed from trace_server
+   to traceserver.
+* (General) Replaced node ids :std::pair<int, int> by uint64_t.
+* (General) Calculation of angle_difference allows negative points.
+* (General) calculate_direction moved from GPSPoint to GeoCoordinate.
+* (General) Nodes have mupliple directions now.
+* (General) Cache writes back periodically.
+* (Buildsys) Introduced config.h.
+* (Misc) Updated INSTALL file.
+
+
+Bugfixes
+
+* (Server) Removed much debug output (not really a bugfix, but useful!).
+* (Server) Fixes for gcc 3.4, 4.0 and 4.1.
+* (Tests) Applied changes and feature to the tests.
+* (Buildsys) Set compiler option "-O3" when optimization is enabled.
+
 
 
 initial berlios import (a.k.a. the touch-and-go)
 ------------------------------------------------
+
