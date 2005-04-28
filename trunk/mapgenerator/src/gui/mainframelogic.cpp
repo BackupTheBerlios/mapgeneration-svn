@@ -111,13 +111,14 @@ namespace mapgeneration_gui
 			(licence_accepted != "yes"))
 		{
 			std::cout << "\nYou did not yet accept the licence.\n"
-			          << "This program is licences under the Academic Free License version 2.1.\n"
+			          << "This program is licenced under the Academic Free License version 2.1.\n"
 			          << "The complete licence text is available in the LICENCE file and at\n"
 			          << "http://www.opensource.org/licenses/afl-2.1.php\n"
 			          << "\n"
-			          << "If you understand and accept the licence terms enter y to continue.\n"
+			          << "If you understand and accept the licence terms enter 'y' to continue, \n"
+			          << "otherwise press enter to abort program execution.\n"
 			          << "If you are the only user you may also change the accepted_licence\n"
-			          << "value in the mapgenerator.conf file to yes.\n\n";
+			          << "value in the mapgenerator.conf file to 'yes' to accept the licence.\n\n";
 			char c = getchar();
 			if (c != 'y' && c != 'Y')
 			{
