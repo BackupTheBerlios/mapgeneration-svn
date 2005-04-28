@@ -16,8 +16,8 @@ New features
 
 * (DB) Table names can be chosen freely.
 * (DB) DBConnection is now an interface.
-  * ODBCDBConnection adopts functions from old DBConnection.
-  * Introduced FileDBConnection.
+  * ODBCDBConnection adopts functions from old DBConnection.
+  * Introduced FileDBConnection.
 * (DB) ODBC is now optional
 * (Misc) Licence information is displayed at program start.
 * (Misc) Added .conf.release files.
@@ -30,9 +30,9 @@ Changes
 * (GUI) Starts from mapgenerator root directory now.
 * (General) Tile: changed access methods for nodes (e.g. operator[]).
 * (General) GeoCoordinate speed up:
-  * Stores geographical coordinates in double[3].
-  * Added operator[], operator<<.
-  * Made some methods inline.
+  * Stores geographical coordinates in double[3].
+  * Added operator[], operator<<.
+  * Made some methods inline.
 * (Misc) Updated INSTALL file.
 * (Misc) Removed exporter.
 
@@ -40,6 +40,7 @@ Changes
 Bugfixes
 
 * (Server) Adjusted and improved path finding parameters.
+* (Server) TraceProcessor: Fixed the checking for node duplicates in a path
 * (GUI) Throws exception when parsing of the configuration file fails.
 * (General) Node: uses static_cast<Node::Id>() instead of (Node::ID)().
 * (Tests) Applied changes and feature to the tests.
@@ -65,13 +66,13 @@ New features
 Changes
 
 * (Server) Re-wrote the core algorithm (large change!).
-  * Simplify
-  * SeekConnectionMode(TM) ;-);-)
-  * smooth connect
-  * smooth disconnect (experimental)
+  * Simplify
+  * SeekConnectionMode(TM) ;-);-)
+  * smooth connect
+  * smooth disconnect (experimental)
 * (Server) Moved filtering methods from TraceProcessor to TraceFilter.
 * (Server) TraceServer: ServiceList value changed from trace_server
-   to traceserver.
+   to traceserver.
 * (General) Replaced node ids :std::pair<int, int> by uint64_t.
 * (General) Calculation of angle_difference allows negative points.
 * (General) calculate_direction moved from GPSPoint to GeoCoordinate.

@@ -81,6 +81,56 @@ namespace mapgeneration
 			std::vector<D_RangeReporting::Id> new_cluster_nodes_fast;
 			tile->fast_cluster_nodes_search(gps_point, _search_radius_m,
 				_search_max_angle_difference_pi * PI, new_cluster_nodes_fast);
+
+/*			std::vector<D_RangeReporting::Id> new_cluster_nodes;
+			tile->cluster_nodes_search(gps_point, _search_radius_m,
+				_search_max_angle_difference_pi * PI, new_cluster_nodes);
+				
+			for (int i = 0; i < new_cluster_nodes.size(); ++i)
+			{
+				bool found = false;
+				for (int j = 0; j < new_cluster_nodes_fast.size(); ++j)
+				{
+					if (*new_cluster_nodes[i] == *new_cluster_nodes_fast[j])
+						found = true;
+				}
+				
+				if ( !found )
+				{
+					Tile::Id tile_id;
+					Node::LocalId node_local_id;
+					Node::split_id(*new_cluster_nodes[i], tile_id, node_local_id);
+					const Node& node = tile->node(*new_cluster_nodes[i]);
+					double distance = gps_point.distance(node);
+					
+					std::cout << "ATTITION!!! Node: " << tile_id << ", " << node_local_id << " = "
+						<< tile->node(*new_cluster_nodes[i]) << " not found!" << std::endl;
+					std::cout << "ATTITION!!! GPSPoint: " << gps_point << ", distance = " << distance << std::endl;
+				}
+			}
+
+			for (int i = 0; i < new_cluster_nodes_fast.size(); ++i)
+			{
+				bool found = false;
+				for (int j = 0; j < new_cluster_nodes.size(); ++j)
+				{
+					if (*new_cluster_nodes[i] == *new_cluster_nodes_fast[j])
+						found = true;
+				}
+				
+				if ( !found )
+				{
+					Tile::Id tile_id;
+					Node::LocalId node_local_id;
+					Node::split_id(*new_cluster_nodes[i], tile_id, node_local_id);
+					const Node& node = tile->node(*new_cluster_nodes[i]);
+					double distance = gps_point.distance(node);
+					
+					std::cout << "ATTITION!!! Node: " << tile_id << ", " << node_local_id << " = "
+						<< tile->node(*new_cluster_nodes[i]) << " too much!" << std::endl;
+					std::cout << "ATTITION!!! GPSPoint: " << gps_point << ", distance = " << distance << std::endl;
+				}
+			}*/
 			
 			result_list.insert(result_list.end(), 
 				new_cluster_nodes_fast.begin(), new_cluster_nodes_fast.end());
@@ -788,9 +838,10 @@ namespace mapgeneration
 					new_path_entries.push_back(
 						path.insert(path_iter, new_entry)
 					);
+
+					++new_node_iter;
 				}
 
-				++new_node_iter;
 			}
 
 

@@ -117,7 +117,7 @@ namespace mapgeneration
 		double cos_lon1 = cos(lon1);
 		double sin_lon1 = sin(lon1);
 
-		double dist = (sqrt(2.0) * in_search_radius) / EARTH_RADIUS_M;
+		double dist = (sqrt(2.0) * (in_search_radius + 2.0)) / EARTH_RADIUS_M;
 		double cos_dist = cos(dist);
 		double sin_dist = sin(dist);
 		
@@ -153,20 +153,28 @@ namespace mapgeneration
 		_range_reporting.range_query(query_rectangle, out_query_result);
 		/* done. */
 		
-		/* compare angles... */
+		/* compare distance and angles... */
 		std::vector<D_RangeReporting::Id>::iterator iter
 			= out_query_result.begin();
 		while (iter != out_query_result.end())
 		{
 			bool erased = false;
+			const Node& the_node = node(**iter);
 			
-			double min_angle = node(**iter).minimal_direction_difference_to(in_gps_point);
-			if (min_angle > in_search_angle)
+			if (the_node.approximated_distance(in_gps_point) > in_search_radius)
 			{
 				iter = out_query_result.erase(iter);
 				erased = true;
+			} else
+			{
+				double min_angle = the_node.minimal_direction_difference_to(in_gps_point);
+				if (min_angle > in_search_angle)
+				{
+					iter = out_query_result.erase(iter);
+					erased = true;
+				}
 			}
-			
+				
 			if ( !erased )
 				++iter;
 		}
