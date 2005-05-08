@@ -76,8 +76,8 @@ mgg: $(objects)
 	$(MAKE) -C $(bindir) $(mainobjects)
 	@top_builddir@libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) @WX_LIBS@ -o mgg ../gpstrans/gpsmath.o ../gpstrans/gpsproj.o $(objects) $(fullmainobjects)
 
-	cp $(fullxrcs) $(guibinxrcdir) -f -v
-	cp $(fullimages) $(guibinimagesdir) -f -v
+	cp -f -v $(fullxrcs) $(guibinxrcdir)
+	cp -f -v $(fullimages) $(guibinimagesdir)
 
 
 # Removes the binaries
