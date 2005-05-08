@@ -122,19 +122,19 @@ AC_PROG_LIBTOOL
 
 #### Checks for libraries. ####
 # Common C++
-CCGNU2_CONFIG_PATH="$PATH"
-AC_ARG_WITH(ccgnu2-config-path,
-            AC_HELP_STRING([--with-ccgnu2-config-path=DIR],
-                       [Define the path to the commoncpp2 program ccgnu2-config]),
-        [ if test -d "$withval" ; then
-			CCGNU2_CONFIG_PATH="$withval"
+CCGNU2_CONFIG="ccgnu2-config"
+AC_ARG_WITH(ccgnu2-config,
+            AC_HELP_STRING([--with-ccgnu2-config=FILE],
+                       [Define the commoncpp2 program ccgnu2-config]),
+        [ if test -x "$withval" ; then
+			CCGNU2_CONFIG="$withval"
           else
-            AC_MSG_ERROR([Cannot stat directory $withval])
+            AC_MSG_ERROR([Cannot stat file $withval])
           fi ] )
 
 AC_PATH_PROG(CCGNU2_CONFIG, ccgnu2-config,
 		,
-		$CCGNU2_CONFIG_PATH)
+		)
 
 if test $CCGNU2_CONFIG; then
 	LIBS="$LIBS `$CCGNU2_CONFIG --stdlibs`"
@@ -210,24 +210,24 @@ else
 fi
 AC_SUBST(have_odbc)
 
-
-# WxWidgets	
-WX_CONFIG_PATH="$PATH"
-AC_ARG_WITH(wx-config-path,
-            AC_HELP_STRING([--with-wx-config-path=DIR],
-                       [Define the path to the WxWidgets program wx-config]),
-        [ if test -d "$withval" ; then
-			WX_CONFIG_PATH="$withval"
+# WxWidgets
+WX_CONFIG="wx-config"	
+AC_ARG_WITH(wx-config,
+            AC_HELP_STRING([--with-wx-config=DIR],
+                       [Define the WxWidgets program wx-config]),
+        [ if test -x "$withval" ; then
+			WX_CONFIG="$withval"
           else
-            AC_MSG_ERROR([Cannot stat directory $withval])
+            AC_MSG_ERROR([Cannot stat file $withval])
           fi ] )
           
 if test "x$enable_gui" = "xyes"; then
 	AC_SUBST(WX_LIBS)
 	AC_SUBST(WX_CPPFLAGS)
+
 	AC_PATH_PROG(WX_CONFIG, wx-config,
 			,
-			$WX_CONFIG_PATH)
+			)
 
 	if test $WX_CONFIG; then
 		LIBS="$LIBS `$WX_CONFIG --libs`"
