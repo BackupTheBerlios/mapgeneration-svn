@@ -753,9 +753,9 @@ namespace mapgeneration_util
 	inline int
 	Cache<T_ID, T_Elem>::cached_objects()
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		int cached_objects = _objects.size();
-		_mutex.leave();
+		_mutex.leaveMutex();
 		return cached_objects;
 	}
 
@@ -764,9 +764,9 @@ namespace mapgeneration_util
 	inline int
 	Cache<T_ID, T_Elem>::cached_size()
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		int cached_size = _cached_size;
-		_mutex.leave();
+		_mutex.leaveMutex();
 		return cached_size;
 	}
 	
@@ -775,9 +775,9 @@ namespace mapgeneration_util
 	void
 	Cache<T_ID, T_Elem>::clear_prefetch_queue()
 	{
-		_prefetch_queue_mutex.enter();
+		_prefetch_queue_mutex.enterMutex();
 		_prefetches.clear();
-		_prefetch_queue_mutex.leave();
+		_prefetch_queue_mutex.leaveMutex();
 	}
 
 
@@ -787,12 +787,12 @@ namespace mapgeneration_util
 	{
 		int result = 0;
 
-		_mutex.enter();
+		_mutex.enterMutex();
 		typename std::map<T_ID, Entry>::iterator iter = _objects.begin();
 		typename std::map<T_ID, Entry>::iterator iter_end = _objects.end();
 		for (; iter != iter_end; ++iter)
 			if (flush(iter)) result++;			
-		_mutex.leave();
+		_mutex.leaveMutex();
 
 		return result;
 	}
@@ -802,7 +802,7 @@ namespace mapgeneration_util
 	typename Cache<T_ID, T_Elem>::Pointer
 	Cache<T_ID, T_Elem>::get(T_ID id)
 	{		
-		_mutex.enter();
+		_mutex.enterMutex();
 
 		Entry* entry = search_in_cache(id);
 		if (!entry)
@@ -811,11 +811,11 @@ namespace mapgeneration_util
 		if (entry)
 		{
 			typename Cache<T_ID, T_Elem>::Pointer pointer(entry);
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return pointer;
 		}
 
-		_mutex.leave();
+		_mutex.leaveMutex();
 		return typename Cache<T_ID, T_Elem>::Pointer(0);
 	}
 	
@@ -824,9 +824,9 @@ namespace mapgeneration_util
 	typename Cache<T_ID, T_Elem>::Entry*
 	Cache<T_ID, T_Elem>::get_entry(T_ID id)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		Entry* entry = search_in_cache(id);
-		_mutex.leave();
+		_mutex.leaveMutex();
 		
 		return entry;
 	}
@@ -836,17 +836,17 @@ namespace mapgeneration_util
 	typename Cache<T_ID, T_Elem>::Pointer
 	Cache<T_ID, T_Elem>::get_if_in_cache(T_ID id)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 
 		Entry* entry = search_in_cache(id);
 		if (entry)
 		{
 			typename Cache<T_ID, T_Elem>::Pointer pointer(entry);
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return pointer;
 		}
 
-		_mutex.leave();
+		_mutex.leaveMutex();
 		return typename Cache<T_ID, T_Elem>::Pointer(0);
 	}
 	
@@ -856,7 +856,7 @@ namespace mapgeneration_util
 	Cache<T_ID, T_Elem>::get_or_prefetch(T_ID id, 
 		pubsub::Subscriber<T_ID>* notifier)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 
 		Entry* entry = search_in_cache(id);
 		if (!entry)
@@ -865,11 +865,11 @@ namespace mapgeneration_util
 		} else
 		{
 			typename Cache<T_ID, T_Elem>::Pointer pointer(entry);
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return pointer;
 		}
 
-		_mutex.leave();
+		_mutex.leaveMutex();
 		return typename Cache<T_ID, T_Elem>::Pointer(0);
 	}
 	
@@ -880,7 +880,7 @@ namespace mapgeneration_util
 	{
 		std::vector<T_ID> result;
 		
-		_mutex.enter();
+		_mutex.enterMutex();
 		result = wrapper_get_used_ids();
 		std::sort(result.begin(), result.end());
 		
@@ -894,7 +894,7 @@ namespace mapgeneration_util
 				result.push_back(iter->first);
 			}
 		}
-		_mutex.leave();
+		_mutex.leaveMutex();
 	
 		std::sort(result.begin(), result.end());
 		
@@ -914,12 +914,12 @@ namespace mapgeneration_util
 	bool
 	Cache<T_ID, T_Elem>::insert(T_ID id, T_Elem* elem)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		Entry* search_result = search_in_cache(id);
 		if ((search_result && search_result->object!=0) || 
 			(!search_result && load_into_cache(id)->object!=0))
 		{
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return false;
 		}
 
@@ -938,7 +938,7 @@ namespace mapgeneration_util
 		std::pair<typename std::map<T_ID, typename Cache<T_ID, T_Elem>::Entry >::iterator, bool> result = 
 			_objects.insert(new_entry_pair(id, elem, true));
 		
-		_mutex.leave();
+		_mutex.leaveMutex();
 		
 		if (!result.second)
 			mlog(MLog::error) << "Could not insert element that should be "
@@ -952,14 +952,14 @@ namespace mapgeneration_util
 	bool
 	Cache<T_ID, T_Elem>::insert(T_ID* id, T_Elem* elem)
 	{
-		_mutex.enter();		
+		_mutex.enterMutex();		
 		if (_unused_ids.size() == 0)
 		{
 			std::vector<T_ID> unused_ids_vector = wrapper_get_free_ids();
 			
 			if (unused_ids_vector.size() == 0)
 			{
-				_mutex.leave();
+				_mutex.leaveMutex();
 				return false;
 			}
 				
@@ -976,7 +976,7 @@ namespace mapgeneration_util
 		std::cout << "Inserting as id: " << *id << "\n";
 		
 		bool insert_result = insert(*id, elem);		
-		_mutex.leave();
+		_mutex.leaveMutex();
 		
 		return insert_result;
 	}
@@ -986,13 +986,13 @@ namespace mapgeneration_util
 	bool
 	Cache<T_ID, T_Elem>::is_dirty(T_ID id)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		Entry* entry = search_in_cache(id);
 		
 		bool dirty;
 		if (!entry) dirty = false;
 			else dirty = entry.dirty;
-		_mutex.leave();
+		_mutex.leaveMutex();
 		
 		return dirty;
 	}
@@ -1004,9 +1004,9 @@ namespace mapgeneration_util
 	{
 		bool result = false;
 		
-		_prefetch_queue_mutex.enter();
+		_prefetch_queue_mutex.enterMutex();
 		result = !_prefetches.empty();
-		_prefetch_queue_mutex.leave();
+		_prefetch_queue_mutex.leaveMutex();
 		
 		return result;
 	}
@@ -1017,14 +1017,14 @@ namespace mapgeneration_util
 	Cache<T_ID, T_Elem>::prefetch(T_ID id, 
 		pubsub::Subscriber<T_ID>* notifier)
 	{
-		_prefetch_queue_mutex.enter();
+		_prefetch_queue_mutex.enterMutex();
 		_prefetches.push_back(
 			std::pair<T_ID, pubsub::Subscriber<T_ID>* >(
 				id,
 				notifier
 			)
 		);
-		_prefetch_queue_mutex.leave();
+		_prefetch_queue_mutex.leaveMutex();
 		
 		_thread_should_work_event.signal();
 	}
@@ -1034,7 +1034,7 @@ namespace mapgeneration_util
 	bool
 	Cache<T_ID, T_Elem>::remove(T_ID id)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		/** @todo Change search_in_cache so that this function can also use it...*/
 		typename std::map<T_ID, typename Cache<T_ID, T_Elem>::Entry >::iterator search_result = 
 			_objects.find(id);
@@ -1048,7 +1048,7 @@ namespace mapgeneration_util
 			std::find(_unused_ids.begin(), _unused_ids.end(), id);
 		if (unused_ids_iter == _unused_ids.end())
 			_unused_ids.push_front(id);
-		_mutex.leave();
+		_mutex.leaveMutex();
 		
 		return true;
 	}
@@ -1068,12 +1068,12 @@ namespace mapgeneration_util
 	{
 		int counter = 0;
 		
-		_mutex.enter();
+		_mutex.enterMutex();
 		typename std::map<T_ID, Entry>::iterator iter = _objects.begin();
 		typename std::map<T_ID, Entry>::iterator iter_end = _objects.end();
 		for (; iter != iter_end; ++iter)
 			if (write_back(iter)) counter++;
-		_mutex.leave();
+		_mutex.leaveMutex();
 			
 		return counter;
 	}
@@ -1163,16 +1163,16 @@ namespace mapgeneration_util
 			if (cached_size() > soft_max_cached_size() &&
 				!(_options & _NO_MEMORY_LIMIT))
 			{				
-				_mutex.enter();
+				_mutex.enterMutex();
 				free_cache_down_to(soft_max_cached_size());
-				_mutex.leave();
+				_mutex.leaveMutex();
 			}
 			
 			bool end = false;
 			while(!end)
 			{
 				
-				_prefetch_queue_mutex.enter();
+				_prefetch_queue_mutex.enterMutex();
 				if (_prefetches.empty())
 					end = true;
 				else
@@ -1181,21 +1181,21 @@ namespace mapgeneration_util
 					pubsub::Subscriber<T_ID>* notifier = 
 						_prefetches.front().second;
 					
-					_mutex.enter();				
+					_mutex.enterMutex();				
 					if (!search_in_cache(id))
 						load_into_cache(id);
-					_mutex.leave();
+					_mutex.leaveMutex();
 	
 					if (notifier)
 						notifier->receive(id);
 					_prefetches.pop_front();					
 				}
-				_prefetch_queue_mutex.leave();
+				_prefetch_queue_mutex.leaveMutex();
 				
-				_mutex.enter();
+				_mutex.enterMutex();
 				if (cached_size() > soft_max_cached_size())
 					free_cache_down_to(soft_max_cached_size());				
-				_mutex.leave();
+				_mutex.leaveMutex();
 			}
 
 			_thread_should_work_event.reset();
@@ -1213,7 +1213,7 @@ namespace mapgeneration_util
 	void
 	Cache<T_ID, T_Elem>::free_cache_down_to(int max_size)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 	 	typename std::map<T_ID, Entry>::iterator iter;
 	 	typename std::deque<T_ID>::iterator ids_iter = _object_ids.begin();
 	 	typename std::deque<T_ID>::iterator ids_iter_end = _object_ids.end();
@@ -1232,7 +1232,7 @@ namespace mapgeneration_util
 			
 			++ids_iter;
 		}
-		_mutex.leave();
+		_mutex.leaveMutex();
 	}
 
 
@@ -1240,7 +1240,7 @@ namespace mapgeneration_util
 	inline bool
 	Cache<T_ID, T_Elem>::flush(typename std::map<T_ID, Entry>::iterator entry)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		T_ID id = entry->first;
 		T_Elem* elem = entry->second.object;
 		
@@ -1255,11 +1255,11 @@ namespace mapgeneration_util
 			delete elem;
 			_objects.erase(entry);
 			_cached_size -= size_of_object;
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return true;
 		}
 		
-		_mutex.leave();
+		_mutex.leaveMutex();
 		return false;
 	}
 	
@@ -1268,7 +1268,7 @@ namespace mapgeneration_util
 	typename Cache<T_ID, T_Elem>::Entry*
 	Cache<T_ID, T_Elem>::load_into_cache(T_ID id)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		if (cached_size() >= hard_max_cached_size() && 
 			!(_options & _NO_MEMORY_LIMIT))
 			free_cache_down_to(hard_max_cached_size());
@@ -1288,17 +1288,17 @@ namespace mapgeneration_util
 		{
 			mlog(MLog::error, "Cache::load_into_cache") 
 				<< "Wanted to insert a tile into cache, but map says it's already inserted... :-(\n";
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return 0;
 		} else
 		{
 			_cached_size += wrapper_size_of(elem);
 			_object_ids.push_back(id);
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return &((result.first)->second);
 		}
 
-		_mutex.leave();			// This should be unreachable....
+		_mutex.leaveMutex();			// This should be unreachable....
 		
 	}
 	
@@ -1321,17 +1321,17 @@ namespace mapgeneration_util
 	typename Cache<T_ID, T_Elem>::Entry*
 	Cache<T_ID, T_Elem>::search_in_cache(T_ID id)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		typename std::map<T_ID, typename Cache<T_ID, T_Elem>::Entry >::iterator search_result = 
 			_objects.find(id);
 			
 		if (search_result != _objects.end())
 		{
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return &(*search_result).second;
 		}
 
-		_mutex.leave();
+		_mutex.leaveMutex();
 		return 0;
 	}
 	
@@ -1413,7 +1413,7 @@ namespace mapgeneration_util
 	inline bool
 	Cache<T_ID, T_Elem>::write_back(typename std::map<T_ID, Entry>::iterator iter)
 	{
-		_mutex.enter();
+		_mutex.enterMutex();
 		if (iter->second.dirty && iter->second.users == 0)
 		{
 			T_ID id = iter->first;
@@ -1421,11 +1421,11 @@ namespace mapgeneration_util
 			wrapper_save(id, elem);
 			iter->second.dirty = false;
 
-			_mutex.leave();
+			_mutex.leaveMutex();
 			return true;
 		}
 
-		_mutex.leave();
+		_mutex.leaveMutex();
 		return false;
 	}
 	

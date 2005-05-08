@@ -53,25 +53,25 @@ namespace mapgeneration_gui
 	{
 		if (_tiles_to_display > 100000L)
 		{
-			_prefetched_queue_mutex.enter();
+			_prefetched_queue_mutex.enterMutex();
 			_prefetched_tile_ids.clear();
-			_prefetched_queue_mutex.leave();
+			_prefetched_queue_mutex.leaveMutex();
 			return;
 		}
 		
 		bool end = false;
 		while(!end)
 		{
-			_prefetched_queue_mutex.enter();
+			_prefetched_queue_mutex.enterMutex();
 			if (_prefetched_tile_ids.empty())
 			{
 				end = true;
-				_prefetched_queue_mutex.leave();
+				_prefetched_queue_mutex.leaveMutex();
 			} else
 			{
 				Tile::Id id = _prefetched_tile_ids.front();
 				_prefetched_tile_ids.pop_front();
-				_prefetched_queue_mutex.leave();
+				_prefetched_queue_mutex.leaveMutex();
 				
 				TileCache::Pointer tile_pointer;
 				tile_pointer = _tile_cache->get(id);
@@ -352,9 +352,9 @@ namespace mapgeneration_gui
 	void
 	MapDrawer::tile_prefetched(unsigned int id)
 	{
-		_prefetched_queue_mutex.enter();
+		_prefetched_queue_mutex.enterMutex();
 		_prefetched_tile_ids.push_back(id);	
-		_prefetched_queue_mutex.leave();
+		_prefetched_queue_mutex.leaveMutex();
 /*		TileCache::Pointer tile_pointer=_tile_cache->get(id);
 		if (tile_pointer != 0)
 		{
@@ -414,19 +414,18 @@ namespace mapgeneration_gui
 	{
 		while(!should_stop())
 		{
-			_prefetched_queue_mutex.enter();
+			_prefetched_queue_mutex.enterMutex();
 			if (!_prefetched_tile_ids.empty())
 			{
 				_prefetched_tile_ids.clear();
-				_prefetched_queue_mutex.leave();
+				_prefetched_queue_mutex.leaveMutex();
 				_use_prefetch = false;
 				_map_scrolled_window->Refresh();
 			}
-			_prefetched_queue_mutex.leave();
+			_prefetched_queue_mutex.leaveMutex();
 						
 			_should_stop_event.wait(500);
 		}
 	}	
 	
 } // namespace mapgeneration_gui
-
