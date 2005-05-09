@@ -24,6 +24,10 @@ main:
 gui:
 	$(MAKE) -C $(bindir) gui
 
+# Compiles the MapAndGuide converter
+.PHONY: mng
+mng:
+	$(MAKE) -C $(bindir) mng
 
 # Compiles the tests
 .PHONY: tests

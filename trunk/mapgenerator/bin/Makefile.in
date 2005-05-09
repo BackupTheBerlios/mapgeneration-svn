@@ -63,6 +63,11 @@ gui:
 	$(MAKE) -C ./gpstrans
 	$(MAKE) -C ./gui
 
+# Compiles the MapAndGuide converter
+.PHONY: mng
+mng:
+	$(MAKE) -C ./util/mngconverter
+
 # Compiles the tests
 .PHONY: tests
 tests:
