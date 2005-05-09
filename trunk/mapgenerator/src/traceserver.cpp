@@ -43,20 +43,29 @@ namespace mapgeneration
 			mlog(MLog::info, "TraceServer")
 				<< "Configuration for port number not found, using default (" 
 				<< port << ").\n";
-		}		
+		}
 
 		std::vector<ost::NetworkDeviceInfo> devices;
 		enumNetworkDevices (devices);
-
-		std::vector<ost::NetworkDeviceInfo>::iterator iter = devices.begin();
-		std::vector<ost::NetworkDeviceInfo>::iterator iter_end = devices.end();
-		for(; iter != iter_end; ++iter)
+		
+		if (devices.size() == 0)
 		{
-			mlog(MLog::debug, "TraceServer") << "Binding to interface "
-				<< iter->name() << " address " << iter->address().getHostname()
-				<< " port " << port << ".\n";
-			ost::TCPSocket new_tcp_socket(iter->address(), port);
+			mlog(MLog::warning, "TraceServer") << 
+				"No devices found, trying to bind to 127.0.0.1.\n";
+			ost::TCPSocket new_tcp_socket(ost::IPV4Address("127.0.0.1"), port);
 			_tcp_sockets.push_back(new_tcp_socket);
+		} else
+		{
+			std::vector<ost::NetworkDeviceInfo>::iterator iter = devices.begin();
+			std::vector<ost::NetworkDeviceInfo>::iterator iter_end = devices.end();
+			for(; iter != iter_end; ++iter)
+			{
+				mlog(MLog::debug, "TraceServer") << "Binding to interface "
+					<< iter->name() << " address " << iter->address().getHostname()
+					<< " port " << port << ".\n";
+				ost::TCPSocket new_tcp_socket(iter->address(), port);
+				_tcp_sockets.push_back(new_tcp_socket);
+			}
 		}
 		
 		mlog(MLog::info, "TraceServer") << "Initialized\n";		
