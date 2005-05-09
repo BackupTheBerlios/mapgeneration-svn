@@ -32,8 +32,11 @@ Supported types:
 	</filteredtrace>
 	
 	<tracefilter>
+		<longest_tunnel type="double">50000.0</longest_tunnel>
 		<max_acceleration type="double" default="15">15</max_acceleration>
+		<max_distance_gap type="double">15000.0</max_distance_gap>
 		<max_speed type="double" default="70">70</max_speed>
+		<max_time_gap type="double" default="3600.0">3600.0</max_time_gap>
 		<min_trace_length type="int" default="5">5</min_trace_length>
 	</tracefilter>
 	

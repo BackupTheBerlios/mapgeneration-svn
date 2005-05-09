@@ -16,7 +16,8 @@ namespace mapgeneration
 {
  
 
-	TraceFilter::TraceFilter(pubsub::ServiceList* service_list,TileManager* tile_manager)
+	TraceFilter::TraceFilter(pubsub::ServiceList* service_list,
+		TileManager* tile_manager)
 	: _service_list(service_list), _tile_manager(tile_manager)
 	{
 	}
@@ -66,7 +67,7 @@ namespace mapgeneration
 				ready_traces = 0;
 				while(ready_traces < available_traces)
 				{
-					apply_time_filter(_working_queue.front());
+					apply_equal_time_filter(_working_queue.front());
 					_working_queue.pop();
 					++ready_traces;
 					/*show_state("Applied time filter", ready_traces);*/
@@ -77,12 +78,23 @@ namespace mapgeneration
 				ready_traces = 0;
 				while(ready_traces < available_traces)
 				{
-					apply_location_filter(_working_queue.front());
+					apply_equal_location_filter(_working_queue.front());
 					_working_queue.pop();
 					++ready_traces;
 					/*show_state("Applied location filter", ready_traces);*/
 				}
 
+				/* Test for gaps */
+				available_traces = _working_queue.size();
+				ready_traces = 0;
+				while(ready_traces < available_traces)
+				{
+					apply_gap_filter(_working_queue.front());
+					_working_queue.pop();
+					++ready_traces;
+					/*show_state("Applied speed filter", ready_traces);*/
+				}
+				
 				/* Test for speed */
 				available_traces = _working_queue.size();
 				ready_traces = 0;
@@ -149,7 +161,7 @@ namespace mapgeneration
 	/**
 	 * CAUTION:
 	 * Two following points with the same timestamp are NOT allowed!
-	 * Use apply_time_filter before this filter to avoid flawed behaviour.
+	 * Use apply_equal_time_filter before this filter to avoid flawed behaviour.
 	 */
 	void
 	TraceFilter::apply_acceleration_filter(FilteredTrace& filtered_trace)
@@ -286,7 +298,7 @@ namespace mapgeneration
 
 
 	void
-	TraceFilter::apply_location_filter(FilteredTrace& filtered_trace)
+	TraceFilter::apply_equal_location_filter(FilteredTrace& filtered_trace)
 	{
 		if (filtered_trace.size() < 2)
 		{
@@ -342,10 +354,200 @@ namespace mapgeneration
 	}
 	
 	
+	void
+	TraceFilter::apply_equal_time_filter(FilteredTrace& filtered_trace)
+	{
+		if (filtered_trace.size() < 2)
+		{
+			_working_queue.push(filtered_trace);
+			_working_queue.pop();
+			return;
+		}
+
+		/* Now we know: the filtered_trace has a size of 2 at least! */
+			
+		/* Init the iterator for point testing */
+		FilteredTrace::iterator first_test_point_iter
+			= filtered_trace.begin();
+		FilteredTrace::iterator second_test_point_iter
+			= ++(filtered_trace.begin());
+			
+		int counter = 1;
+		
+		do
+		{
+			if (first_test_point_iter->get_time()
+				> second_test_point_iter->get_time())
+			{
+				/* Times invalid */
+				mlog(MLog::debug, "TraceFilter") << "Timestamps are invalid "
+				<< "around point " << counter << ".\n";
+				
+				/* Cut off first part of the trace */
+				FilteredTrace cutoff_part(_service_list);
+				cutoff_part.splice(cutoff_part.begin(), filtered_trace,
+					filtered_trace.begin(), second_test_point_iter);
+				_working_queue.push(cutoff_part);
+				
+				/* Increment iters */
+				first_test_point_iter = second_test_point_iter;
+				++second_test_point_iter;
+				
+				/*show_state("Applying time filter");*/
+
+			} else if (first_test_point_iter->get_time()
+				== second_test_point_iter->get_time())
+			{
+				/* Times equal */
+				mlog(MLog::debug, "TraceFilter") << "Timestamps are equal "
+				<< "around point " << counter << ".\n";
+				
+				/* Save iterator */
+				FilteredTrace::iterator delete_iter = second_test_point_iter;
+				++second_test_point_iter;
+				
+				/* Delete iterator */
+				filtered_trace.erase(delete_iter);
+				
+				/*show_state("Applying time filter");*/
+
+			} else
+			{
+				++first_test_point_iter;
+				++second_test_point_iter;
+			}
+			
+			++counter;
+			
+		} while (second_test_point_iter != filtered_trace.end());
+		
+		_working_queue.push(filtered_trace);	
+	}
+	
+	
+	void
+	TraceFilter::apply_gap_filter(FilteredTrace& filtered_trace)
+	{
+		if (filtered_trace.size() < 2)
+		{
+			_working_queue.push(filtered_trace);
+			_working_queue.pop();
+			return;
+		}
+		
+		/* Now we know: the filtered_trace has a size of 2 at least! */
+		
+		/* Init the thresholds... */
+		double longest_tunnel = 50000.0;
+		if (!_service_list->get_service_value("tracefilter.longest_tunnel",
+			longest_tunnel))
+		{
+			mlog(MLog::info, "TraceFilter")
+				<< "Configuration for longest tunnel not found, using"
+				<< " default ("	<< longest_tunnel << "m).\n";
+		}
+		
+		double max_distance_gap = 15000.0;
+		if (!_service_list->get_service_value("tracefilter.max_distance_gap",
+			max_distance_gap))
+		{
+			mlog(MLog::info, "TraceFilter")
+				<< "Configuration for max_distance_gap not found, using"
+				<< " default ("	<< max_distance_gap << "m).\n";
+		}
+		
+		if (max_distance_gap > longest_tunnel)
+		{
+			mlog(MLog::info, "TraceFilter")
+				<< "A max_distance_gap greater than longest_tunnel does not make "
+				<< "sense! Setting max_distance_gap to longest_tunnel.\n";
+			max_distance_gap = longest_tunnel;
+		}
+		
+		double max_time_gap = 3600.0;
+		if (!_service_list->get_service_value("tracefilter.max_time_gap",
+			max_time_gap))
+		{
+			mlog(MLog::info, "TraceFilter")
+				<< "Configuration for max_time_gap not found, using"
+				<< " default ("	<< max_time_gap << "s).\n";
+		}
+		/* done. */
+		
+		/* Init the iterator for point testing */
+		FilteredTrace::iterator first_test_point_iter
+			= filtered_trace.begin();
+		FilteredTrace::iterator second_test_point_iter
+			= ++(filtered_trace.begin());
+			
+		int counter = 1;
+		
+		/* Loop over the trace */
+		do
+		{
+			double distance = second_test_point_iter
+				->distance(*first_test_point_iter);
+			double time = second_test_point_iter->get_time()
+				- first_test_point_iter->get_time();
+			
+			if (distance > max_distance_gap)
+			{
+				/* Threshold exceeded */
+				mlog(MLog::debug, "TraceFilter")
+					<< "max_distance_gap exceeded (" << distance
+					<< " > " << max_distance_gap << ") at point "
+					<< counter << ".\n";
+				
+				/* Cut off first part of the trace */
+				FilteredTrace cutoff_part(_service_list);
+				cutoff_part.splice(cutoff_part.begin(), filtered_trace,
+					filtered_trace.begin(), second_test_point_iter);
+				_working_queue.push(cutoff_part);
+
+				/* Increment iters */
+				first_test_point_iter = second_test_point_iter;
+				++second_test_point_iter;
+
+				/*show_state("Applying speed filter");*/
+
+			} else if (time > max_time_gap)
+			{
+				/* Threshold exceeded */
+				mlog(MLog::debug, "TraceFilter")
+					<< "max_time_gap exceeded (" << time
+					<< " > " << max_time_gap << ") at point "
+					<< counter << ".\n";
+				
+				/* Cut off first part of the trace */
+				FilteredTrace cutoff_part(_service_list);
+				cutoff_part.splice(cutoff_part.begin(), filtered_trace,
+					filtered_trace.begin(), second_test_point_iter);
+				_working_queue.push(cutoff_part);
+
+				/* Increment iters */
+				first_test_point_iter = second_test_point_iter;
+				++second_test_point_iter;
+
+				/*show_state("Applying speed filter");*/
+
+			} else
+			{
+				++first_test_point_iter;
+				++second_test_point_iter;
+			}
+			
+			++counter;
+			
+		} while(second_test_point_iter != filtered_trace.end());
+
+		_working_queue.push(filtered_trace);
+	}
+	
+	
 	/**
 	 * CAUTION:
 	 * Two following points with the same timestamp are NOT allowed!
-	 * Use apply_time_filter before this filter to avoid flawed behaviour.
+	 * Use apply_equal_time_filter before this filter to avoid flawed behaviour.
 	 */
 	void
 	TraceFilter::apply_speed_filter(FilteredTrace& filtered_trace)
@@ -421,77 +623,6 @@ namespace mapgeneration
 	}
 
 
-	void
-	TraceFilter::apply_time_filter(FilteredTrace& filtered_trace)
-	{
-		if (filtered_trace.size() < 2)
-		{
-			_working_queue.push(filtered_trace);
-			_working_queue.pop();
-			return;
-		}
-
-		/* Now we know: the filtered_trace has a size of 2 at least! */
-			
-		/* Init the iterator for point testing */
-		FilteredTrace::iterator first_test_point_iter
-			= filtered_trace.begin();
-		FilteredTrace::iterator second_test_point_iter
-			= ++(filtered_trace.begin());
-			
-		int counter = 1;
-		
-		do
-		{
-			if (first_test_point_iter->get_time()
-				> second_test_point_iter->get_time())
-			{
-				/* Times invalid */
-				mlog(MLog::debug, "TraceFilter") << "Timestamps are invalid "
-				<< "around point " << counter << ".\n";
-				
-				/* Cut off first part of the trace */
-				FilteredTrace cutoff_part(_service_list);
-				cutoff_part.splice(cutoff_part.begin(), filtered_trace,
-					filtered_trace.begin(), second_test_point_iter);
-				_working_queue.push(cutoff_part);
-				
-				/* Increment iters */
-				first_test_point_iter = second_test_point_iter;
-				++second_test_point_iter;
-				
-				/*show_state("Applying time filter");*/
-
-			} else if (first_test_point_iter->get_time()
-				== second_test_point_iter->get_time())
-			{
-				/* Times equal */
-				mlog(MLog::debug, "TraceFilter") << "Timestamps are equal "
-				<< "around point " << counter << ".\n";
-				
-				/* Save iterator */
-				FilteredTrace::iterator delete_iter = second_test_point_iter;
-				++second_test_point_iter;
-				
-				/* Delete iterator */
-				filtered_trace.erase(delete_iter);
-				
-				/*show_state("Applying time filter");*/
-
-			} else
-			{
-				++first_test_point_iter;
-				++second_test_point_iter;
-			}
-			
-			++counter;
-			
-		} while (second_test_point_iter != filtered_trace.end());
-		
-		_working_queue.push(filtered_trace);	
-	}
-	
-	
 /*	void
 	TraceFilter::show_state(std::string step_name, int number)
 	{

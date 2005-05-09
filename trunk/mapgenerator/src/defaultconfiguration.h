@@ -45,8 +45,11 @@ namespace mapgeneration
 				
 				v.push_back(Parameter("filteredtrace.size_factor", "double", "1.0"));
 				
+				v.push_back(Parameter("tracefilter.longest_tunnel", "double", "50000.0"));
 				v.push_back(Parameter("tracefilter.max_acceleration", "double", "15"));
+				v.push_back(Parameter("tracefilter.max_distance_gap", "double", "15000.0"));
 				v.push_back(Parameter("tracefilter.max_speed", "double", "70"));
+				v.push_back(Parameter("tracefilter.max_time_gap", "double", "3600.0"));
 				v.push_back(Parameter("tracefilter.min_trace_length", "int", "5"));
 			};
 
