@@ -12,7 +12,6 @@
 #include <cmath>
 #include <set>
 
-#include "util/constants.h"
 #include "util/mlog.h"
 
 namespace mapgeneration
@@ -38,85 +37,283 @@ namespace mapgeneration
 	}
 	
 	
-  	double
-	GeoCoordinate::calculate_direction(const GeoCoordinate& geo_coordinate) const
-	{		
-		double latitude_difference = geo_coordinate.get_latitude() - get_latitude();
-		double longitude_difference = geo_coordinate.get_longitude() - get_longitude();
+	double
+	GeoCoordinate::bearing_approximated(const GeoCoordinate& geo_coordinate,
+		const Representation representation) const
+	{
+		double lat_diff = geo_coordinate._latitude - _latitude;
+		double lon_diff = geo_coordinate._longitude - _longitude;
 		
 		/* calculation of the direction with the following formula */
-		double direction = atan(longitude_difference / latitude_difference);
+		double bearing = atan2(lat_diff, lon_diff);
 		
-		if (latitude_difference >= 0)
-			;
-		else
-			direction += PI;
-			
-		if (direction < 0) direction += 2 * PI;
-
-		return direction;
+		if (bearing < 0)
+			bearing += 2 * PI;
+		
+		return convert(bearing, representation);
 	}
 	
 	
 	double
-	GeoCoordinate::approximated_distance(GeoCoordinate geo_coordinate) const
+	GeoCoordinate::bearing_on_great_circle(const GeoCoordinate& geo_coordinate,
+		const Representation representation, const double at_point) const
 	{
-/*		double EARTH_UMFANG = 40010000.0;
+		/* everything in radians! */
 		
-		double longitude_difference = _longitude - geo_coordinate.get_longitude();
-		double latitude_difference = _latitude - geo_coordinate.get_latitude();
+		GeoCoordinate start_gc = interpolate(*this, geo_coordinate, 1.0 - at_point);
 		
-		double dlat = latitude_difference / 360.0 * EARTH_UMFANG;
-		double dlong = longitude_difference / 360.0 * EARTH_UMFANG * cos(_latitude * PI / 180);
-
-		return sqrt(dlat * dlat + dlong * dlong);*/
-		
-		double dmf = (EARTH_RADIUS_M * PI) / 180.0; // degree to meter factor
-
-		double lat_diff_in_degree
-			= (_latitude - geo_coordinate.get_latitude());
-		double lon_diff_in_degree
-			= (_longitude - geo_coordinate.get_longitude())
-				 * cos(_latitude * PI / 180.0);
-		
-		return dmf * sqrt(lat_diff_in_degree * lat_diff_in_degree
-			+ lon_diff_in_degree * lon_diff_in_degree);
-	}
-	
-	
-	double
-	GeoCoordinate::distance(GeoCoordinate geo_coordinate) const
-	{
 		double drf = PI / 180; // degree to radian factor
-		double latitude_in_rad = _latitude * drf;
-		double latitude2_in_rad = geo_coordinate.get_latitude() * drf;
-		double longitude_difference_in_rad
-			= (_longitude - geo_coordinate.get_longitude()) * drf;
-	  
-		/* calculates the distance between two GeoCoordinates with the
-		 * following formula */
-
-		/* might be 0 before division: ask Rene! */		
-		return EARTH_RADIUS_M * acos(
-			(sin(latitude_in_rad) * sin(latitude2_in_rad))
-			+ (cos(latitude_in_rad) * cos(latitude2_in_rad)
-				* cos(longitude_difference_in_rad)));
+		double lat1 = start_gc._latitude * drf;
+		double lat2 = geo_coordinate._latitude * drf;
+		double lon_diff = (geo_coordinate._longitude - start_gc._longitude) * drf;
 		
-/*		double latitude2 = geo_coordinate.get_latitude();
-		return (1852 * 60 * acos(
-			(sin(_latitude * PI / 180) * sin(latitude2 * PI / 180))
-			+ (cos(_latitude * PI / 180) * cos(latitude2 * PI / 180) * cos(longitude_difference * PI / 180))
-			) * 180 /PI);*/
+		/** @todo does that work? Is the start_gc on the same great circle like
+		 * the two other gcs??? */
+		double dist = start_gc.distance_on_great_circle(geo_coordinate, _RADIAN);
+		
+		double bearing = acos(
+			(sin(lat2) - sin(lat1) * cos(dist)) / (cos(lat1) * sin(dist))
+		);
+		
+		if (sin(lon_diff) < 0.0)
+			bearing = 2.0 * PI - bearing;
+		
+		/* make a mathematical angle */
+		bearing = PI / 2.0 - bearing;
+		
+		if (bearing < 0.0)
+			bearing += 2.0 * PI;
+		
+		return convert(bearing, representation);
 	}
 	
 	
 	double
-	GeoCoordinate::distance_to_tile_border(Heading heading) const
+	GeoCoordinate::bearing_on_rhumb_line(const GeoCoordinate& geo_coordinate,
+		const Representation representation) const
+	{
+		/* everything in radians! */
+		
+		double drf = PI / 180; // degree to radian factor
+		double lat1 = _latitude * drf;
+		double lat2 = geo_coordinate._latitude * drf;
+		double lat_diff = lat2 - lat1;
+		
+		double lon_diff_W = (_longitude - geo_coordinate._longitude) * drf;
+		double lon_diff_E = -lon_diff_W;
+		
+		if (lon_diff_W < 0.0)
+			lon_diff_W += (2.0 * PI);
+		if (lon_diff_E < 0.0)
+			lon_diff_E += (2.0 * PI);
+		
+		double dphi = log( tan(lat2/2.0 + PI/4.0) / tan(lat1/2.0 + PI/4.0) );
+		
+		/** @todo outsource EPSILON! I used it here and there. */
+		double EPSILON = 0.00000001; // arbitrary
+		double q;
+		if ( fabs(lat_diff) < EPSILON )
+			q = cos(lat1);
+		else
+			q = lat_diff / dphi;
+		
+		double bearing;
+		if (lon_diff_W < lon_diff_E)
+			bearing = atan2(-lon_diff_W, dphi);
+		else
+			bearing = atan2(lon_diff_E, dphi);
+		
+		if (bearing < 0.0)
+			bearing += 2.0 * PI;
+		
+		/* make a mathematical angle */
+		bearing = PI / 2.0 - bearing;
+		
+		while ( (bearing < 0.0) || (bearing >= 2.0 * PI) )
+		{
+			if (bearing < 0.0)
+				bearing += (2.0 * PI);
+			else if (bearing > 0.0)
+				bearing -= (2.0 * PI);
+		}
+		
+		return convert(bearing, representation);
+	}
+	
+	
+	GeoCoordinate
+	GeoCoordinate::compute_geo_coordinate(double bearing_on_rhumb_line,
+		double distance_on_rhumb_line,
+		const GeoCoordinate::Representation bearing_representation,
+		const GeoCoordinate::Representation distance_representation) const
+	{
+		/* test representations and convert to radian... */
+		double drf = PI / 180.0; // degree to radian factor
+		double mrf = 1.0 / EARTH_RADIUS_M; // meter to radian factor
+		
+		double bearing = bearing_on_rhumb_line;
+		switch (bearing_representation)
+		{
+			case _DEGREE:
+				bearing *= drf;
+				break;
+				
+			case _METER:
+				throw "FALSE REPRESENTATION: bearing is given in meters!";
+				break;
+		}
+		
+		while ( !((0 <= bearing) && (bearing < 2.0 * PI)) )
+		{
+			if (bearing < 0)
+				bearing += (2.0 * PI);
+			else
+				bearing -= (2.0 * PI);
+		}
+		
+		double distance = distance_on_rhumb_line;
+		switch (distance_representation)
+		{
+			case _DEGREE:
+				distance *= drf;
+				break;
+				
+			case _METER:
+				distance *= mrf;
+				break;
+		}
+		/* done. */
+		
+		/* convert mathematical bearing to navigation bearing... */
+		bearing = (PI / 2.0) - bearing;
+		/* done */
+		
+		/* convert my coordinates to radians... */
+		double lat1 = _latitude * drf;
+		double lon1 = _longitude * drf;
+		/* done. */
+		
+		/* calculate values...*/
+		double lat2 = lat1 + distance * cos(bearing);
+		double lat_diff = lat1 - lat2;
+		
+		double dphi = log( tan(lat2/2.0 + PI/4.0) / tan(lat1/2.0 + PI/4.0) );
+		
+		double EPSILON = 0.00000001; // arbitrary
+		double q;
+		if ( fabs(lat_diff) < EPSILON )
+			q = cos(lat1);
+		else
+			q = lat_diff / dphi;
+		
+		double dlon = -distance * sin(bearing) / q;
+		double lon2 = lon1 + dlon;
+		
+		while ( (lon2 < -PI) || (PI <= lon2) )
+		{
+			if (lon2 < 0.0)
+				lon2 += (2.0 * PI);
+			else if (lon2 > 0.0)
+				lon2 -= (2.0 * PI);
+		}
+		/* done. */
+		
+		/* convert to degree and return... */
+		double rdf = 180.0 / PI; // radian to degree factor;
+		
+		GeoCoordinate gc;
+		gc.set_latitude(lat2 * rdf);
+		gc.set_longitude(lon2 * rdf);
+		
+		return gc;
+		/* done. */
+	}
+	
+	
+	double
+	GeoCoordinate::distance_approximated(const GeoCoordinate& geo_coordinate,
+		const Representation representation) const
+	{
+		double lat_diff = _latitude - geo_coordinate._latitude;
+		double lon_diff = _longitude - geo_coordinate._longitude;
+		
+		double distance = sqrt(lat_diff * lat_diff + lon_diff * lon_diff);
+		
+		return convert(distance * PI / 180.0, representation);
+	}
+	
+	
+	double
+	GeoCoordinate::distance_on_great_circle(const GeoCoordinate& geo_coordinate,
+		const Representation representation) const
+	{
+		/* calculates the distance between two GeoCoordinates with the
+		 * Great circle distance formula */
+
+		double drf = PI / 180.0; // degree to radian factor
+		
+		double lat1 = _latitude * drf;
+		double lat2 = geo_coordinate._latitude * drf;
+		
+		double lon1 = _longitude * drf;
+		double lon2 = geo_coordinate._longitude * drf;
+		
+		double sin_average_lat = sin( (lat1 - lat2) / 2.0 );
+		double sin_average_lon = sin( (lon1 - lon2) / 2.0 );
+			
+		double distance = 2.0 * asin( sqrt(sin_average_lat * sin_average_lat
+			+ cos(lat1) * cos(lat2) * sin_average_lon * sin_average_lon) );
+		
+		return convert(distance, representation);
+	}
+	
+	
+	double
+	GeoCoordinate::distance_on_rhumb_line(const GeoCoordinate& geo_coordinate,
+		const Representation representation) const
+	{
+		/* everything in radians! */
+		
+		double drf = PI / 180; // degree to radian factor
+		double lat1 = _latitude * drf;
+		double lat2 = geo_coordinate._latitude * drf;
+		double lat_diff = lat2 - lat1;
+		
+		double lon_diff_W = (geo_coordinate._longitude - _longitude) * drf;
+		double lon_diff_E = -lon_diff_W;
+
+		if (lon_diff_W < 0.0)
+			lon_diff_W += (2.0 * PI);
+		if (lon_diff_E < 0.0)
+			lon_diff_E += (2.0 * PI);
+		
+		double dphi = log( tan(lat2/2.0 + PI/4.0) / tan(lat1/2.0 + PI/4.0) );
+		
+		double EPSILON = 0.00000001; // arbitrary
+		double q;
+		if ( fabs(lat_diff) < EPSILON )
+			q = cos(lat1);
+		else
+			q = (lat_diff) / dphi;
+		
+		double distance;
+		if (lon_diff_W < lon_diff_E)
+			distance = sqrt(q * q * lon_diff_W * lon_diff_W + lat_diff * lat_diff);
+		else
+			distance = sqrt(q * q * lon_diff_E * lon_diff_E + lat_diff * lat_diff);
+		
+		return convert(distance, representation);
+	}
+	
+	
+	double
+	GeoCoordinate::distance_to_tile_border(const Heading heading,
+		const Representation representation) const
 	{
 		GeoCoordinate compare_point(*this);
-		/*
-		 * calculation of a GeoCoordinate on the  north, east,  south ,west, NE, NW, SE, SW  tile  border.
-		 */
+		
+		/* calculation of a GeoCoordinate on the north, east, south,
+		 * west, NE, NW, SE, SW  tile  border. */
 		switch (heading)
 		{
 			case _NORTH:
@@ -152,7 +349,7 @@ namespace mapgeneration
 		
 		/* calculation  of the distance between  the current GeoCoordinate 
 		 * and the calculated tile border coordinate */
-		return approximated_distance(compare_point);
+		return distance_approximated(compare_point, representation);
 	}
 	
 	
@@ -169,18 +366,16 @@ namespace mapgeneration
 		split_tile_id(tile_id, northing, easting);
 		
 		/** @todo Support north pole */
-		/*
-		 * puts  all tile_ids  into vec_tile_ids when the distance to the tile
-		 * border is less the treshold
-		 */
-		if (distance_to_tile_border(_NORTH) < radius_threshold)
+		/* puts  all tile_ids  into vec_tile_ids when the distance to the tile
+		 * border is less the treshold */
+		if (distance_to_tile_border(_NORTH, _METER) < radius_threshold)
 		{	    	
 			vec_tile_ids.push_back(merge_tile_id_parts(northing + 1, easting));
 		
-			if (distance_to_tile_border(_NORTHWEST) < radius_threshold)
+			if (distance_to_tile_border(_NORTHWEST, _METER) < radius_threshold)
 				vec_tile_ids.push_back(merge_tile_id_parts(northing + 1, easting - 1));
 		  
-			if (distance_to_tile_border(_NORTHEAST) < radius_threshold)
+			if (distance_to_tile_border(_NORTHEAST, _METER) < radius_threshold)
 				vec_tile_ids.push_back(merge_tile_id_parts(northing + 1, easting + 1));
 		}
 		
@@ -192,22 +387,22 @@ namespace mapgeneration
 		 * better concept.
 		 * 
 		 * (Another remark on "smooth" coordinates:
-		 * This methods gives us 9 tiles. Only 4 are needed.) */	
-		if (distance_to_tile_border(_SOUTH) < radius_threshold)
+		 * This methods gives us 9 tiles. Only 4 are needed.) */
+		if (distance_to_tile_border(_SOUTH, _METER) < radius_threshold)
 		{	
 			vec_tile_ids.push_back(merge_tile_id_parts(northing - 1, easting));
 			
-			if (distance_to_tile_border(_SOUTHWEST) < radius_threshold)
+			if (distance_to_tile_border(_SOUTHWEST, _METER) < radius_threshold)
 				vec_tile_ids.push_back(merge_tile_id_parts(northing - 1, easting - 1));
 			
-			if (distance_to_tile_border(_SOUTHEAST) < radius_threshold)		
+			if (distance_to_tile_border(_SOUTHEAST, _METER) < radius_threshold)		
 				vec_tile_ids.push_back(merge_tile_id_parts(northing - 1, easting + 1));
 		}
 		
-		if (distance_to_tile_border(_WEST) < radius_threshold)
+		if (distance_to_tile_border(_WEST, _METER) < radius_threshold)
 			vec_tile_ids.push_back(merge_tile_id_parts(northing, easting - 1));
 		
-		if (distance_to_tile_border(_EAST) < radius_threshold)
+		if (distance_to_tile_border(_EAST, _METER) < radius_threshold)
 			vec_tile_ids.push_back(merge_tile_id_parts(northing, easting + 1));
 		
 		return vec_tile_ids;

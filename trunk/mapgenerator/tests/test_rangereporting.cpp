@@ -56,7 +56,7 @@ void slow_query(const MyFixpointVector& fv, const GeoCoordinate& query_point)
 	MyFixpointVector::const_iterator iter_end = fv.end();
 	for(; iter != iter_end; ++iter)
 	{
-		double distance = iter->second.approximated_distance(query_point);
+		double distance = iter->second.distance_approximated(query_point);
 		if (distance <= 30.0)
 		{
 			cluster_nodes.push_back(iter.position_number());

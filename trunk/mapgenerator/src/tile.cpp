@@ -86,7 +86,7 @@ namespace mapgeneration
 		FixpointVector<Node>::const_iterator iter_end = _nodes.end();
 		for(; iter != iter_end; ++iter)
 		{
-			double distance = iter->second.approximated_distance(in_gps_point);
+			double distance = iter->second.distance_approximated(in_gps_point);
 			double direction_difference = iter->
 				second.minimal_direction_difference_to(in_gps_point);
 			if ((distance <= in_search_radius) && (direction_difference <= in_search_angle))
@@ -107,43 +107,13 @@ namespace mapgeneration
 	{
 		/* everything in radian! */
 		
-		/* 13 trigonometrical computations */
-		
-		double lat1 = (in_gps_point.get_latitude() / 180.0) * PI;
-		double lon1 = (in_gps_point.get_longitude() / 180.0) * PI;
-		
-		double cos_lat1 = cos(lat1);
-		double sin_lat1 = sin(lat1);
-		double cos_lon1 = cos(lon1);
-		double sin_lon1 = sin(lon1);
-
-		double dist = (sqrt(2.0) * (in_search_radius + 2.0)) / EARTH_RADIUS_M;
-		double cos_dist = cos(dist);
-		double sin_dist = sin(dist);
-		
-		double angle;
-		double acos_xyz;
-		
-		/* compute upper right corner */
-		angle = PI / 4.0; // 45 degrees
-		double lat2_ur = asin( cos(angle) * cos_lat1 * sin_dist + sin_lat1 * cos_dist );
-		acos_xyz = acos( (cos_dist - sin_lat1 * sin(lat2_ur)) / (cos_lat1 * cos(lat2_ur)) );
-		double lon2_ur = lon1 + acos_xyz;
-		
-		GeoCoordinate urc;
-		urc.set_latitude( (lat2_ur / PI) * 180.0 );
-		urc.set_longitude( (lon2_ur / PI) * 180.0 );
-		/* done */
-		
-		/*compute lower right corner */
-		angle += PI; // 135 degrees
-		double lat2_ll = asin( cos(angle) * cos_lat1 * sin_dist + sin_lat1 * cos_dist );
-		double lon2_ll = lon1 - acos_xyz;
-		
-		GeoCoordinate llc;
-		llc.set_latitude( (lat2_ll / PI) * 180.0 );
-		llc.set_longitude( (lon2_ll / PI) * 180.0 );
-		/* done */
+		/* compute corner distance.
+		 * + 2.0 is needed to provide 100% compatibility to cluster_node_search! */
+		double corner_dist = (in_search_radius + 2.0) * sqrt(2.0);
+		GeoCoordinate llc = in_gps_point.compute_geo_coordinate(225.0,
+			corner_dist, GeoCoordinate::_DEGREE, GeoCoordinate::_METER);
+		GeoCoordinate urc = in_gps_point.compute_geo_coordinate(45.0,
+			corner_dist, GeoCoordinate::_DEGREE, GeoCoordinate::_METER);
 		
 		/* set query rectangle and start the query... */
 		rangereporting::Rectangle<GeoCoordinate> query_rectangle;
@@ -161,7 +131,7 @@ namespace mapgeneration
 			bool erased = false;
 			const Node& the_node = node(**iter);
 			
-			if (the_node.approximated_distance(in_gps_point) > in_search_radius)
+			if (the_node.distance_approximated(in_gps_point) > in_search_radius)
 			{
 				iter = out_query_result.erase(iter);
 				erased = true;
@@ -178,6 +148,73 @@ namespace mapgeneration
 			if ( !erased )
 				++iter;
 		}
+		/* done. */
+	}
+	
+	
+	void
+	Tile::fast_cluster_nodes_search(const Segment<GeoCoordinate>& in_segment,
+		const double in_search_distance, const double in_search_angle,
+		std::vector<D_RangeReporting::Id>& out_query_result) const
+	{
+		/* everything in radian! */
+		
+		/* get points... */
+		GeoCoordinate point_1 = in_segment.get_points().first;
+		GeoCoordinate point_2 = in_segment.get_points().second;
+		/* done. */
+		
+		/* compute distance and bearing... */
+		double p2p_bearing = point_1.bearing_default(point_2);
+
+		double corner_dist = (sqrt(2.0) * in_search_distance) / EARTH_RADIUS_M;
+		/* done. */
+		
+		/* compute the four corners of the trapezoid... */
+		double current_bearing;
+		
+		current_bearing = p2p_bearing - (0.75 * PI); // bearing - 135 degree
+		GeoCoordinate corner_1 = point_1.compute_geo_coordinate(
+			current_bearing, corner_dist);
+		
+		current_bearing = p2p_bearing + (0.75 * PI);
+		GeoCoordinate corner_2 = point_1.compute_geo_coordinate(
+			current_bearing, corner_dist);
+		
+		current_bearing = p2p_bearing + (0.25 * PI);
+		GeoCoordinate corner_3 = point_2.compute_geo_coordinate(
+			current_bearing, corner_dist);
+		
+		current_bearing = p2p_bearing - (0.25 * PI);
+		GeoCoordinate corner_4 = point_2.compute_geo_coordinate(
+			current_bearing, corner_dist);
+		/* done. */
+		
+		/* start the query... */
+		rangereporting::Trapezoid<GeoCoordinate> query_trapezoid(
+			corner_1, corner_2, corner_3, corner_4);
+		
+		out_query_result.clear();
+		_range_reporting.range_query(query_trapezoid, out_query_result);
+		/* done. */
+		
+		/* compare angles... */
+/*		std::vector<D_RangeReporting::Id>::iterator iter
+			= out_query_result.begin();
+		while (iter != out_query_result.end())
+		{
+			bool erased = false;
+			
+			double min_angle = node(**iter).minimal_direction_difference_to(in_gps_point);
+			if (min_angle > in_search_angle)
+			{
+				iter = out_query_result.erase(iter);
+				erased = true;
+			}
+			
+			if ( !erased )
+				++iter;
+		}*/
 		/* done. */
 	}
 	

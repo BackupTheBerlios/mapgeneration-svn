@@ -22,9 +22,11 @@
 #include "util/fixpointvector.h"
 #include "util/serializer.h"
 #include "util/rangereporting/quadtree.h"
+#include "util/rangereporting/segment.h"
 
 using namespace mapgeneration_util;
 using rangereporting::Quadtree;
+using rangereporting::Segment;
 
 namespace mapgeneration
 {
@@ -131,6 +133,12 @@ namespace mapgeneration
 				std::vector<D_RangeReporting::Id>& query_result) const;
 			
 			
+			void
+			fast_cluster_nodes_search(const Segment<GeoCoordinate>& in_segment,
+				const double in_search_distance, const double in_search_angle,
+				std::vector<D_RangeReporting::Id>& query_result) const;
+			
+		
 			void
 			fast_cluster_nodes_search(const GPSPoint& in_gps_point,
 				const double in_search_radius, const double in_search_angle,

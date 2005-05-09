@@ -198,8 +198,10 @@ namespace mapgeneration
 		/* Loop over the trace */
 		do
 		{
-			double distance_1_to_2 = second_test_point_iter->distance(*first_test_point_iter);
-			double distance_2_to_3 = third_test_point_iter->distance(*second_test_point_iter);
+			double distance_1_to_2 = second_test_point_iter
+				->distance_default(*first_test_point_iter);
+			double distance_2_to_3 = third_test_point_iter
+				->distance_default(*second_test_point_iter);
 				
 			double time_1_to_2 = second_test_point_iter->get_time()
 				- first_test_point_iter->get_time();
@@ -273,7 +275,7 @@ namespace mapgeneration
 			
 			/* while the  distance  between  points  is less 4.0 
 			 * they are  all  merged into 1 point */
-			while((iter != filtered_trace.end()) && (old_point.distance(*iter) < 4.0))
+			while((iter != filtered_trace.end()) && (old_point.distance_default(*iter) < 4.0))
 			{
 				new_latitude += iter->get_latitude();
 				new_longitude += iter->get_longitude();
@@ -486,7 +488,7 @@ namespace mapgeneration
 		do
 		{
 			double distance = second_test_point_iter
-				->distance(*first_test_point_iter);
+				->distance_default(*first_test_point_iter);
 			double time = second_test_point_iter->get_time()
 				- first_test_point_iter->get_time();
 			
@@ -583,7 +585,7 @@ namespace mapgeneration
 		do
 		{
 			double distance = second_test_point_iter
-				->distance(*first_test_point_iter);
+				->distance_default(*first_test_point_iter);
 			double time = second_test_point_iter->get_time()
 				- first_test_point_iter->get_time();
 			

@@ -149,8 +149,8 @@ namespace mapgeneration
 		TileCache::Pointer tile_pointer = _tile_cache->get(Node::tile_id(first_node_id));
 		Node* node = &(tile_pointer.write().node(first_node_id));
 		
-		double direction = node->calculate_direction(_tile_cache->
-			get(Node::tile_id(second_node_id))->node(second_node_id));
+		double direction = node->bearing_default(
+			_tile_cache->get(Node::tile_id(second_node_id))->node(second_node_id) );
 			
 		node->add_next_node(second_node_id, direction);
 	}
@@ -254,7 +254,7 @@ namespace mapgeneration
 		TileCache::Pointer tile_2_pointer = _tile_cache->get(Node::tile_id(node_id_2));		
 		
 		return (tile_1_pointer->node(node_id_1).
-			distance(tile_2_pointer->node(node_id_2))
+			distance_default(tile_2_pointer->node(node_id_2))
 			);
 	}
 	
@@ -458,7 +458,7 @@ namespace mapgeneration
 			previous_distance = distance;
 			position += 1.0;
 			path_coordinate = _filtered_trace.gps_point_at(position);
-			distance = entry_coordinate.approximated_distance(path_coordinate);
+			distance = entry_coordinate.distance_approximated(path_coordinate);
 			if (distance < previous_distance)
 				best_position = position;
 		}
@@ -469,7 +469,7 @@ namespace mapgeneration
 			previous_distance = distance;
 			position -= 1.0;
 			path_coordinate = _filtered_trace.gps_point_at(position);
-			distance = entry_coordinate.approximated_distance(path_coordinate);
+			distance = entry_coordinate.distance_approximated(path_coordinate);
 			if (distance < previous_distance)
 				best_position = position;
 		}
@@ -629,13 +629,13 @@ namespace mapgeneration
 					GPSPoint point_on_trace = _filtered_trace.gps_point_at(path_iter->_position);
 					Node node = _tile_cache->get(Node::tile_id(path_iter->_node_id))->
 						node(path_iter->_node_id);
-					points -= point_on_trace.distance(node) * 2;
+					points -= point_on_trace.distance_default(node) * 2;
 					
 					// distance between point on trace and current node
 					point_on_trace = _filtered_trace.gps_point_at(current_entry->_position);
 					node = _tile_cache->get(Node::tile_id(current_entry->_node_id))->
 						node(current_entry->_node_id);
-					points -= point_on_trace.distance(node) * 2;
+					points -= point_on_trace.distance_default(node) * 2;
 					
 					// direction difference between point and node
 					points -= node.minimal_direction_difference_to(
@@ -651,7 +651,7 @@ namespace mapgeneration
 						Node current_entry_node = _tile_cache->get(
 							Node::tile_id(current_entry->_node_id))->node(current_entry->_node_id);
 						point_on_trace = _filtered_trace.gps_point_at(current_entry->_position + 10.0);
-						double direction = current_entry_node.calculate_direction(point_on_trace);
+						double direction = current_entry_node.bearing_default(point_on_trace);
 						double diff = current_entry_node.minimal_direction_difference_to(Direction(direction));
 						points -= diff * 5.0;
 					}

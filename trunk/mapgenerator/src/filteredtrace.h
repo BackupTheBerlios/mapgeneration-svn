@@ -117,8 +117,8 @@ namespace mapgeneration
 			 * @param meters The position to interpolate.
 			 */
 			 
-			GPSPoint
-			old_gps_point_at(double meters);
+//			GPSPoint
+//			old_gps_point_at(double meters);
 			
 			GPSPoint
 			gps_point_at(double meters);

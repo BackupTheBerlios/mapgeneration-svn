@@ -63,14 +63,14 @@ namespace mapgeneration
 		double previous_direction = 0;
 		
 		// Calculate direction for first point
-		direction = previous_point->calculate_direction(*iter);
+		direction = previous_point->bearing_default(*iter);
 		previous_point->set_direction(direction);
 		previous_direction = direction;
 		previous_point = iter;
 		++iter;
 		for (; iter != iter_end; ++iter)
 		{
-			direction = previous_point->calculate_direction(*iter);
+			direction = previous_point->bearing_default(*iter);
 			previous_point->set_direction((previous_direction + direction) / 2);
 			previous_direction = direction;
 			previous_point = iter;
@@ -172,7 +172,7 @@ namespace mapgeneration
 	}*/
 	
 	
-	GPSPoint
+/*	GPSPoint
 	FilteredTrace::old_gps_point_at(double meters)
 	{
 			iterator iter = begin();
@@ -192,10 +192,10 @@ namespace mapgeneration
 			double distance_from_previous_point;
 			for(; iter != iter_end; ++iter)
 			{
-				distance_from_previous_point = previous_point->distance(*iter); // calculating the distance from the previous point
+				distance_from_previous_point = previous_point->distance_m(*iter); // calculating the distance from the previous point
 				if(left_distance < distance_from_previous_point)
 				{
-					double weight = 1.0 - left_distance / previous_point->distance(*iter);
+					double weight = 1.0 - left_distance / previous_point->distance_m(*iter);
 					GPSPoint new_point = iter->interpolate(*previous_point , *iter, weight);
 					--iter;
 					new_point.set_direction(iter->get_direction());
@@ -207,7 +207,7 @@ namespace mapgeneration
 					previous_point = iter;
 				}
 			}
-		}
+		}*/
 	
 	
 	GPSPoint
@@ -239,8 +239,10 @@ namespace mapgeneration
 				&point_before_meters))
 		{
 			double left_distance = meters - point_before_meters;
-			double weight = 1.0 - left_distance / point_before->distance(*point_after);
-			GPSPoint new_point = GPSPoint::interpolate(*point_before , *point_after, weight);
+			double weight = 1.0 - left_distance
+				/ point_before->distance_default(*point_after);
+			GPSPoint new_point
+				= GPSPoint::interpolate(*point_before , *point_after, weight);
 			return new_point;
 			
 		} else
@@ -335,7 +337,7 @@ namespace mapgeneration
 
 		do
 		{
-			length_m += previous_iter->distance(*iter);
+			length_m += previous_iter->distance_default(*iter);
 			++previous_iter;
 			++iter;
 		} while (previous_iter != iter_end);

@@ -9,43 +9,50 @@
 #ifndef SEGMENT_H
 #define SEGMENT_H
 
-#include "rangereportingsystem.h"
-
 namespace rangereporting
 {
+	
+	template<typename T_Point>
+	class Segment;
+	
+	
+	template<typename T_Point>
+	std::ostream& operator<<(std::ostream& out,
+		const Segment<T_Point>& segment);
+	
 	
 	//-------------------------------------------------------------------------//
 	//--- Definition section --------------------------------------------------//
 	//-------------------------------------------------------------------------//
 	
-	template<typename T_Point_2D>
+	template<typename T_Point>
 	class Segment
 	{
 		
-		friend class Quadtree<T_Point_2D>;
-		
 		friend std::ostream& operator<< <> (std::ostream& out,
-			const Segment<T_Point_2D>& segment);
+			const Segment<T_Point>& segment);
 		
 		
 		public:
 			
+			inline
 			Segment();
 			
 			
-			Segment(const T_Point_2D& point_1, const T_Point_2D& point_2);
+			inline std::pair<T_Point, T_Point>
+			get_points() const;
 			
 			
 			inline void
-			points(T_Point_2D& point_1, T_Point_2D& point_2) const;
+			set_points(const T_Point& in_point_1, const T_Point& in_point_1);
 			
 			
 		protected:
 			
-			T_Point_2D _point_1;
+			T_Point _point_1;
 			
 			
-			T_Point_2D _point_2;
+			T_Point _point_2;
 	};
 	
 	
@@ -53,35 +60,36 @@ namespace rangereporting
 	//--- Implementation section ----------------------------------------------//
 	//-------------------------------------------------------------------------//
 	
-	template<typename T_Point_2D>
+	template<typename T_Point>
 	std::ostream&
-	operator<<(std::ostream& out, const Segment<T_Point_2D>& segment)
+	operator<<(std::ostream& out, const Segment<T_Point>& segment)
 	{
-		out << "Segment:" << std::endl
-			<< "\t" << segment._point_1 << " - " << segment._point_2;
+		out << "Segment: "
+			<< segment._point_1 << " - " << segment._point_2;
 		
 		return out;
 	}
 	
 	
-	template<typename T_Point_2D>
-	Segment<T_Point_2D>::Segment()
+	template<typename T_Point>
+	inline
+	Segment<T_Point>::Segment()
 	: _point_1(), _point_2()
 	{
 	}
 	
 	
-	template<typename T_Point_2D>
-	Segment<T_Point_2D>::Segment(const T_Point_2D& point_1,
-		const T_Point_2D& point_2)
-	: _point_1(point_1), _point_2(point_2)
+	template<typename T_Point>
+	inline std::pair<T_Point, T_Point>
+	Segment<T_Point>::get_points() const
 	{
+		return std::make_pair(_point_1, _point_2);
 	}
 	
 	
-	template<typename T_Point_2D>
+	template<typename T_Point>
 	inline void
-	Segment<T_Point_2D>::points(T_Point_2D& point_1, T_Point_2D& point_2) const
+	Segment<T_Point>::set_points(const T_Point& point_1, const T_Point& point_2)
 	{
 		point_1 = _point_1;
 		point_2 = _point_2;

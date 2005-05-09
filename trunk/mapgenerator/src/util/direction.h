@@ -10,8 +10,10 @@
 #define DIRECTION_H
 
 #include <iostream>
-#include "serializer.h"
-#include "mlog.h"
+
+#include "util/constants.h"
+#include "util/mlog.h"
+#include "util/serializer.h"
 
 
 namespace mapgeneration_util
@@ -109,15 +111,14 @@ namespace mapgeneration_util
 	Direction::Direction(double direction)
 	: _direction(direction)
 	{
-		const double PI=3.141592653589793238462643;
-		if (direction < 0 || direction >= 2 * PI) throw ("Direction not in [0; 2*PI)");
+		if (direction < 0 || direction >= 2 * PI)
+			throw ("Direction not in [0; 2*PI)");
 	}
 	
 	
 	inline double
 	Direction::angle_difference(const Direction& direction) const
 	{
-		const double PI=3.141592653589793238462643;
 		double difference = direction._direction - _direction;
 		if (difference < 0) difference *= -1;
 		if (difference >= PI) difference = (2 * PI) - difference;
@@ -158,8 +159,8 @@ namespace mapgeneration_util
 	inline void
 	Direction::set_direction(double direction)
 	{
-		const double PI=3.141592653589793238462643;
-		if (direction < 0 || direction >= 2 * PI) throw ("Direction not in [0; 2*PI)");
+		if (direction < 0 || direction >= 2 * PI)
+			throw ("Direction not in [0; 2*PI)");
 		_direction = direction;
 	}
 
