@@ -51,6 +51,8 @@ namespace mapgeneration
 				v.push_back(Parameter("tracefilter.max_speed", "double", "70"));
 				v.push_back(Parameter("tracefilter.max_time_gap", "double", "3600.0"));
 				v.push_back(Parameter("tracefilter.min_trace_length", "int", "5"));
+				
+				v.push_back(Parameter("tracelogwriter.write_to_file", "bool", "false"));
 			};
 
 		

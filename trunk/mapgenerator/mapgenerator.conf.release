@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!-- Test configuration.
 Supported types:
+	- bool
 	- double
 	- int
 	- string
@@ -39,6 +40,10 @@ Supported types:
 		<max_time_gap type="double" default="3600.0">3600.0</max_time_gap>
 		<min_trace_length type="int" default="5">5</min_trace_length>
 	</tracefilter>
+	
+	<tracelogwriter>
+		<write_to_file type="bool" default="false">false</write_to_file>
+	</tracelogwriter>
 	
 	<traceprocessor>
 		<search_max_angle_difference_pi type="double">0.25</search_max_angle_difference_pi>

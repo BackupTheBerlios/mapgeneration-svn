@@ -756,7 +756,7 @@ namespace mapgeneration
 		tracelog_filename << "tracelog" << _id;
 		tracelog_filename.flush();
 		_trace_log = new TraceLogWriter(_tile_manager, 
-			tracelog_filename.str(), _filtered_trace);
+			tracelog_filename.str(), _filtered_trace, _service_list);
 
 		_filtered_trace.calculate_directions();
 		_filtered_trace.precompute_data();

@@ -57,22 +57,6 @@ else
 fi
 
 
-# Tracelogs
-AC_MSG_CHECKING(whether to enable tracelogs)
-debug_tracelogs="yes"
-AC_ARG_ENABLE(tracelogs,
-		AC_HELP_STRING([--enable-tracelogs=[yes/no]],
-                       [Turn tracelogs on/off [default=yes]]),
-		, enable_tracelogs=$tracelogs_default)
-
-if test "x$enable_tracelogs" = "xyes"; then
-        CXXFLAGS="$CXXFLAGS -DTRACELOGS"
-		AC_MSG_RESULT(yes)
-else
-		AC_MSG_RESULT(no)
-fi
-
-
 # GUI
 AC_MSG_CHECKING(whether to enable build the gui)
 gui_default="yes"

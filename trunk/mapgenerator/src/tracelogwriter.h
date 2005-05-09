@@ -19,11 +19,9 @@ namespace mapgeneration
 	class TraceLogWriter;
 }
 
-
 #include "tilemanager.h"
-
 #include "tracelog.h"
-
+#include "util/pubsub/servicesystem.h"
 
 namespace mapgeneration
 {
@@ -40,7 +38,7 @@ namespace mapgeneration
 			 * Standard constructor.
 			 */
 			TraceLogWriter (TileManager* tile_manager, const std::string file_name,
-				const FilteredTrace& filtered_trace);
+				const FilteredTrace& filtered_trace, pubsub::ServiceList* service_list);
 			
 			
 			~TraceLogWriter();
@@ -74,6 +72,9 @@ namespace mapgeneration
 
 
 			TileCache* _tile_cache;
+			
+			
+			bool _write_to_file;
 			
 			
 			void

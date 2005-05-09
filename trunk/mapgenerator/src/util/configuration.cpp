@@ -75,7 +75,7 @@ namespace mapgeneration_util
 				type = "string";
 			}
 			
-			if (type!="double" && type!="int" && type!="string")
+			if (type!="bool" && type!="double" && type!="int" && type!="string")
 			{
 				mlog(MLog::error, "Configuration")
 					<< "Parameter with unknown type found. Assuming string!\n";
@@ -137,7 +137,18 @@ namespace mapgeneration_util
 		{			
 			pubsub::GenericService* generic_service;
 
-			if (parameter_iter->second._type == "double")
+			if (parameter_iter->second._type == "bool")
+			{
+				bool value = false;
+				if (parameter_iter->second._value == "true")
+					value = true;
+				
+				generic_service = new pubsub::Service<bool>
+				(
+					parameter_iter->second._name,
+					value
+				);
+			} else if (parameter_iter->second._type == "double")
 			{
 				double value = atof(parameter_iter->second._value.c_str());
 				generic_service = new pubsub::Service<double>
