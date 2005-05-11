@@ -28,6 +28,12 @@ using namespace mapgeneration_util;
 using rangereporting::Quadtree;
 using rangereporting::Segment;
 
+/** @todo Should be in the configuration file.
+ * But the transferation from the ServiceList over the TraceProcessor to the
+ * Tile and onwards to the Quadtree is a very long way. We should think about
+ * a better solution. */
+#define _MIN_DEPTH 3
+
 namespace mapgeneration
 {
 
@@ -365,10 +371,11 @@ namespace mapgeneration
 	}
 	
 	
-/*	inline bool
-	Tile::move_node(Node::Id from_node_id, const Node& to_node)
+	inline bool
+	Tile::move_node(D_RangeReporting::Id& from_node_id, const Node& to_node)
 	{
-	}*/
+		return _range_reporting.move_point(from_node_id, to_node);
+	}
 	
 	
 	inline Node&
@@ -432,6 +439,27 @@ namespace mapgeneration
 	Tile::operator[](Node::LocalId node_local_id) const
 	{
 		return _nodes[static_cast<int>(node_local_id)].second;
+	}
+	
+	
+	inline bool
+	Tile::remove_node(D_RangeReporting::Id& node_id)
+	{
+		bool removed_from_range_reporting = _range_reporting.remove_point(node_id);
+		if ( !removed_from_range_reporting )
+		{
+			mlog(MLog::error, "Tile") << "Cannot remove node with id=" << *node_id
+				<< " from the range reporting system. Blame your programer. S/he made"
+				<< " a mistake. Somewhere...\n";
+		}
+		
+		Tile::Id tile_id;
+		Node::LocalId node_local_id;
+		Node::split_id(*node_id, tile_id, node_local_id);
+		
+		_nodes.erase(static_cast<int>(node_local_id));
+		
+		return removed_from_range_reporting;
 	}
 	
 	

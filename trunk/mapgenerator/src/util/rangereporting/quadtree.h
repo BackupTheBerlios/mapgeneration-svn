@@ -63,9 +63,9 @@ namespace rangereporting
 	 * a range tree does. But in extensive enquiries I have not found an
 	 * appropriate data structure that
 	 * <ul>
-	 * <li>allows fast queries (e.g. O(log n))</li>
+	 * <li>allows fast queries (e.g. O(log n) with a small constant)</li>
 	 * <li>is dynamic, i.e. it is possible to add/delete points in fast manner</li>
-	 * <li>uses minimal space; O(log n) at most</li>
+	 * <li>uses minimal space; O(n log n) at most</li>
 	 * </ul>
 	 * ....
 	 * 

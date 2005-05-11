@@ -56,8 +56,8 @@ namespace mapgeneration
 		
 		/* compute max depth... */
 		int max_depth = static_cast<int>(ceil(log10(_nodes.size()) / log10(4)));
-		if (max_depth < 5)
-			max_depth = 5;
+		if (max_depth < _MIN_DEPTH)
+			max_depth = _MIN_DEPTH;
 		/* done. */
 		
 		/* set the values for _range_reporting... */
