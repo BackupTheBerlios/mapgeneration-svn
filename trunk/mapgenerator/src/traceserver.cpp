@@ -52,7 +52,7 @@ namespace mapgeneration
 		{
 			mlog(MLog::warning, "TraceServer") << 
 				"No devices found, trying to bind to 127.0.0.1.\n";
-			ost::TCPSocket new_tcp_socket(ost::IPV4Address("127.0.0.1"), port);
+			ost::TCPSocket new_tcp_socket(ost::InetAddress("127.0.0.1"), port);
 			_tcp_sockets.push_back(new_tcp_socket);
 		} else
 		{
