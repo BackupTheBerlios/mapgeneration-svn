@@ -394,6 +394,11 @@ namespace mapgeneration
 			operator[](int dimension);
 			
 			
+			GeoCoordinate
+			nearest_geo_coordinate_on_segment_on_great_circle(
+				const GeoCoordinate& start_gc, const GeoCoordinate& end_gc) const;
+			
+			
 			/**
 			 * @see mapgeneration_util::Serailizer
 			 */

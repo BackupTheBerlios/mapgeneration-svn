@@ -60,10 +60,16 @@ namespace mapgeneration
 	GeoCoordinate::bearing_on_great_circle(const GeoCoordinate& geo_coordinate,
 		const Representation output_representation, const double at_point) const
 	{
-		/* everything in radians! */
-		
-		GeoCoordinate start_gc = interpolate_on_great_circle(*this,
-			geo_coordinate, 1.0 - at_point);
+		/* Do not call interpolate_on_great_circle for the trivial value... */
+		GeoCoordinate start_gc;
+		if (at_point == 0.0)
+			start_gc = *this;
+		else 
+			/* I do not test for at_point==1.0 because if start_gc==end_gc this
+			 * method cannot return a reasonable bearing! */
+			start_gc = interpolate_on_great_circle(*this, geo_coordinate,
+				1.0 - at_point);
+		/* done. */
 		
 		double lat1 = start_gc._latitude * d2r;
 		double lat2 = geo_coordinate._latitude * d2r;
@@ -838,6 +844,13 @@ namespace mapgeneration
 	GeoCoordinate::interpolate_on_great_circle(const GeoCoordinate& gc_1,
 	 const GeoCoordinate& gc_2, const double weight_on_first)
 	{
+		/* return, if weight_on_first has trivial values... */
+		if (weight_on_first == 0.0)
+			return gc_2;
+		if (weight_on_first == 1.0)
+			return gc_1;
+		/* done. */
+		
 		double dist = gc_1.distance_on_great_circle(gc_2, _RADIAN);
 		double sin_dist = sin(dist);
 		
@@ -884,5 +897,53 @@ namespace mapgeneration
 	}
 	
 	
+	GeoCoordinate
+	GeoCoordinate::nearest_geo_coordinate_on_segment_on_great_circle(
+		const GeoCoordinate& start_gc, const GeoCoordinate& end_gc) const
+	{
+		/* This method automatically choose the shorter segment from start_gc
+		 * to end_gc! Just have that in mind. */
+		 
+		/* A = start_gc
+		 * B = end_gc
+		 * D = *this */
+		
+		/** @todo think about fast_... methods.
+		 * e.g. fast_nearest_geo_coordinate... where we will not call distance
+		 * and bearing methods but compute everything in here.
+		 * At the moment many infomation are compute twice or more often
+		 * (e.g. distances) */
+		
+		double distance_AB = start_gc.distance_on_great_circle(end_gc, _RADIAN);
+		double distance_AD = start_gc.distance_on_great_circle(*this, _RADIAN);
+		
+		double bearing_AB = start_gc.bearing_on_great_circle(end_gc);
+		double bearing_AD = start_gc.bearing_on_great_circle(*this);
+		
+		/* alpha is the arc(AB, AD) */
+		double abs_alpha = fabs(bearing_AB - bearing_AD);
+		
+		if (abs_alpha > PI / 2.0)
+			return start_gc;
+		
+		double bearing_BA = end_gc.bearing_on_great_circle(start_gc);
+		double bearing_BD = end_gc.bearing_on_great_circle(*this);
+		double abs_beta = fabs(bearing_BA - bearing_BD);
+		
+		if (abs_beta > PI / 2.0)
+			return end_gc;
+				
+		double sin_distance_AD = sin(distance_AD);
+		
+		double sin_XTD = sin_distance_AD * sin(bearing_AD - bearing_AB);
+		double XTD = asin( sin_XTD );
+		
+		double ATD = asin(
+			sqrt(sin_distance_AD * sin_distance_AD - sin_XTD * sin_XTD) / cos(XTD)
+		);
+		
+		return start_gc.compute_geo_coordinate_on_great_circle(bearing_AB, ATD,
+			_RADIAN, _RADIAN);
+	}
 	
 } // namespace mapgeneration

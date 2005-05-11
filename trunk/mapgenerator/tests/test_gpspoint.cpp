@@ -42,6 +42,7 @@ int main()
 	GeoCoordinate st_maergen(48.00694444, 8.09305555);
 	
 	GeoCoordinate lax(33.95, -118.4);
+	GeoCoordinate inv_senden(51.8511111111, 7.484166666 - 180.0);
 	GeoCoordinate jfk(40.633333333333, -73.7833333333333);
 	GeoCoordinate somewhere_in_pacific(-40.00000101, 120.1010101022);
 	GeoCoordinate near_senden(51.8507, 7.484);
@@ -49,7 +50,8 @@ int main()
 //	senden = lax;
 //	senden = somewhere_in_pacific;
 //	st_maergen = jfk;
-	st_maergen = lax;
+//	st_maergen = lax;
+	st_maergen = inv_senden;
 //	st_maergen = near_senden;
 	
 	cout << "Senden:      " << senden << endl;
@@ -59,7 +61,7 @@ int main()
 	cout.setf(ios::fixed);
 	cout.precision(15);
 	
-	cout << "Distance on a Great Circle (Senden -> St.Maergen)" << endl;
+/*	cout << "Distance on a Great Circle (Senden -> St.Maergen)" << endl;
 	cout << "\tRadian: " << senden.distance_on_great_circle(st_maergen, GeoCoordinate::_RADIAN) << endl;
 	cout << "\tDegree: " << senden.distance_on_great_circle(st_maergen, GeoCoordinate::_DEGREE) << endl;
 	cout << "\tMeters: " << senden.distance_on_great_circle(st_maergen, GeoCoordinate::_METER) << endl;
@@ -147,6 +149,20 @@ int main()
 	cout << x << endl;
 //	cout << y << endl;
 	cout << z << endl;
+	*/
+	
+	GeoCoordinate a(50.0, 7.5);
+	GeoCoordinate b(90.0, 0.0);
+	GeoCoordinate c(0.0, 90.0);
+//	std::cout << senden.bearing_on_great_circle(b, GeoCoordinate::_DEGREE) << std::endl;
+	
+	std::cout << "senden->st_maergen" << std::endl;
+	GeoCoordinate d = b.nearest_geo_coordinate_on_segment_on_great_circle(senden, st_maergen);
+	std::cout << d << std::endl << std::endl;
+
+	std::cout << "st_maergen->senden" << std::endl;
+	GeoCoordinate e = b.nearest_geo_coordinate_on_segment_on_great_circle(st_maergen, senden);
+	std::cout << e << std::endl;
 	
 	return 0;
 }
