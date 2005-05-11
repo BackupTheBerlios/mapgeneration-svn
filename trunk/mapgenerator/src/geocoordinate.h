@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "util/constants.h"
+#include "util/mlog.h"
 #include "util/serializer.h"
 
 using namespace mapgeneration_util;
@@ -22,7 +23,24 @@ using namespace mapgeneration_util;
 #define _longitude _values[_LONGITUDE]
 
 #define bearing_default bearing_on_rhumb_line
+#define compute_geo_coordinate_default compute_geo_coordinate_on_rhumb_line
 #define distance_default distance_on_rhumb_line
+#define interpolate_default interpolate_on_rhumb_line
+
+/* factors for conversion from x to y
+ * x = {d|m|r}, y = {d|m|r}
+ * d = degrees
+ * m = meters
+ * r = radians */
+#define d2d (1.0)
+#define d2m ((EARTH_RADIUS_M * PI) / 180.0)
+#define d2r (PI / 180.0)
+#define m2d (180.0 / (PI * EARTH_RADIUS_M))
+#define m2m (1.0)
+#define m2r (1.0 / EARTH_RADIUS_M)
+#define r2d (180.0 / PI)
+#define r2m (EARTH_RADIUS_M)
+#define r2r (1.0)
 
 namespace mapgeneration
 {
@@ -110,36 +128,53 @@ namespace mapgeneration
 			
 			double
 			bearing_approximated(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _RADIAN) const;
+				const Representation output_representation = _RADIAN) const;
 			
 			
 			double
 			bearing_on_great_circle(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _RADIAN,
+				const Representation output_representation = _RADIAN,
 				const double at_point = 0.0) const;
 			
 			
 			inline double
 			bearing_on_loxodrom(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _RADIAN) const;
+				const Representation output_representation = _RADIAN) const;
 			
 			
 			inline double
 			bearing_on_orthodrom(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _RADIAN,
+				const Representation output_representation = _RADIAN,
 				const double at_point = 0.0) const;
 			
 			
 			double
 			bearing_on_rhumb_line(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _RADIAN) const;
+				const Representation output_representation = _RADIAN) const;
 			
 			
 			GeoCoordinate
-			compute_geo_coordinate(double bearing_on_rhumb_line,
-				double distance_on_rhumb_line,
+			compute_geo_coordinate_approximated(double bearing, double distance,
 				const Representation bearing_representation = _RADIAN,
-				const Representation distance_representation = _RADIAN) const;
+				const Representation distance_representation = _METER) const;
+			
+			
+			GeoCoordinate
+			compute_geo_coordinate_on_great_circle(double starting_bearing,
+				double distance,
+				const Representation bearing_representation = _RADIAN,
+				const Representation distance_representation = _METER) const;
+			
+			
+			GeoCoordinate
+			compute_geo_coordinate_on_rhumb_line(double bearing, double distance,
+				const Representation bearing_representation = _RADIAN,
+				const Representation distance_representation = _METER) const;
+			
+			
+			inline static void
+			convert(double& value, const Representation from_representation,
+				const Representation to_representation);
 			
 			
 			/**
@@ -157,28 +192,28 @@ namespace mapgeneration
 			 
 			double
 			distance_approximated(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _METER) const;
+				const Representation output_representation = _METER) const;
 			
 			
 			
 			double
 			distance_on_great_circle(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _METER) const;
+				const Representation output_representation = _METER) const;
 			
 			
 			inline double
 			distance_on_loxodrom(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _METER) const;
+				const Representation output_representation = _METER) const;
 			
 			
 			inline double
 			distance_on_orthodrom(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _METER) const;
+				const Representation output_representation = _METER) const;
 			
 			
 			double
 			distance_on_rhumb_line(const GeoCoordinate& geo_coordinate,
-				const Representation representation = _METER) const;
+				const Representation output_representation = _METER) const;
 			
 			
 			/**
@@ -190,7 +225,7 @@ namespace mapgeneration
 			 */
 			double
 			distance_to_tile_border(const Heading heading,
-				const Representation representation) const;
+				const Representation output_representation) const;
 			
 			
 			/**
@@ -274,9 +309,18 @@ namespace mapgeneration
 			 * weight_on_first)
 			 * @return the new GeoCoordinate
 			 */
-			 /** @todo is the interpolated GeoCoordinate in the same GreatCircle? */
-			inline static GeoCoordinate
-			interpolate(const GeoCoordinate& gc_1,
+			static GeoCoordinate
+			interpolate_approximated(const GeoCoordinate& gc_1,
+				const GeoCoordinate& gc_2, const double weight_on_first);
+			
+			
+			static GeoCoordinate
+			interpolate_on_great_circle(const GeoCoordinate& gc_1,
+				const GeoCoordinate& gc_2, const double weight_on_first);
+			
+			
+			static GeoCoordinate
+			interpolate_on_rhumb_line(const GeoCoordinate& gc_1,
 				const GeoCoordinate& gc_2, const double weight_on_first);
 			
 			
@@ -292,6 +336,10 @@ namespace mapgeneration
 			 */
 			inline static unsigned int
 			merge_tile_id_parts(const int northing, const int easting);
+			
+			
+			inline static void
+			normalise_arc(double& arc, const Representation representation);
 			
 			
 			/**
@@ -420,10 +468,6 @@ namespace mapgeneration
 			double _values[3];
 			
 			
-			inline double
-			convert(const double value, const Representation representation) const;
-			
-			
 	};
 	
 	
@@ -448,32 +492,46 @@ namespace mapgeneration
 	
 	inline double
 	GeoCoordinate::bearing_on_loxodrom(const GeoCoordinate& geo_coordinate,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
-		return bearing_on_rhumb_line(geo_coordinate, representation);
+		return bearing_on_rhumb_line(geo_coordinate, output_representation);
 	}
 	
 	
 	inline double
 	GeoCoordinate::bearing_on_orthodrom(const GeoCoordinate& geo_coordinate,
-		const Representation representation, const double at_point) const
+		const Representation output_representation, const double at_point) const
 	{
-		return bearing_on_great_circle(geo_coordinate, representation, at_point);
+		return bearing_on_great_circle(geo_coordinate, output_representation, at_point);
 	}
 		
 		
-	inline double
-	GeoCoordinate::convert(const double radian_value,
-		const Representation representation) const
+	inline void
+	GeoCoordinate::convert(double& value,
+		const Representation from_representation,
+		const Representation to_representation)
 	{
-		if (representation == _DEGREE)
-			return radian_value * 180.0 / PI;
+		switch (from_representation)
+		{
+			case _DEGREE:
+				value *= d2r;
+				break;
 			
-		else if (representation == _METER)
-			return radian_value * EARTH_RADIUS_M;
+			case _METER:
+				value *= m2r;
+				break;
+		}
+		
+		switch (to_representation)
+		{
+			case _DEGREE:
+				value *= r2d;
+				break;
 			
-		else
-			return radian_value;
+			case _METER:
+				value *= r2m;
+				break;
+		}
 	}
 	
 	
@@ -488,17 +546,17 @@ namespace mapgeneration
 	
 	inline double
 	GeoCoordinate::distance_on_loxodrom(const GeoCoordinate& geo_coordinate,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
-		return distance_on_rhumb_line(geo_coordinate, representation);
+		return distance_on_rhumb_line(geo_coordinate, output_representation);
 	}
 	
 	
 	inline double
 	GeoCoordinate::distance_on_orthodrom(const GeoCoordinate& geo_coordinate,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
-		return distance_on_great_circle(geo_coordinate, representation);
+		return distance_on_great_circle(geo_coordinate, output_representation);
 	}
 	
 	
@@ -540,20 +598,6 @@ namespace mapgeneration
 	}
 	
 	
-	inline GeoCoordinate
-	GeoCoordinate::interpolate(const GeoCoordinate& gc_1,
-		const GeoCoordinate& gc_2, const double weight_on_first)
-	{
-		double weight_on_second = 1.0 - weight_on_first;
-		
-		/*	interpolation of 2 geocoordinates by means of  the weight on 
-		 *	the first  geocoordinate */
-		return GeoCoordinate(gc_1.get_latitude() * weight_on_first + gc_2.get_latitude() * weight_on_second, 
-				gc_1.get_longitude() * weight_on_first + gc_2.get_longitude() * weight_on_second,
-				gc_1.get_altitude() * weight_on_first + gc_2.get_altitude() * weight_on_second);
-	}
-	
-	
 	inline unsigned int
 	GeoCoordinate::merge_tile_id_parts(int northing, int easting)
 	{
@@ -563,6 +607,21 @@ namespace mapgeneration
 		if (easting < 0) easting += 36000;
 		
 		return ((northing << 16) + easting);
+	}
+	
+	
+	inline void
+	GeoCoordinate::normalise_arc(double& arc, const Representation representation)
+	{
+		convert(arc, representation, _RADIAN);
+		
+		while (arc < 0)
+			arc += (2.0 * PI);
+		
+		while (2.0 * PI <= arc)
+			arc -= (2.0 * PI);
+		
+		convert(arc, _RADIAN, representation);
 	}
 	
 	

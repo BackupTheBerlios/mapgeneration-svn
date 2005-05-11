@@ -49,8 +49,8 @@ int main()
 //	senden = lax;
 //	senden = somewhere_in_pacific;
 //	st_maergen = jfk;
-//	st_maergen = lax;
-	st_maergen = near_senden;
+	st_maergen = lax;
+//	st_maergen = near_senden;
 	
 	cout << "Senden:      " << senden << endl;
 	cout << "St. Maergen: " << st_maergen << endl;
@@ -60,89 +60,92 @@ int main()
 	cout.precision(15);
 	
 	cout << "Distance on a Great Circle (Senden -> St.Maergen)" << endl;
-//	cout << "\tRadian: " << senden.distance_on_great_circle(st_maergen, GeoCoordinate::_RADIAN) << endl;
-//	cout << "\tDegree: " << senden.distance_on_great_circle(st_maergen, GeoCoordinate::_DEGREE) << endl;
+	cout << "\tRadian: " << senden.distance_on_great_circle(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tDegree: " << senden.distance_on_great_circle(st_maergen, GeoCoordinate::_DEGREE) << endl;
 	cout << "\tMeters: " << senden.distance_on_great_circle(st_maergen, GeoCoordinate::_METER) << endl;
 	
-//	cout << "Distance on a Great Circle (St.Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.distance_on_great_circle(senden, GeoCoordinate::_RADIAN) << endl;
-//	cout << "\tDegree: " << st_maergen.distance_on_great_circle(senden, GeoCoordinate::_DEGREE) << endl;
-//	cout << "\tMeters: " << st_maergen.distance_on_great_circle(senden, GeoCoordinate::_METER) << endl;
+	cout << "Distance on a Great Circle (St.Maergen -> Senden)" << endl;
+	cout << "\tRadian: " << st_maergen.distance_on_great_circle(senden, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tDegree: " << st_maergen.distance_on_great_circle(senden, GeoCoordinate::_DEGREE) << endl;
+	cout << "\tMeters: " << st_maergen.distance_on_great_circle(senden, GeoCoordinate::_METER) << endl;
 	
 	cout << "Distance on a rhumb line (Senden -> St.Maergen)" << endl;
-//	cout << "\tRadian: " << senden.distance_on_rhumb_line(st_maergen, GeoCoordinate::_RADIAN) << endl;
-//	cout << "\tDegree: " << senden.distance_on_rhumb_line(st_maergen, GeoCoordinate::_DEGREE) << endl;
+	cout << "\tRadian: " << senden.distance_on_rhumb_line(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tDegree: " << senden.distance_on_rhumb_line(st_maergen, GeoCoordinate::_DEGREE) << endl;
 	cout << "\tMeters: " << senden.distance_on_rhumb_line(st_maergen, GeoCoordinate::_METER) << endl;
 	
-//	cout << "Distance on a rhumb line (St.Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.distance_on_rhumb_line(senden, GeoCoordinate::_RADIAN) << endl;
-//	cout << "\tDegree: " << st_maergen.distance_on_rhumb_line(senden, GeoCoordinate::_DEGREE) << endl;
-//	cout << "\tMeters: " << st_maergen.distance_on_rhumb_line(senden, GeoCoordinate::_METER) << endl;
+	cout << "Distance on a rhumb line (St.Maergen -> Senden)" << endl;
+	cout << "\tRadian: " << st_maergen.distance_on_rhumb_line(senden, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tDegree: " << st_maergen.distance_on_rhumb_line(senden, GeoCoordinate::_DEGREE) << endl;
+	cout << "\tMeters: " << st_maergen.distance_on_rhumb_line(senden, GeoCoordinate::_METER) << endl;
 	
 	cout << "Distance approximated (Senden -> St.Maergen)" << endl;
-//	cout << "\tRadian: " << senden.distance_approximated(st_maergen, GeoCoordinate::_RADIAN) << endl;
-//	cout << "\tDegree: " << senden.distance_approximated(st_maergen, GeoCoordinate::_DEGREE) << endl;
+	cout << "\tRadian: " << senden.distance_approximated(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tDegree: " << senden.distance_approximated(st_maergen, GeoCoordinate::_DEGREE) << endl;
 	cout << "\tMeters: " << senden.distance_approximated(st_maergen, GeoCoordinate::_METER) << endl;
 	
-//	cout << "Distance approximated (St.Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.distance_approximated(senden, GeoCoordinate::_RADIAN) << endl;
-//	cout << "\tDegree: " << st_maergen.distance_approximated(senden, GeoCoordinate::_DEGREE) << endl;
-//	cout << "\tMeters: " << st_maergen.distance_approximated(senden, GeoCoordinate::_METER) << endl;
+	cout << "Distance approximated (St.Maergen -> Senden)" << endl;
+	cout << "\tRadian: " << st_maergen.distance_approximated(senden, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tDegree: " << st_maergen.distance_approximated(senden, GeoCoordinate::_DEGREE) << endl;
+	cout << "\tMeters: " << st_maergen.distance_approximated(senden, GeoCoordinate::_METER) << endl;
 	
 	cout << endl;
 	
 	cout << "Bearing on Great Circle at the start point (Senden -> St. Maergen)" << endl;
-//	cout << "\tRadian: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tRadian: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_RADIAN) << endl;
 	cout << "\tDegree: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_DEGREE) << endl;
-/*	cout << "Bearing on Great Circle at 1/4 (Senden -> St. Maergen)" << endl;
-//	cout << "\tRadian: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "Bearing on Great Circle at 1/4 (Senden -> St. Maergen)" << endl;
+	cout << "\tRadian: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_RADIAN, 0.25) << endl;
 	cout << "\tDegree: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_DEGREE, 0.25) << endl;
 	cout << "Bearing on Great Circle at 1/2 (Senden -> St. Maergen)" << endl;
-//	cout << "\tRadian: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tRadian: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_RADIAN, 0.5) << endl;
 	cout << "\tDegree: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_DEGREE, 0.5) << endl;
 	cout << "Bearing on Great Circle at 3/4 (Senden -> St. Maergen)" << endl;
-//	cout << "\tRadian: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tRadian: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_RADIAN, 0.75) << endl;
 	cout << "\tDegree: " << senden.bearing_on_great_circle(st_maergen, GeoCoordinate::_DEGREE, 0.75) << endl;
-	*/
-/*	cout << "Bearing on Great Circle at the start point (St. Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_RADIAN) << endl;
+	
+	cout << "Bearing on Great Circle at the start point (St. Maergen -> Senden)" << endl;
+	cout << "\tRadian: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_RADIAN) << endl;
 	cout << "\tDegree: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_DEGREE) << endl;
-/*	cout << "Bearing on Great Circle at 1/4 (St. Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_RADIAN) << endl;
+	cout << "Bearing on Great Circle at 1/4 (St. Maergen -> Senden)" << endl;
+	cout << "\tRadian: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_RADIAN, 0.25) << endl;
 	cout << "\tDegree: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_DEGREE, 0.25) << endl;
 	cout << "Bearing on Great Circle at 1/2 (St. Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tRadian: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_RADIAN, 0.5) << endl;
 	cout << "\tDegree: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_DEGREE, 0.5) << endl;
 	cout << "Bearing on Great Circle at 3/4 (St. Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tRadian: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_RADIAN, 0.75) << endl;
 	cout << "\tDegree: " << st_maergen.bearing_on_great_circle(senden, GeoCoordinate::_DEGREE, 0.75) << endl;
-	*/
+	
 	cout << endl;
 	
 	cout << "Bearing on rhumb line (Senden -> St. Maergen)" << endl;
-//	cout << "\tRadian: " << senden.bearing_on_rhumb_line(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tRadian: " << senden.bearing_on_rhumb_line(st_maergen, GeoCoordinate::_RADIAN) << endl;
 	cout << "\tDegree: " << senden.bearing_on_rhumb_line(st_maergen, GeoCoordinate::_DEGREE) << endl;
 	
-//	cout << "Bearing on rhumb line (St. Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.bearing_on_rhumb_line(senden, GeoCoordinate::_RADIAN) << endl;
-//	cout << "\tDegree: " << st_maergen.bearing_on_rhumb_line(senden, GeoCoordinate::_DEGREE) << endl;
+	cout << "Bearing on rhumb line (St. Maergen -> Senden)" << endl;
+	cout << "\tRadian: " << st_maergen.bearing_on_rhumb_line(senden, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tDegree: " << st_maergen.bearing_on_rhumb_line(senden, GeoCoordinate::_DEGREE) << endl;
 	
 	cout << "Bearing approximated (Senden -> St. Maergen)" << endl;
-//	cout << "\tRadian: " << senden.bearing_approximated(st_maergen, GeoCoordinate::_RADIAN) << endl;
+	cout << "\tRadian: " << senden.bearing_approximated(st_maergen, GeoCoordinate::_RADIAN) << endl;
 	cout << "\tDegree: " << senden.bearing_approximated(st_maergen, GeoCoordinate::_DEGREE) << endl;
 	
-/*	cout << "Bearing approximated (St. Maergen -> Senden)" << endl;
-//	cout << "\tRadian: " << st_maergen.bearing_approximated(senden, GeoCoordinate::_RADIAN) << endl;
+	cout << "Bearing approximated (St. Maergen -> Senden)" << endl;
+	cout << "\tRadian: " << st_maergen.bearing_approximated(senden, GeoCoordinate::_RADIAN) << endl;
 	cout << "\tDegree: " << st_maergen.bearing_approximated(senden, GeoCoordinate::_DEGREE) << endl;
-	*/
-	GeoCoordinate x = senden.compute_geo_coordinate(senden.bearing_on_rhumb_line(st_maergen),
-		senden.distance_on_rhumb_line(st_maergen));
-	GeoCoordinate y = senden.compute_geo_coordinate(senden.bearing_on_great_circle(st_maergen),
-		senden.distance_on_great_circle(st_maergen));
-	GeoCoordinate z = senden.compute_geo_coordinate(senden.bearing_approximated(st_maergen),
-		senden.distance_approximated(st_maergen));
+
+	GeoCoordinate x = senden.compute_geo_coordinate_on_rhumb_line(senden.bearing_on_rhumb_line(st_maergen),
+		senden.distance_on_rhumb_line(st_maergen) * 0.1);
+	GeoCoordinate y = senden.compute_geo_coordinate_on_great_circle(senden.bearing_on_great_circle(st_maergen),
+		senden.distance_on_great_circle(st_maergen) * 0.5);
+	GeoCoordinate z = senden.compute_geo_coordinate_approximated(senden.bearing_approximated(st_maergen),
+		senden.distance_approximated(st_maergen) * 0.1);
+	
+	cout << "Senden:      " << senden << endl;
+	cout << "St. Maergen: " << st_maergen << endl;
 	cout << x << endl;
-	cout << y << endl;
+//	cout << y << endl;
 	cout << z << endl;
 	
 	return 0;

@@ -12,8 +12,6 @@
 #include <cmath>
 #include <set>
 
-#include "util/mlog.h"
-
 namespace mapgeneration
 {
 	
@@ -39,36 +37,38 @@ namespace mapgeneration
 	
 	double
 	GeoCoordinate::bearing_approximated(const GeoCoordinate& geo_coordinate,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
-		double lat_diff = geo_coordinate._latitude - _latitude;
-		double lon_diff = geo_coordinate._longitude - _longitude;
+		double cos_lat1 = cos(_latitude * d2r);
 		
-		/* calculation of the direction with the following formula */
-		double bearing = atan2(lat_diff, lon_diff);
+		double lat_diff = (geo_coordinate._latitude - _latitude) * d2r;
+		double lon_diff = (geo_coordinate._longitude - _longitude) * d2r;
 		
-		if (bearing < 0)
-			bearing += 2 * PI;
+		double bearing = atan2(cos_lat1 * lon_diff, lat_diff);
 		
-		return convert(bearing, representation);
+		/* make a mathematical angle */
+		bearing = PI / 2.0 - bearing;
+		
+		normalise_arc(bearing, _RADIAN);
+		convert(bearing, _RADIAN, output_representation);
+		
+		return bearing;
 	}
 	
 	
 	double
 	GeoCoordinate::bearing_on_great_circle(const GeoCoordinate& geo_coordinate,
-		const Representation representation, const double at_point) const
+		const Representation output_representation, const double at_point) const
 	{
 		/* everything in radians! */
 		
-		GeoCoordinate start_gc = interpolate(*this, geo_coordinate, 1.0 - at_point);
+		GeoCoordinate start_gc = interpolate_on_great_circle(*this,
+			geo_coordinate, 1.0 - at_point);
 		
-		double drf = PI / 180; // degree to radian factor
-		double lat1 = start_gc._latitude * drf;
-		double lat2 = geo_coordinate._latitude * drf;
-		double lon_diff = (geo_coordinate._longitude - start_gc._longitude) * drf;
+		double lat1 = start_gc._latitude * d2r;
+		double lat2 = geo_coordinate._latitude * d2r;
+		double lon_diff = (geo_coordinate._longitude - start_gc._longitude) * d2r;
 		
-		/** @todo does that work? Is the start_gc on the same great circle like
-		 * the two other gcs??? */
 		double dist = start_gc.distance_on_great_circle(geo_coordinate, _RADIAN);
 		
 		double bearing = acos(
@@ -81,25 +81,24 @@ namespace mapgeneration
 		/* make a mathematical angle */
 		bearing = PI / 2.0 - bearing;
 		
-		if (bearing < 0.0)
-			bearing += 2.0 * PI;
+		normalise_arc(bearing, _RADIAN);
+		convert(bearing, _RADIAN, output_representation);
 		
-		return convert(bearing, representation);
+		return bearing;
 	}
 	
 	
 	double
 	GeoCoordinate::bearing_on_rhumb_line(const GeoCoordinate& geo_coordinate,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
 		/* everything in radians! */
 		
-		double drf = PI / 180; // degree to radian factor
-		double lat1 = _latitude * drf;
-		double lat2 = geo_coordinate._latitude * drf;
+		double lat1 = _latitude * d2r;
+		double lat2 = geo_coordinate._latitude * d2r;
 		double lat_diff = lat2 - lat1;
 		
-		double lon_diff_W = (_longitude - geo_coordinate._longitude) * drf;
+		double lon_diff_W = (_longitude - geo_coordinate._longitude) * d2r;
 		double lon_diff_E = -lon_diff_W;
 		
 		if (lon_diff_W < 0.0)
@@ -129,59 +128,22 @@ namespace mapgeneration
 		/* make a mathematical angle */
 		bearing = PI / 2.0 - bearing;
 		
-		while ( (bearing < 0.0) || (bearing >= 2.0 * PI) )
-		{
-			if (bearing < 0.0)
-				bearing += (2.0 * PI);
-			else if (bearing > 0.0)
-				bearing -= (2.0 * PI);
-		}
+		normalise_arc(bearing, _RADIAN);
+		convert(bearing, _RADIAN, output_representation);
 		
-		return convert(bearing, representation);
+		return bearing;
 	}
 	
 	
 	GeoCoordinate
-	GeoCoordinate::compute_geo_coordinate(double bearing_on_rhumb_line,
-		double distance_on_rhumb_line,
+	GeoCoordinate::compute_geo_coordinate_approximated(double bearing,
+		double distance,
 		const GeoCoordinate::Representation bearing_representation,
 		const GeoCoordinate::Representation distance_representation) const
 	{
 		/* test representations and convert to radian... */
-		double drf = PI / 180.0; // degree to radian factor
-		double mrf = 1.0 / EARTH_RADIUS_M; // meter to radian factor
-		
-		double bearing = bearing_on_rhumb_line;
-		switch (bearing_representation)
-		{
-			case _DEGREE:
-				bearing *= drf;
-				break;
-				
-			case _METER:
-				throw "FALSE REPRESENTATION: bearing is given in meters!";
-				break;
-		}
-		
-		while ( !((0 <= bearing) && (bearing < 2.0 * PI)) )
-		{
-			if (bearing < 0)
-				bearing += (2.0 * PI);
-			else
-				bearing -= (2.0 * PI);
-		}
-		
-		double distance = distance_on_rhumb_line;
-		switch (distance_representation)
-		{
-			case _DEGREE:
-				distance *= drf;
-				break;
-				
-			case _METER:
-				distance *= mrf;
-				break;
-		}
+		convert(bearing, bearing_representation, _RADIAN);
+		convert(distance, distance_representation, _RADIAN);
 		/* done. */
 		
 		/* convert mathematical bearing to navigation bearing... */
@@ -189,74 +151,146 @@ namespace mapgeneration
 		/* done */
 		
 		/* convert my coordinates to radians... */
-		double lat1 = _latitude * drf;
-		double lon1 = _longitude * drf;
+		double lat0 = _latitude * d2r;
+		double lon0 = _longitude * d2r;
+		/* done. */
+		
+		/* calculate new values... */
+		double lat_new = lat0 + distance * cos(bearing);
+		double lon_new = lon0 + distance * sin(bearing) / cos(lat0);
+		/* done. */
+		
+		/* convert to degree and return... */
+		GeoCoordinate gc_new;
+		gc_new.set_latitude(lat_new * r2d);
+		gc_new.set_longitude(lon_new * r2d);
+		
+		return gc_new;
+		/* done. */
+	}
+	
+	
+	GeoCoordinate
+	GeoCoordinate::compute_geo_coordinate_on_great_circle(double starting_bearing,
+		double distance,
+		const GeoCoordinate::Representation bearing_representation,
+		const GeoCoordinate::Representation distance_representation) const
+	{
+		/* test representations and convert to radian... */
+		convert(starting_bearing, bearing_representation, _RADIAN);
+		convert(distance, distance_representation, _RADIAN);
+		
+		double bearing = starting_bearing;
+		/* done. */
+		
+		/* convert mathematical bearing to navigation bearing... */
+		bearing = (PI / 2.0) - bearing;
+		/* done */
+		
+		/* convert my coordinates to radians and precompute some cos ans sins... */
+		double lat0 = _latitude * d2r;
+		double lon0 = _longitude * d2r;
+		
+		double cos_lat0 = cos(lat0);
+		double sin_lat0 = sin(lat0);
+		
+		double cos_dist = cos(distance);
+		double sin_dist = sin(distance);
+		/* done. */
+		
+		/* calculate new values... */
+		double lat_new = asin(
+			sin_lat0 * cos_dist + cos_lat0 * sin_dist * cos(bearing) );
+		double dlon = atan2(
+			sin(bearing) * sin_dist * cos_lat0, cos_dist - sin_lat0 * sin(lat_new) );
+		double lon_new = lon0 + dlon;
+		/* done. */
+		
+		/* convert to degree and return... */
+		GeoCoordinate gc_new;
+		gc_new.set_latitude(lat_new * r2d);
+		gc_new.set_longitude(lon_new * r2d);
+		
+		return gc_new;
+		/* done. */
+	}
+	
+	
+	GeoCoordinate
+	GeoCoordinate::compute_geo_coordinate_on_rhumb_line(double bearing,
+		double distance,
+		const GeoCoordinate::Representation bearing_representation,
+		const GeoCoordinate::Representation distance_representation) const
+	{
+		/* test representations and convert to radian... */
+		convert(bearing, bearing_representation, _RADIAN);
+		convert(distance, distance_representation, _RADIAN);
+		/* done. */
+		
+		/* convert mathematical bearing to navigation bearing... */
+		bearing = (PI / 2.0) - bearing;
+		/* done */
+		
+		/* convert my coordinates to radians... */
+		double lat0 = _latitude * d2r;
+		double lon0 = _longitude * d2r;
 		/* done. */
 		
 		/* calculate values...*/
-		double lat2 = lat1 + distance * cos(bearing);
-		double lat_diff = lat1 - lat2;
+		double lat_new = lat0 + distance * cos(bearing);
+		double lat_diff = lat0 - lat_new;
 		
-		double dphi = log( tan(lat2/2.0 + PI/4.0) / tan(lat1/2.0 + PI/4.0) );
+		double dphi = log( tan(lat_new/2.0 + PI/4.0) / tan(lat0/2.0 + PI/4.0) );
 		
 		double EPSILON = 0.00000001; // arbitrary
 		double q;
 		if ( fabs(lat_diff) < EPSILON )
-			q = cos(lat1);
+			q = cos(lat0);
 		else
 			q = lat_diff / dphi;
 		
 		double dlon = -distance * sin(bearing) / q;
-		double lon2 = lon1 + dlon;
-		
-		while ( (lon2 < -PI) || (PI <= lon2) )
-		{
-			if (lon2 < 0.0)
-				lon2 += (2.0 * PI);
-			else if (lon2 > 0.0)
-				lon2 -= (2.0 * PI);
-		}
+		double lon_new = lon0 + dlon;
 		/* done. */
 		
 		/* convert to degree and return... */
-		double rdf = 180.0 / PI; // radian to degree factor;
+		GeoCoordinate gc_new;
+		gc_new.set_latitude(lat_new * r2d);
+		gc_new.set_longitude(lon_new * r2d);
 		
-		GeoCoordinate gc;
-		gc.set_latitude(lat2 * rdf);
-		gc.set_longitude(lon2 * rdf);
-		
-		return gc;
+		return gc_new;
 		/* done. */
 	}
 	
 	
 	double
 	GeoCoordinate::distance_approximated(const GeoCoordinate& geo_coordinate,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
-		double lat_diff = _latitude - geo_coordinate._latitude;
-		double lon_diff = _longitude - geo_coordinate._longitude;
+		double cos_lat1 = cos(_latitude * d2r);
 		
-		double distance = sqrt(lat_diff * lat_diff + lon_diff * lon_diff);
+		double dist_N = (geo_coordinate._latitude - _latitude);
+		double dist_E = cos_lat1 * (geo_coordinate._longitude - _longitude);
 		
-		return convert(distance * PI / 180.0, representation);
+		double distance = sqrt(dist_N * dist_N + dist_E * dist_E);
+		convert(distance, _DEGREE, output_representation);
+		
+		return distance;
 	}
 	
 	
 	double
 	GeoCoordinate::distance_on_great_circle(const GeoCoordinate& geo_coordinate,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
 		/* calculates the distance between two GeoCoordinates with the
 		 * Great circle distance formula */
 
-		double drf = PI / 180.0; // degree to radian factor
+		double lat1 = _latitude * d2r;
+		double lat2 = geo_coordinate._latitude * d2r;
 		
-		double lat1 = _latitude * drf;
-		double lat2 = geo_coordinate._latitude * drf;
-		
-		double lon1 = _longitude * drf;
-		double lon2 = geo_coordinate._longitude * drf;
+		double lon1 = _longitude * d2r;
+		double lon2 = geo_coordinate._longitude * d2r;
 		
 		double sin_average_lat = sin( (lat1 - lat2) / 2.0 );
 		double sin_average_lon = sin( (lon1 - lon2) / 2.0 );
@@ -264,22 +298,23 @@ namespace mapgeneration
 		double distance = 2.0 * asin( sqrt(sin_average_lat * sin_average_lat
 			+ cos(lat1) * cos(lat2) * sin_average_lon * sin_average_lon) );
 		
-		return convert(distance, representation);
+		convert(distance, _RADIAN, output_representation);
+		
+		return distance;
 	}
 	
 	
 	double
 	GeoCoordinate::distance_on_rhumb_line(const GeoCoordinate& geo_coordinate,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
 		/* everything in radians! */
 		
-		double drf = PI / 180; // degree to radian factor
-		double lat1 = _latitude * drf;
-		double lat2 = geo_coordinate._latitude * drf;
+		double lat1 = _latitude * d2r;
+		double lat2 = geo_coordinate._latitude * d2r;
 		double lat_diff = lat2 - lat1;
 		
-		double lon_diff_W = (geo_coordinate._longitude - _longitude) * drf;
+		double lon_diff_W = (geo_coordinate._longitude - _longitude) * d2r;
 		double lon_diff_E = -lon_diff_W;
 
 		if (lon_diff_W < 0.0)
@@ -302,13 +337,15 @@ namespace mapgeneration
 		else
 			distance = sqrt(q * q * lon_diff_E * lon_diff_E + lat_diff * lat_diff);
 		
-		return convert(distance, representation);
+		convert(distance, _RADIAN, output_representation);
+		
+		return distance;
 	}
 	
 	
 	double
 	GeoCoordinate::distance_to_tile_border(const Heading heading,
-		const Representation representation) const
+		const Representation output_representation) const
 	{
 		GeoCoordinate compare_point(*this);
 		
@@ -349,7 +386,7 @@ namespace mapgeneration
 		
 		/* calculation  of the distance between  the current GeoCoordinate 
 		 * and the calculated tile border coordinate */
-		return distance_approximated(compare_point, representation);
+		return distance_approximated(compare_point, output_representation);
 	}
 	
 	
@@ -783,6 +820,69 @@ namespace mapgeneration
 		
 		/* Did you forget the beer. ME NOT. Cheers! */
 	}
+	
+	
+	GeoCoordinate
+	GeoCoordinate::interpolate_approximated(const GeoCoordinate& gc_1,
+	 const GeoCoordinate& gc_2, const double weight_on_first)
+	{
+		double distance = gc_1.distance_approximated(gc_2, _RADIAN);
+		double bearing = gc_1.bearing_approximated(gc_2, _RADIAN);
+		
+		return gc_1.compute_geo_coordinate_approximated(bearing,
+			distance * (1.0 - weight_on_first), _RADIAN, _RADIAN);
+	}
+	
+	
+	GeoCoordinate
+	GeoCoordinate::interpolate_on_great_circle(const GeoCoordinate& gc_1,
+	 const GeoCoordinate& gc_2, const double weight_on_first)
+	{
+		double dist = gc_1.distance_on_great_circle(gc_2, _RADIAN);
+		double sin_dist = sin(dist);
+		
+		double lat1 = gc_1._latitude * d2r;
+		double lon1 = gc_1._longitude * d2r;
+		double cos_lat1 = cos(lat1);
+		double sin_lat1 = sin(lat1);
+		double cos_lon1 = cos(lon1);
+		double sin_lon1 = sin(lon1);
+		
+		double lat2 = gc_2._latitude * d2r;
+		double lon2 = gc_2._longitude * d2r;
+		double cos_lat2 = cos(lat2);
+		double sin_lat2 = sin(lat2);
+		double cos_lon2 = cos(lon2);
+		double sin_lon2 = sin(lon2);
+		
+		double A = sin(weight_on_first * dist) / sin_dist;
+		double B = sin( (1.0 - weight_on_first) * dist ) / sin_dist;
+		
+		double x = (A * cos_lat1 * cos_lon1) + (B * cos_lat2 * cos_lon2);
+		double y = (A * cos_lat1 * sin_lon1) + (B * cos_lat2 * sin_lon2);
+		double z = (A * sin_lat1) + (B * sin_lat2);
+		
+		double lat_intermediate = atan2(z, sqrt(x * x + y * y));
+		double lon_intermediate = atan2(y, x);
+		
+		GeoCoordinate gc;
+		gc.set_latitude(lat_intermediate * r2d);
+		gc.set_longitude(lon_intermediate * r2d);
+		return gc;
+	}
+	
+	
+	GeoCoordinate
+	GeoCoordinate::interpolate_on_rhumb_line(const GeoCoordinate& gc_1,
+	 const GeoCoordinate& gc_2, const double weight_on_first)
+	{
+		double distance = gc_1.distance_on_rhumb_line(gc_2, _RADIAN);
+		double bearing = gc_1.bearing_on_rhumb_line(gc_2, _RADIAN);
+		
+		return gc_1.compute_geo_coordinate_on_rhumb_line(bearing,
+			distance * (1.0 - weight_on_first), _RADIAN, _RADIAN);
+	}
+	
 	
 	
 } // namespace mapgeneration

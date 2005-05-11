@@ -110,9 +110,9 @@ namespace mapgeneration
 		/* compute corner distance.
 		 * + 2.0 is needed to provide 100% compatibility to cluster_node_search! */
 		double corner_dist = (in_search_radius + 2.0) * sqrt(2.0);
-		GeoCoordinate llc = in_gps_point.compute_geo_coordinate(225.0,
+		GeoCoordinate llc = in_gps_point.compute_geo_coordinate_default(225.0,
 			corner_dist, GeoCoordinate::_DEGREE, GeoCoordinate::_METER);
-		GeoCoordinate urc = in_gps_point.compute_geo_coordinate(45.0,
+		GeoCoordinate urc = in_gps_point.compute_geo_coordinate_default(45.0,
 			corner_dist, GeoCoordinate::_DEGREE, GeoCoordinate::_METER);
 		
 		/* set query rectangle and start the query... */
@@ -174,19 +174,19 @@ namespace mapgeneration
 		double current_bearing;
 		
 		current_bearing = p2p_bearing - (0.75 * PI); // bearing - 135 degree
-		GeoCoordinate corner_1 = point_1.compute_geo_coordinate(
+		GeoCoordinate corner_1 = point_1.compute_geo_coordinate_default(
 			current_bearing, corner_dist);
 		
 		current_bearing = p2p_bearing + (0.75 * PI);
-		GeoCoordinate corner_2 = point_1.compute_geo_coordinate(
+		GeoCoordinate corner_2 = point_1.compute_geo_coordinate_default(
 			current_bearing, corner_dist);
 		
 		current_bearing = p2p_bearing + (0.25 * PI);
-		GeoCoordinate corner_3 = point_2.compute_geo_coordinate(
+		GeoCoordinate corner_3 = point_2.compute_geo_coordinate_default(
 			current_bearing, corner_dist);
 		
 		current_bearing = p2p_bearing - (0.25 * PI);
-		GeoCoordinate corner_4 = point_2.compute_geo_coordinate(
+		GeoCoordinate corner_4 = point_2.compute_geo_coordinate_default(
 			current_bearing, corner_dist);
 		/* done. */
 		

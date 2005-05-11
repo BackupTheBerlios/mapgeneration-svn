@@ -334,7 +334,7 @@ namespace mapgeneration
 		/* interpolation of two GPSPoints with the aid of the weight on
 		 * the first GPSPoint */
 		double weight_on_second = 1 - weight_on_first;
-		GPSPoint interpolated_gps_point(GeoCoordinate::interpolate(gpsp_1, gpsp_2, weight_on_first));
+		GPSPoint interpolated_gps_point(GeoCoordinate::interpolate_default(gpsp_1, gpsp_2, weight_on_first));
 		interpolated_gps_point.set_time(gpsp_1.get_time() * weight_on_first + 
 			gpsp_2.get_time() * weight_on_second);
 		interpolated_gps_point.set_direction(
