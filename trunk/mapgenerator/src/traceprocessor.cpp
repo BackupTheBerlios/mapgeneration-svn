@@ -483,14 +483,26 @@ namespace mapgeneration
 		bool keep_last_entries,
 		std::list< std::list<PathEntry> >& finished_segments,
 		PathEntry* start_entry)
-	{				
+	{
+		/*
+		 * This method expect a simplified path starting at start_entry 
+		 * and splits up the contents of this path into segments and a new path.
+		 */
+		/*
+		 * At first we have to clear the finished_segments list and create a 
+		 * first segment. We may not clear the path here, as this contains
+		 * the PathEntries we will walk through!
+		 */
 		finished_segments.clear();
 		std::list<PathEntry> empty_segment;
 		finished_segments.push_back(empty_segment);
 		
+		/*
+		 * Then we walk through the optimal path, creating new segments, 
+		 * whenever two nodes are not connected.
+		 */
 		std::list< std::list<PathEntry> >::iterator segment_iter =
-			finished_segments.begin();
-				
+			finished_segments.begin();				
 		PathEntry* position = start_entry;
 		PathEntry* previous_position = 0;
 		while (position != 0)
@@ -508,11 +520,31 @@ namespace mapgeneration
 			position = position->_connection;
 		}
 		
+		/*
+		 * Normally we check all segments for their length.
+		 * After we have copied the PathEntries into the segments we may
+		 * clear the path.
+		 */
+		/* @todo True?? */
 		bool do_not_check_last_segment = false;
 		path.clear();
 		
+		/*
+		 * Normally the last PathEntries are copied back into the
+		 * path and used in further optimizations. If we are optimizing, because
+		 * the path ended several meters in front of the current position
+		 * we can use all entries.
+		 */
 		if (keep_last_entries)
 		{
+			/*
+			 * If the last segment contains less than x entries we copy the
+			 * whole segment into the empty path and remove the segment.
+			 * Else we copy the last x entries of the segment into the path and
+			 * remove them from the last segment. We set 
+			 * do_not_check_last_segment, because we already now that the last
+			 * segment was long enough (and it may be too short now.
+			 */
 			if (segment_iter->size() < 6)
 			{
 				path.insert(path.end(), segment_iter->begin(), segment_iter->end());
@@ -532,7 +564,11 @@ namespace mapgeneration
 				do_not_check_last_segment = true;
 			}
 		}
-				
+		
+		/*
+		 * This loop removes all segments that are shorter than x entries,
+		 * ommiting the last segment if do_not_check_last_segment is true.
+		 */
 		segment_iter = finished_segments.begin();
 		std::list< std::list<PathEntry> >::iterator segment_iter_end =
 			finished_segments.end();			
@@ -554,25 +590,51 @@ namespace mapgeneration
 	TraceProcessor::build_connections(std::list<PathEntry>& path,
 		std::list<PathEntry>::iterator path_iter, bool only_connected)
 	{
+		/*
+		 * This is the recursive method used to scan the path for the
+		 * optimal node connections.
+		 */
+		/*
+		 * If the time_stamp equals time we already visited this entry and
+		 * can immidiatly return the stored points.
+		 */
 		if (path_iter->_time_stamp == _time)
 			return path_iter->_points;
 		
+		/*
+		 * Copy the path_iter to current_entry and update the time_stamp.
+		 */
 		std::list<PathEntry>::iterator current_entry = path_iter;
 		current_entry->_time_stamp = _time;
 		
+		/*
+		 * The destination is always the last path entry. If we have reached it
+		 * we can return a great number of points for this path.
+		 */
 		std::list<PathEntry>::iterator destination_iter = path.end();
 		--destination_iter;
 		if (path_iter == destination_iter)
 		{
+			// connection is zero at the end of the path
 			current_entry->_connection = 0;
 			current_entry->_points = 100000.0;
 			
 			return current_entry->_points;
 		}
 		
+		/*
+		 * Before further recursion we initialize the connection with zero and
+		 * points with -100000.0, because we have not yet found anything
+		 * usable.
+		 */
 		current_entry->_connection = 0;
 		current_entry->_points = -100000.0;
 		
+		/*
+		 * The next loop searches all nodes that follow the current node
+		 * in the path, if it is found (path_iter != path_iter_end) we recurse
+		 * and calculate the points for the connection.
+		 */
 		TileCache::Pointer tile_pointer = _tile_cache->get(Node::tile_id(current_entry->_node_id));
 		std::vector<Node::Id>::const_iterator next_nodes_iter = 
 			tile_pointer->node(current_entry->_node_id).next_node_ids().begin();
@@ -607,6 +669,11 @@ namespace mapgeneration
 			}
 		}
 		
+		/*
+		 * If we have to search not connected ways too, we do that. The point
+		 * calculation is seperate from the above calculations because it will
+		 * probably be very different.
+		 */
 		if (!only_connected)
 		{
 			++path_iter;
@@ -667,6 +734,9 @@ namespace mapgeneration
 			}
 		}
 
+		/*
+		 * Return the optimal number of points we could reach in this path.
+		 */
 		return current_entry->_points;
 	}
 	
@@ -677,23 +747,60 @@ namespace mapgeneration
 		std::list<PathEntry>& path, 
 		std::list< std::list<PathEntry> >& finished_segments)
 	{
+		/*
+		 * simplify path does a depth first search evaluating each possible
+		 * path to find the optimal row of nodes to connect.
+		 * The input consists of the id of the already existing start node,
+		 * the path and the keep_last_entries option. The path and 
+		 * finished_segments will contain the result.
+		 */
 		
+		/*
+		 * This is probably not needed anymore.
+		 * @todo Check if this is really not needed.
+		 */
 		if (path.size() < 2)
 		{
 			path.clear();
 			return;
 		}
 		
+		/*
+		 * We initialize some values. best_points is really bad in the 
+		 * beginning, best_start_entry is simply not found and the method
+		 * is 0 -> we are just searching for connected paths, these are
+		 * always better than paths with "jumps".
+		 */
 		double best_points = -100000.0;
 		PathEntry* best_start_entry = 0;
 		int method = 0;
 
+		/*
+		 * If method 0 (only connected) does not work we need a second
+		 * run searching all possible paths.
+		 */
 		while (best_start_entry == 0 && method < 2)
 		{
+			/*
+			 * We just have to visit each path entry once, we use time stamps
+			 * control this and increase the time before each search.
+			 */
 			++_time;
 			
+			/*
+			 * Make the meaning of method more clear.
+			 */
 			bool only_connected = (method == 0 ? true : false);
 			
+			/*
+			 * If we have a start_node_id we insert it as a new PathEntry into
+			 * the path and start the recursion with this entry.
+			 * The best_start_entry is not the start node (as this is already
+			 * processed), but the first entry after the start node entry.
+			 * Else we start with each PathEntry that is not more than x
+			 * meters away from the first entry and choose the best entry from
+			 * the recursion results.
+			 */
 			if (start_node_id != 0)
 			{
 				PathEntry start_entry;
@@ -732,6 +839,11 @@ namespace mapgeneration
 			
 		}
 		
+		/*
+		 * We build_path_and_segments if we found a result, else we just clear
+		 * the path.
+		 * @todo Is this still current?
+		 */
 		if ((best_start_entry != 0) && (best_points > -10000.0))
 		{
 			build_path_and_segments(path, keep_last_entries,
@@ -784,24 +896,66 @@ namespace mapgeneration
 		 */
 		double completed_position_m = 0.0;
 		
+		/*
+		 * All path entries that where added to the path in the current
+		 * loop. This is stored to revert the last search if needed.
+		 */
 		std::vector< std::list<PathEntry>::iterator > new_path_entries;
+		
+		/*
+		 * The id of the last connected node. If the next node in the path
+		 * is choosen or created, a connection from the node with this id to
+		 * the newly choosen or created node has to be created.
+		 */
 		Node::Id previous_node_id = 0;
+		
+		/*
+		 * The list of PathEntries in the order in which the corresponding 
+		 * nodes occur along the path. Each path entry contains the nodes
+		 * id and the position on the trace that is associated to this node.
+		 */
 		std::list<PathEntry> path;
+		
+		/*
+		 * This is set to true, if a row of connected nodes is found, that
+		 * is long enough to process a part of the trace.
+		 */
 		bool connected_nodes_row = false;
+		
+		/*
+		 * This is only false, if we reverted the previous search and want
+		 * to search for nodes at the same position again.
+		 */
 		bool walk_on = true;
+		
+		/*
+		 * The main loop. The trace is processed as long as the end is not
+		 * reached.
+		 */
 		while (scan_position_m < _filtered_trace.length_m())
 		{
+			/*
+			 * At first all nodes in a certain radius around the current 
+			 * position are searched.
+			 */
 			std::list<D_RangeReporting::Id> cluster_nodes;
 			calculate_cluster_nodes(
 				_filtered_trace.gps_point_at(scan_position_m),
 				cluster_nodes
 			);
 			
-			new_path_entries.clear();	
+			/*
+			 * Each node from the search result is searched in the pass 
+			 * to avoid double entries.
+			 */
+			new_path_entries.clear();
 			std::list<D_RangeReporting::Id>::iterator new_node_iter
 				= cluster_nodes.begin();
 			while (new_node_iter != cluster_nodes.end())
 			{
+				/*
+				 * This loop checks the last x nodes from the path.
+				 */
 				PathEntry new_entry(scan_position_m, **new_node_iter);
 				std::list<PathEntry>::iterator path_iter = path.end();
 				std::list<PathEntry>::iterator path_iter_begin = path.begin();
@@ -820,21 +974,30 @@ namespace mapgeneration
 						new_node_iter = cluster_nodes.erase(new_node_iter);
 					}
 				}
+				
+				/*
+				 * If we hit the beginning of the path we have to check this
+				 * entry too.
+				 */
 				if ((insert == true) && (checked_nodes < 8) && (*path_iter == new_entry))
 				{
 					insert = false;
 					new_node_iter = cluster_nodes.erase(new_node_iter);
 				}
 
+				/**
+				 * If insert is still true we can insert the entry into the 
+				 * path.
+				 */
 				if (insert)
-				{										
+				{
 					double optimal_position = optimal_node_position(new_entry);
 					new_entry._position = optimal_position;
 					
 					path_iter = path.begin();
 					for (; path_iter!=path.end() && 
 						path_iter->_position<new_entry._position; ++path_iter);
-											
+
 					new_path_entries.push_back(
 						path.insert(path_iter, new_entry)
 					);
@@ -844,18 +1007,33 @@ namespace mapgeneration
 
 			}
 
-
+			/*
+			 * If we did not find any nodes and the path is empty we set the
+			 * distinct_position_m to some meters behind the current 
+			 * scan_position_m. Otherwise we would never be able to create new
+			 * roads.
+			 * @todo This should be scan_position_m - x !!!
+			 */
 			if (!cluster_nodes.size() && !path.size())
 			{
 				distinct_position_m = scan_position_m;
 			}
 
 
+			/*
+			 * If the path contains at least x nodes or the last node in the
+			 * path is already more than x meters away we do some further check
+			 * to decide what to do.
+			 */
 			if (path.size() > 5 ||
 				(path.size() && (path.back()._position < scan_position_m-30.0)))
-			{				
+			{	
 				int connected_nodes = 0;
 				
+				/*
+				 * If the path contains at least x nodes, we count the nodes 
+				 * that are connected in a row at the end of the path.
+				 */
 				if (path.size() > 5)
 				{
 					std::list<PathEntry>::iterator path_iter = path.end();
@@ -872,14 +1050,37 @@ namespace mapgeneration
 						--path_iter;
 					}
 					
+					/* 
+					 * If we found the number of nodes needed to assume that
+					 * we are surely on this road, we set connected_nodes_row
+					 * to indicate this fact.
+					 */
 					if (connected_nodes > 5)
 						connected_nodes_row = true;
 				}
-								
+				
+				/*
+				 * Now we decide if we want to process the path. We process the
+				 * path if
+				 * - we have found a row of more than x nodes and can be really
+				 * sure to be on that road
+				 * - we have found a connected_nodes_row (see above), but did
+				 * not find it in the current iteration, meaning that there was
+				 * a node from another road in the last search
+				 * - we have left the path for more than x meters.
+				 */
 				if ((connected_nodes > 20) ||
 					(connected_nodes_row && (connected_nodes < 6)) ||
 					(path.back()._position < scan_position_m-30.0))
 				{
+					/*
+					 * If the second case occured we take back the last search
+					 * step. This way we have a connected_nodes_row at the end
+					 * of the path.
+					 * In the third case we create a new node and insert it into
+					 * the path. This node will be used as the destination point
+					 * for the path search algorithm.
+					 */
 					if (connected_nodes < 6)
 					{
 						// Take back the last scan step.
@@ -896,49 +1097,63 @@ namespace mapgeneration
 						path.push_back(PathEntry(scan_position_m, new_node_id));
 					//	std::cout << "Inserted destination point.\n";
 					}
-			/*		} else
-					{
-						std::cout << "Did not insert destination point.\n";
-					}*/
-					
+
+					/*
+					 * This list will contain the segments calculated by
+					 * simplify path.
+					 */
 					std::list< std::list<PathEntry> > finished_segments;
 					
+					/*
+					 * We don't want to keep the last results if they contain
+					 * the destination point.
+					 */
 					bool keep_last_entries = true;
 					if (path.back()._position < scan_position_m-30.0)
 						keep_last_entries = false;
-						
+					
+					/*
+					 * We call the simplify algorithm to calculate the optimal
+					 * nodes to use.
+					 */
 					simplify_path(previous_node_id, keep_last_entries, path, finished_segments);
 					
+					/*
+					 * If the algorithm has returned any segments we can set the
+					 * distinct_position_m to the position of the last node in
+					 * this results, else we use the current scan_position_m.
+					 */
 					if (finished_segments.size())
 						distinct_position_m = finished_segments.back().back()._position;
 					else
 						distinct_position_m = scan_position_m;
-					
+
+					/*
+					 * This method merges the trace to the map as
+					 * described by the segments. previous_node_id and
+					 * completed_position_m are updates as needed.
+					 */					
 					use_segments(finished_segments, /*last_used_node_ids,*/ completed_position_m, previous_node_id);
 					
-					/*if (!path.empty() && (path.back()._position < scan_position_m-30.0))
-						path.clear();*/
-					
+					/*
+					 * After processing there is no row of connected nodes in
+					 * the path.
+					 */
 					connected_nodes_row = false;
 				}
 			}
 
-
+			/*
+			 * If the path is empty we let the create_nodes method create nodes
+			 * up to the distinct_position_m.
+			 */
 			if (!path.size())
 				create_nodes(completed_position_m, distinct_position_m, false,
 					previous_node_id);
 
-			/*while (!path.size() && completed_position_m<(distinct_position_m-20.0))
-			{
-				completed_position_m += 10.0;
-				GPSPoint new_node_position = _filtered_trace.
-					gps_point_at(completed_position_m);
-				Node::Id new_node_id = create_new_node(new_node_position);
-				if (previous_node_id != 0)
-					connect_nodes(previous_node_id, new_node_id);
-				previous_node_id = new_node_id;
-			}*/
-
+			/*
+			 * Without walking on we would stay right where we are. ;-)
+			 */
 			if (walk_on)
 				scan_position_m += 10.0;
 			else
@@ -965,6 +1180,24 @@ namespace mapgeneration
 	TraceProcessor::use_segments(std::list< std::list<PathEntry> >& finished_segments, 
 		double& completed_position_m, Node::Id& previous_node_id)
 	{
+		/*
+		 * This method gets a list of segments. Each segment contains a list of
+		 * PathEntries that reference nodes. The nodes referenced by the 
+		 * PathEntries in one segment are connected and should be used in the
+		 * order of their appearance. The segments should also be used
+		 * in order, but they (exactly: the last node of 
+		 * one segment and the first node of the next segment) are not
+		 * already connected and the distance between them might require new
+		 * nodes to be created.
+		 * After this method finished:
+		 * - all nodes inside the segments are merged with the trace.
+		 * - new nodes are created to fill the gaps before the segments.
+		 * - the completed_position_m is at the end of the last segment.
+		 */
+		/*
+		 * We start with two layers of iterators, the first for the segments,
+		 * the second for the path entries in the segments.
+		 */
 		std::list< std::list<PathEntry> >::iterator finished_segments_iter =
 			finished_segments.begin();
 		std::list< std::list<PathEntry> >::iterator finished_segments_iter_end =
@@ -979,28 +1212,30 @@ namespace mapgeneration
 				finished_segments_iter->end();
 					
 			/*
-			 * Fill pre-segment gap.
-			 */
-			/*while(completed_position_m < (segment_iter->_position - 15.0))
-			{
-				completed_position_m += 10.0;
-				GPSPoint new_node_position = _filtered_trace.
-					gps_point_at(completed_position_m);
-				Node::Id new_node_id = create_new_node(new_node_position);
-				if (previous_node_id != 0)
-					connect_nodes(previous_node_id, new_node_id);
-				previous_node_id = new_node_id;
-			}*/
+			 * The method create_nodes creates nodes from the 
+			 * completed_position_m up to the first node of the current segment
+			 * (segment_iter->_position), not actually creating the node at
+			 * this position (false). The previous_node_id is updated.
+			 * After this step the step from the previous_node_id to the
+			 * first node of the segment has a correct length.
+			 */		
 			create_nodes(completed_position_m, segment_iter->_position, false,
 				previous_node_id);
 			
 			/*
-			 * Apply segment.
+			 * Now we can process the segment, connecting nodes as needed (see
+			 * below) and merging the trace and nodes (in the near future).
 			 */
 			for (; segment_iter != segment_iter_end; ++segment_iter)
 			{
 				completed_position_m = segment_iter->_position;
 				Node::Id used_node_id = segment_iter->_node_id;
+				/*
+				 * We could and should actually just connect the last node
+				 * before the segment and the first node of the segment, but the
+				 * double connection of the nodes inside the segment is captured
+				 * inside connect_nodes.
+				 */
 				if (previous_node_id != 0)
 					connect_nodes(previous_node_id, used_node_id);
 				previous_node_id = used_node_id;
