@@ -22,10 +22,10 @@ using namespace mapgeneration_util;
 #define _latitude _values[_LATITUDE]
 #define _longitude _values[_LONGITUDE]
 
-#define bearing_default bearing_on_rhumb_line
-#define compute_geo_coordinate_default compute_geo_coordinate_on_rhumb_line
-#define distance_default distance_on_rhumb_line
-#define interpolate_default interpolate_on_rhumb_line
+#define bearing_default bearing_approximated
+#define compute_geo_coordinate_default compute_geo_coordinate_approximated
+#define distance_default distance_approximated
+#define interpolate_default interpolate_approximated
 
 /* factors for conversion from x to y
  * x = {d|m|r}, y = {d|m|r}
