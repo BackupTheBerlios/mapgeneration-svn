@@ -212,7 +212,8 @@ namespace mapgeneration
 			double
 			build_connections(std::list<PathEntry>& path,
 				std::list<PathEntry>::iterator path_iter, 
-				double previous_direction, bool only_connected);
+				double previous_direction, bool disconnect, 
+				bool only_connected);
 
 
 			/**
@@ -342,7 +343,7 @@ namespace mapgeneration
 			 */
 			void
 			TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,
-				bool keep_last_entries,
+				bool disconnect,
 				std::list< std::list<PathEntry> >& finished_segments,
 				PathEntry* start_entry);
 			
@@ -364,7 +365,7 @@ namespace mapgeneration
 			 */
 			void
 			simplify_path(Node::Id previous_node_id, 
-				bool keep_last_entries,
+				bool disconnect,
 				std::list<PathEntry>& path,
 				std::list< std::list<PathEntry> >& finished_segments);
 			

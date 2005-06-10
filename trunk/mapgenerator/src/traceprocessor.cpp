@@ -480,7 +480,7 @@ namespace mapgeneration
 	
 	void
 	TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,
-		bool keep_last_entries,
+		bool disconnect,
 		std::list< std::list<PathEntry> >& finished_segments,
 		PathEntry* start_entry)
 	{
@@ -527,6 +527,8 @@ namespace mapgeneration
 		 */
 		/* @todo True?? */
 		bool do_not_check_last_segment = false;
+		/* @todo ????????????? */
+		//if (disconnect) do_not_check_last_segment = true;
 		path.clear();
 		
 		/*
@@ -535,7 +537,7 @@ namespace mapgeneration
 		 * the path ended several meters in front of the current position
 		 * we can use all entries.
 		 */
-		if (keep_last_entries)
+		if (!disconnect)
 		{
 			/*
 			 * If the last segment contains less than x entries we copy the
@@ -589,7 +591,7 @@ namespace mapgeneration
 	double
 	TraceProcessor::build_connections(std::list<PathEntry>& path,
 		std::list<PathEntry>::iterator path_iter, double previous_direction,
-		bool only_connected)
+		bool disconnect, bool only_connected)
 	{
 		/*
 		 * This is the recursive method used to scan the path for the
@@ -657,10 +659,7 @@ namespace mapgeneration
 				double direction_to_next = current_entry_node.bearing_default(next_entry_node);
 				
 				double points = build_connections(path, path_iter, 
-					direction_to_next, only_connected);
-				
-				// If we set this to 1000 the programm need lots of memory!!!!! ????
-				//points += 10.0;
+					direction_to_next, disconnect, only_connected);
 				
 				// Negative points for:								
 				// distance we want to walk from node to node
@@ -701,7 +700,7 @@ namespace mapgeneration
 					double direction_to_next = current_entry_node.bearing_default(next_entry_node);
 					
 					double points = build_connections(path, path_iter, 
-						direction_to_next, only_connected);
+						direction_to_next, disconnect, only_connected);
 						
 					// Negative points for:				
 					// no connection
@@ -752,6 +751,28 @@ namespace mapgeneration
 						diff = (diff > 0 ? diff : -diff);
 						points -= diff * 50.0;
 					}
+					
+					// The two blocks below could be used for smooth connects and disconnects.
+					/*if (current_entry->_position < path_iter->_position-20.0)
+					{
+						Node next_entry_node = _tile_cache->get(
+							Node::tile_id(path_iter->_node_id))->node(path_iter->_node_id);
+						point_on_trace = _filtered_trace.gps_point_at(path_iter->_position - 10.0);
+						double direction = point_on_trace.bearing_default(next_entry_node);
+						double diff = next_entry_node.minimal_direction_difference_to(Direction(direction));
+						points -= diff * 100.0;
+					}
+					
+					if (disconnect && 
+						path_iter->_node_id == destination_iter->_node_id)
+					{
+						Node current_entry_node = _tile_cache->get(
+							Node::tile_id(current_entry->_node_id))->node(current_entry->_node_id);
+						point_on_trace = _filtered_trace.gps_point_at(current_entry->_position + 10.0);
+						double direction = current_entry_node.bearing_default(point_on_trace);
+						double diff = current_entry_node.minimal_direction_difference_to(Direction(direction));
+						points -= diff * 20.0;
+					}*/
 
 					if (points > current_entry->_points)
 					{
@@ -773,7 +794,7 @@ namespace mapgeneration
 	
 	void
 	TraceProcessor::simplify_path(Node::Id start_node_id, 
-		bool keep_last_entries,
+		bool disconnect,
 		std::list<PathEntry>& path, 
 		std::list< std::list<PathEntry> >& finished_segments)
 	{
@@ -842,7 +863,7 @@ namespace mapgeneration
 				path.insert(path.begin(), start_entry);
 							
 				best_points = build_connections(path, path.begin(), 
-					1001.0, only_connected);
+					1001.0, disconnect, only_connected);
 				best_start_entry = path.front()._connection;
 			} else
 			{
@@ -853,7 +874,7 @@ namespace mapgeneration
 					(path_iter->_position < start_position + 50.0))
 				{
 					double points = build_connections(path, path_iter, 
-						1001.0, only_connected);
+						1001.0, disconnect, only_connected);
 					points -= path_iter->_position - start_position;
 					
 					if (points > best_points)
@@ -878,7 +899,7 @@ namespace mapgeneration
 		 */
 		if ((best_start_entry != 0) && (best_points > -10000.0))
 		{
-			build_path_and_segments(path, keep_last_entries,
+			build_path_and_segments(path, disconnect,
 				finished_segments, best_start_entry);
 		} else
 		{
@@ -1036,6 +1057,11 @@ namespace mapgeneration
 
 					++new_node_iter;
 				}
+				
+				/*
+				 *  @todo Implement a more robust system to capture already
+				 * processed nodes.
+				 */
 
 			}
 
@@ -1057,8 +1083,10 @@ namespace mapgeneration
 			 * path is already more than x meters away we do some further check
 			 * to decide what to do.
 			 */
-			if (path.size() > 5 ||
-				(path.size() && (path.back()._position < scan_position_m-30.0)))
+			bool disconnect = false;
+			if (path.size() && (path.back()._position < scan_position_m-30.0))
+				disconnect = true;
+			if (path.size() > 5 || disconnect)
 			{	
 				int connected_nodes = 0;
 				
@@ -1103,7 +1131,7 @@ namespace mapgeneration
 				 */
 				if ((connected_nodes > 20) ||
 					(connected_nodes_row && (connected_nodes < 6)) ||
-					(path.back()._position < scan_position_m-30.0))
+					disconnect)
 				{
 					/*
 					 * If the second case occured we take back the last search
@@ -1113,6 +1141,7 @@ namespace mapgeneration
 					 * the path. This node will be used as the destination point
 					 * for the path search algorithm.
 					 */
+					Node::Id new_node_id;
 					if (connected_nodes < 6)
 					{
 						// Take back the last scan step.
@@ -1120,12 +1149,12 @@ namespace mapgeneration
 						for (; new_entries_iter != new_path_entries.end(); ++new_entries_iter)
 							path.erase(*new_entries_iter);
 						walk_on = false;
-					} else if (path.back()._position < scan_position_m-30.0)
+					} else if (disconnect)
 					{
 						// Insert a destination point.
 						GPSPoint new_node_position = _filtered_trace.
 							gps_point_at(scan_position_m);
-						Node::Id new_node_id = create_new_node(new_node_position);
+						new_node_id = create_new_node(new_node_position);
 						path.push_back(PathEntry(scan_position_m, new_node_id));
 					//	std::cout << "Inserted destination point.\n";
 					}
@@ -1135,20 +1164,12 @@ namespace mapgeneration
 					 * simplify path.
 					 */
 					std::list< std::list<PathEntry> > finished_segments;
-					
-					/*
-					 * We don't want to keep the last results if they contain
-					 * the destination point.
-					 */
-					bool keep_last_entries = true;
-					if (path.back()._position < scan_position_m-30.0)
-						keep_last_entries = false;
-					
+										
 					/*
 					 * We call the simplify algorithm to calculate the optimal
 					 * nodes to use.
 					 */
-					simplify_path(previous_node_id, keep_last_entries, path, finished_segments);
+					simplify_path(previous_node_id, disconnect, path, finished_segments);
 					
 					/*
 					 * If the algorithm has returned any segments we can set the
@@ -1159,6 +1180,11 @@ namespace mapgeneration
 						distinct_position_m = finished_segments.back().back()._position;
 					else
 						distinct_position_m = scan_position_m;
+						
+					if (disconnect)
+					{						
+						/* @todo Delete node with new_node_id.*/
+					}
 
 					/*
 					 * This method merges the trace to the map as
