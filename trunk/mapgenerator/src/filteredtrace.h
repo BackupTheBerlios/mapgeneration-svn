@@ -62,6 +62,13 @@ namespace mapgeneration
 			 */
 			void
 			calculate_needed_tile_ids(double radius);
+			
+			
+			/**
+			 * @brief Returns the curvature at the given position.
+			 */
+			double
+			curvature_at(double meters);
 
 			
 			/**

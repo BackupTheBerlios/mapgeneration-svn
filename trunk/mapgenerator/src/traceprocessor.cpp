@@ -588,7 +588,8 @@ namespace mapgeneration
 	
 	double
 	TraceProcessor::build_connections(std::list<PathEntry>& path,
-		std::list<PathEntry>::iterator path_iter, bool only_connected)
+		std::list<PathEntry>::iterator path_iter, double previous_direction,
+		bool only_connected)
 	{
 		/*
 		 * This is the recursive method used to scan the path for the
@@ -649,7 +650,14 @@ namespace mapgeneration
 			
 			if (path_iter != path_iter_end)
 			{				
-				double points = build_connections(path, path_iter, only_connected);
+				Node current_entry_node = _tile_cache->get(
+					Node::tile_id(current_entry->_node_id))->node(current_entry->_node_id);
+				Node next_entry_node = _tile_cache->get(
+					Node::tile_id(path_iter->_node_id))->node(path_iter->_node_id);
+				double direction_to_next = current_entry_node.bearing_default(next_entry_node);
+				
+				double points = build_connections(path, path_iter, 
+					direction_to_next, only_connected);
 				
 				// If we set this to 1000 the programm need lots of memory!!!!! ????
 				//points += 10.0;
@@ -686,7 +694,14 @@ namespace mapgeneration
 					
 				if (!connected)
 				{
-					double points = build_connections(path, path_iter, only_connected);
+					Node current_entry_node = _tile_cache->get(
+						Node::tile_id(current_entry->_node_id))->node(current_entry->_node_id);
+					Node next_entry_node = _tile_cache->get(
+						Node::tile_id(path_iter->_node_id))->node(path_iter->_node_id);
+					double direction_to_next = current_entry_node.bearing_default(next_entry_node);
+					
+					double points = build_connections(path, path_iter, 
+						direction_to_next, only_connected);
 						
 					// Negative points for:				
 					// no connection
@@ -706,7 +721,7 @@ namespace mapgeneration
 					
 					// direction difference between point and node
 					points -= node.minimal_direction_difference_to(
-						point_on_trace) * 40.0;
+						point_on_trace) * 5.0;
 					
 					// distance between current nodes position and connection
 					//	position
@@ -721,6 +736,21 @@ namespace mapgeneration
 						double direction = current_entry_node.bearing_default(point_on_trace);
 						double diff = current_entry_node.minimal_direction_difference_to(Direction(direction));
 						points -= diff * 5.0;
+					}
+					
+					if (previous_direction < 1000.0)
+					{
+						Node current_entry_node = _tile_cache->get(
+							Node::tile_id(current_entry->_node_id))->node(current_entry->_node_id);
+						Node next_entry_node = _tile_cache->get(
+							Node::tile_id(path_iter->_node_id))->node(path_iter->_node_id);
+						double dir_diff = current_entry_node.bearing_default(next_entry_node) - previous_direction;
+						double edge_length = current_entry_node.distance_default(next_entry_node);
+						double curvature_on_road = 	dir_diff / edge_length;
+						double curvature_on_trace = _filtered_trace.curvature_at(current_entry->_position);
+						double diff = curvature_on_road - curvature_on_trace;
+						diff = (diff > 0 ? diff : -diff);
+						points -= diff * 50.0;
 					}
 
 					if (points > current_entry->_points)
@@ -811,7 +841,8 @@ namespace mapgeneration
 				start_entry._node_id = start_node_id;			
 				path.insert(path.begin(), start_entry);
 							
-				best_points = build_connections(path, path.begin(), only_connected);
+				best_points = build_connections(path, path.begin(), 
+					1001.0, only_connected);
 				best_start_entry = path.front()._connection;
 			} else
 			{
@@ -821,7 +852,8 @@ namespace mapgeneration
 				while ((path_iter != path_iter_end) && 
 					(path_iter->_position < start_position + 50.0))
 				{
-					double points = build_connections(path, path_iter, only_connected);
+					double points = build_connections(path, path_iter, 
+						1001.0, only_connected);
 					points -= path_iter->_position - start_position;
 					
 					if (points > best_points)

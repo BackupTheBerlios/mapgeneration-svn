@@ -211,7 +211,8 @@ namespace mapgeneration
 			 */
 			double
 			build_connections(std::list<PathEntry>& path,
-				std::list<PathEntry>::iterator path_iter, bool only_connected);
+				std::list<PathEntry>::iterator path_iter, 
+				double previous_direction, bool only_connected);
 
 
 			/**

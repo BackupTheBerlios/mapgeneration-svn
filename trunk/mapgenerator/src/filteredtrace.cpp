@@ -120,6 +120,46 @@ namespace mapgeneration
 	}
 	
 	
+	double
+	FilteredTrace::curvature_at(double meters)
+	{
+		if (_cached_size <= 1)
+		{
+			mlog(MLog::error, "FilteredTrace") << "Empty FilteredTrace: "
+				<< "Cannot calculate new gps point at " << meters << "m!\n";
+			return 0;
+		}
+		
+		if (meters<0 || meters>length_m())
+		{
+			mlog(MLog::error, "FilteredTrace") << "Position does not exist: "
+				<< "Cannot calculate new gps point at " << meters << "m!\n";
+			return 0;
+		}
+
+		const_iterator point_before;
+		const_iterator point_after;
+		double point_before_meters;
+		double point_after_meters;
+		
+		if (gps_points_before_and_after(meters, &point_before, &point_after,
+				&point_before_meters, &point_after_meters))
+		{
+			double left_distance = meters - point_before_meters;
+			double weight = 1.0 - left_distance
+				/ point_before->distance_default(*point_after);
+			double curvature = 
+				(point_after->get_direction() - point_before->get_direction()) / 
+				(point_after_meters - point_before_meters);
+			return curvature;
+			
+		} else
+		{
+			return 0;
+		}
+	}
+	
+	
 	void
 	FilteredTrace::deserialize(std::istream& i_stream)
 	{
