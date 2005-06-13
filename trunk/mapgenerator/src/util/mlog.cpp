@@ -19,6 +19,7 @@ namespace mapgeneration_util
 	MLog::MLog()
 	: std::streambuf(), std::ostream((std::streambuf*) this), _buffer()
 	{
+		setf(std::ios::fixed);
 	}
 
 
