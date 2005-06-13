@@ -21,8 +21,7 @@ namespace mapgeneration
 
 	TraceServer::TraceServer(pubsub::ServiceList* service_list, 
 		TraceFilter* trace_filter)
-	: _service_list(service_list), _trace_filter(trace_filter), 
-		_trace_connections()
+	: _service_list(service_list), _trace_filter(trace_filter)
 	{
 	}
 	
@@ -75,61 +74,30 @@ namespace mapgeneration
 	void
 	TraceServer::thread_run()
 	{		
-		
-/*		ost::InetAddress address("127.0.0.1");
-		ost::TCPSocket server(address, 9000);*/
-		
 		mlog(MLog::info, "TraceServer") << "Waiting for connections...\n";
 		while (!should_stop())
-		{
-			std::list<TraceConnection>::iterator i = _trace_connections.begin();
-			while (i != _trace_connections.end() && !should_stop())
-			{
-				(*i).receive();
-				if (!i->active())
-				{
-					std::string input_string = (*i).input_string();
-					/*mlog(MLog::debug, "TraceServer") << "Received:\n";
-					mlog(MLog::debug, "TraceServer") << input_string << "\n";*/
-					i = _trace_connections.erase(i);
-					
-					mlog(MLog::debug, "TraceServer") << "Sending input to TraceFilter\n";
-					_trace_filter->new_trace(input_string);					
-				}
-				else
-					++i;
-			}
-			
-			int timeout = (_trace_connections.size() ? 50 : 200);
-			_should_stop_event.wait(timeout);
-			
+		{			
 			std::list<ost::TCPSocket>::iterator tcp_socket_iter = 
 				_tcp_sockets.begin();
 			std::list<ost::TCPSocket>::iterator tcp_socket_iter_end = 
 				_tcp_sockets.end();
 			for (; tcp_socket_iter != tcp_socket_iter_end; ++tcp_socket_iter)
 			{
-				while (tcp_socket_iter->isPendingConnection(10) && !should_stop())
+				if (tcp_socket_iter->isPendingConnection(0))
 				{
 					mlog(MLog::debug, "TraceServer") 
 						<< "Accepting new connection on address "
 						<< tcp_socket_iter->getLocal().getHostname() << ".\n";
-					_trace_connections.push_back(*(
-						new TraceConnection(*tcp_socket_iter)
-					));
+					TraceConnection* new_connection = 
+						new TraceConnection(*tcp_socket_iter, _trace_filter);
+					new_connection->start();
 				}
 			}
+			
+			_should_stop_event.wait(100);
 		}
 	
 		mlog(MLog::info, "TraceServer") << "Shutting down...\n";
-		
-		std::list<TraceConnection>::iterator i = _trace_connections.begin();
-		while (i != _trace_connections.end())
-		{
-			
-			
-			++i;
-		}
 
 		mlog(MLog::info, "TraceServer") << "Stopped.\n";
 	}

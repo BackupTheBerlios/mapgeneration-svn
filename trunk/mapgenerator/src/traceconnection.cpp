@@ -19,47 +19,43 @@
 namespace mapgeneration
 {
 	
-	TraceConnection::TraceConnection(ost::TCPSocket &server)
-	: ost::SimpleTCPStream(server), _input_string(""), _active(true)
+	TraceConnection::TraceConnection(ost::TCPSocket &server, 
+		TraceFilter* trace_filter)
+	: ost::TCPSession(server), _input_string(""), _trace_filter(trace_filter)
 	{
 		std::cout << "Creating TraceConnection!" << std::endl;
-		_buffer_size = 1024;
-		_buffer = new char[_buffer_size + 1];
 	}
 
 
 	TraceConnection::~TraceConnection()
 	{
-		delete [] _buffer;
 	}
 	
 	
 	void
-	TraceConnection::receive()
+	TraceConnection::run()
 	{
-		bool active = false;
-		int read_bytes=1;				
-		while (read_bytes)
+		setCompletion(true);
+
+		int buffer_size = 1024;
+		char* buffer = new char[buffer_size + 1];
+		
+		bool active = true;
+		
+		while (isPending(ost::Socket::pendingInput) && active)
 		{
-			read_bytes = read(_buffer, _buffer_size, 0);
-			_input_string.append(_buffer, read_bytes);
-			if (read_bytes) active = true;
+			int read_bytes = readData(buffer, buffer_size, 0);
+			if (read_bytes > 0)
+				_input_string.append(buffer, read_bytes);
+			else
+				active = false;
 		}
-		_active = active;
-	}
-	
-	
-	bool
-	TraceConnection::active()
-	{
-		return _active;
-	}
-
-
-	std::string
-	TraceConnection::input_string()
-	{
-		return _input_string;
+		
+		delete [] buffer;
+		
+		mlog(MLog::debug, "TraceConnection") << 
+			"Sending input to TraceFilter\n";
+		_trace_filter->new_trace(_input_string);
 	}
 
 

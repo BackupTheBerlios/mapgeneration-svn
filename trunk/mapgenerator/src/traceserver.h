@@ -58,8 +58,6 @@ namespace mapgeneration
 		
 			std::list<ost::TCPSocket> _tcp_sockets;
 					
-			std::list<TraceConnection> _trace_connections;
-			
 			TraceFilter* _trace_filter;
 
 	};

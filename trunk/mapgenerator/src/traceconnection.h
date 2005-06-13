@@ -12,7 +12,7 @@
 #include <cc++/socket.h>
 #include <iostream>
 
-#include "tilemanager.h"
+#include "tracefilter.h"
 #include "traceconnection.h"
 
 
@@ -25,33 +25,24 @@ namespace mapgeneration
 	 * At the moment TraceConnection is not working as it should, so there
 	 * is no complete documentation at the moment.
 	 */
-	class TraceConnection : public ost::SimpleTCPStream {
+	class TraceConnection : public ost::TCPSession {
 	
 		public:
 		
-			TraceConnection(ost::TCPSocket &server);
+			TraceConnection(ost::TCPSocket &server, TraceFilter* trace_filter);
 			
 			~TraceConnection();
 			
 			void
-			receive();
-			
-			bool
-			active();
-			
-			std::string
-			input_string();
+			run();
 		
 		//	void run();
 		
 		private:
-		
-			char* _buffer;
-			int _buffer_size;
-			
-			bool _active;
 			
 			std::string _input_string;
+			
+			TraceFilter* _trace_filter;			
 			
 	};
 
