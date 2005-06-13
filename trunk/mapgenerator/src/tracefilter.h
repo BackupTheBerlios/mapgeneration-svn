@@ -28,7 +28,7 @@ namespace mapgeneration
 			
 						
 			void
-			new_trace(FilteredTrace& filtered_trace);
+			new_trace(std::string& nmea_string);
 			
 				
 		protected:
@@ -53,7 +53,7 @@ namespace mapgeneration
 			TileManager* _tile_manager;
 			
 			
-			std::queue<FilteredTrace> _queue;
+			std::queue<std::string> _queue;
 			
 			
 			std::queue<FilteredTrace> _working_queue;

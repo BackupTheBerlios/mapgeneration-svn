@@ -93,14 +93,8 @@ namespace mapgeneration
 					mlog(MLog::debug, "TraceServer") << input_string << "\n";*/
 					i = _trace_connections.erase(i);
 					
-					mlog(MLog::debug, "TraceServer") << "Parsing input...\n";
-					FilteredTrace filtered_trace(_service_list);
-					if (filtered_trace.parse_nmea_string(input_string))
-					{
-						mlog(MLog::debug, "TraceServer") << "" << filtered_trace.size() << " Points\n";
-						mlog(MLog::debug, "TraceServer") << "Sending new trace to TileManager.\n";
-						_trace_filter->new_trace(filtered_trace);
-					}
+					mlog(MLog::debug, "TraceServer") << "Sending input to TraceFilter\n";
+					_trace_filter->new_trace(input_string);					
 				}
 				else
 					++i;

@@ -24,9 +24,9 @@ namespace mapgeneration
 	
 	
 	void
-	TraceFilter::new_trace(FilteredTrace& filtered_trace)
+	TraceFilter::new_trace(std::string& nmea_string)
 	{
-		_queue.push(filtered_trace);
+		_queue.push(nmea_string);
 	}
 	
 	
@@ -49,99 +49,107 @@ namespace mapgeneration
 
 			while(_queue.size() > 0)
 			{
-				
-				_working_queue.push(_queue.front());
-				_queue.pop();
-				
-				/*show_state("Inital state");*/
-				
-				/* apply anti-cumulation filter */
-				apply_anti_cumulation_filter(_working_queue.front());
-				/*show_state("Applied anti-cumulation filter");*/
-				
-				int available_traces;
-				int ready_traces;
-
-				/* Test for time */
-				available_traces = _working_queue.size();
-				ready_traces = 0;
-				while(ready_traces < available_traces)
+				FilteredTrace filtered_trace(_service_list);
+				if (filtered_trace.parse_nmea_string(_queue.front()))
 				{
-					apply_equal_time_filter(_working_queue.front());
-					_working_queue.pop();
-					++ready_traces;
-					/*show_state("Applied time filter", ready_traces);*/
-				}
-				
-				/* Test for location */
-				available_traces = _working_queue.size();
-				ready_traces = 0;
-				while(ready_traces < available_traces)
-				{
-					apply_equal_location_filter(_working_queue.front());
-					_working_queue.pop();
-					++ready_traces;
-					/*show_state("Applied location filter", ready_traces);*/
-				}
-
-				/* Test for gaps */
-				available_traces = _working_queue.size();
-				ready_traces = 0;
-				while(ready_traces < available_traces)
-				{
-					apply_gap_filter(_working_queue.front());
-					_working_queue.pop();
-					++ready_traces;
-					/*show_state("Applied speed filter", ready_traces);*/
-				}
-				
-				/* Test for speed */
-				available_traces = _working_queue.size();
-				ready_traces = 0;
-				while(ready_traces < available_traces)
-				{
-					apply_speed_filter(_working_queue.front());
-					_working_queue.pop();
-					++ready_traces;
-					/*show_state("Applied speed filter", ready_traces);*/
-				}
-				
-				/* Test for acceleration */
-				available_traces = _working_queue.size();
-				ready_traces = 0;
-				while(ready_traces < available_traces)
-				{
-					apply_acceleration_filter(_working_queue.front());
-					_working_queue.pop();
-					++ready_traces;
-					/*show_state("Applied acceleration filter", ready_traces);*/
-				}
-				
-				/* Test for trace length and propagade it to the tile manager */
-				int min_trace_length = 5;
-				if (!_service_list->get_service_value("tracefilter.min_trace_length",
-					min_trace_length))
-				{
-					mlog(MLog::info, "TraceFilter")
-						<< "Configuration for min trace length not found,"
-						<< " using default (" << min_trace_length << ").\n";
-				}
-
-				while(_working_queue.size() > 0)
-				{
-					FilteredTrace& trace = _working_queue.front();
-					if (trace.size() < min_trace_length)
+					_working_queue.push(filtered_trace);
+					
+					/*show_state("Inital state");*/
+					
+					/* apply anti-cumulation filter */
+					apply_anti_cumulation_filter(_working_queue.front());
+					/*show_state("Applied anti-cumulation filter");*/
+					
+					int available_traces;
+					int ready_traces;
+	
+					/* Test for time */
+					available_traces = _working_queue.size();
+					ready_traces = 0;
+					while(ready_traces < available_traces)
 					{
-						mlog(MLog::debug, "TraceFilter")
-							<< "Trace too small. Discard it!\n";
-					} else
-					{
-						_tile_manager->new_trace(trace);
+						apply_equal_time_filter(_working_queue.front());
+						_working_queue.pop();
+						++ready_traces;
+						/*show_state("Applied time filter", ready_traces);*/
 					}
 					
-					_working_queue.pop();
-					/*show_state("Propagation");*/
+					/* Test for location */
+					available_traces = _working_queue.size();
+					ready_traces = 0;
+					while(ready_traces < available_traces)
+					{
+						apply_equal_location_filter(_working_queue.front());
+						_working_queue.pop();
+						++ready_traces;
+						/*show_state("Applied location filter", ready_traces);*/
+					}
+	
+					/* Test for gaps */
+					available_traces = _working_queue.size();
+					ready_traces = 0;
+					while(ready_traces < available_traces)
+					{
+						apply_gap_filter(_working_queue.front());
+						_working_queue.pop();
+						++ready_traces;
+						/*show_state("Applied speed filter", ready_traces);*/
+					}
+					
+					/* Test for speed */
+					available_traces = _working_queue.size();
+					ready_traces = 0;
+					while(ready_traces < available_traces)
+					{
+						apply_speed_filter(_working_queue.front());
+						_working_queue.pop();
+						++ready_traces;
+						/*show_state("Applied speed filter", ready_traces);*/
+					}
+					
+					/* Test for acceleration */
+					available_traces = _working_queue.size();
+					ready_traces = 0;
+					while(ready_traces < available_traces)
+					{
+						apply_acceleration_filter(_working_queue.front());
+						_working_queue.pop();
+						++ready_traces;
+						/*show_state("Applied acceleration filter", ready_traces);*/
+					}
+					
+					/* Test for trace length and propagade it to the tile manager */
+					int min_trace_length = 5;
+					if (!_service_list->get_service_value("tracefilter.min_trace_length",
+						min_trace_length))
+					{
+						mlog(MLog::info, "TraceFilter")
+							<< "Configuration for min trace length not found,"
+							<< " using default (" << min_trace_length << ").\n";
+					}
+	
+					while(_working_queue.size() > 0)
+					{
+						FilteredTrace& trace = _working_queue.front();
+						if (trace.size() < min_trace_length)
+						{
+						mlog(MLog::debug, "TraceFilter")
+							<< "Trace too small. Discard it!\n";
+						} else
+						{
+							_tile_manager->new_trace(trace);
+						}
+						
+						_working_queue.pop();
+						/*show_state("Propagation");*/
+					}
+				} else
+				{
+					mlog(MLog::warning, "TraceFilter")
+							<< "Error parsing NMEA string!\n";
 				}
+				
+				_queue.pop();
 			}
 
 			_should_stop_event.wait(500);
