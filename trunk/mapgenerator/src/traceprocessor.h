@@ -87,8 +87,8 @@ namespace mapgeneration
 			TraceProcessor (unsigned int id, TileManager* tile_manager, 
 				pubsub::ServiceList* service_list, 
 				FilteredTrace& filtered_trace);
-
-
+			
+			
 			/**
 			 * @brief The run method. Mainly the cluster algorithm.
 			 */
@@ -396,7 +396,7 @@ namespace mapgeneration
 			use_segments(std::list< std::list<PathEntry> >& finished_segments,
 				double& complete_position_m, Node::Id& previous_node_id);
 	};
-
+	
 	
 } // namespace mapgeneration
 

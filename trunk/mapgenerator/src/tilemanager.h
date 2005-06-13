@@ -95,7 +95,11 @@ namespace mapgeneration
 			
 			
 		protected:
-		
+			
+			void
+			thread_deinit();
+			
+			
 			/**
 			 * @brief "The thread itself" and also the main method of the TileManager.
 			 */

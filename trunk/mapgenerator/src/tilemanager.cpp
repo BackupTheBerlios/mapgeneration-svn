@@ -9,8 +9,10 @@
 #include "tilemanager.h"
 
 #include <vector>
-#include "util/mlog.h"
 
+#include "util/arithmeticoperations.h"
+#include "util/mlog.h"
+#include "util/pubsub/arithmeticservice.h"
 
 using namespace mapgeneration_util;
 
@@ -26,6 +28,16 @@ namespace mapgeneration
 		_next_trace_processor_id = 1;
 		_trace_queue;
 		_trace_processors;
+		
+		/* init service for processed filtered traces... */
+		pubsub::GenericService* service
+			= new pubsub::ArithmeticService<double>(
+				"statistics.received_meters",
+				0.0, mapgeneration_util::add<double>
+			);
+		
+		_service_list->add(service);
+		/* done. */
 	}
 	
 	
@@ -288,6 +300,16 @@ namespace mapgeneration
 	
 	
 	void
+	TileManager::thread_deinit()
+	{
+		double meters;
+		_service_list->get_service_value("statistics.received_meters", meters);
+		mlog(MLog::info, "TileManager") << "Received filtered trace meters: "
+			<< meters << "m\n";
+	}
+	
+	
+	void
 	TileManager::thread_run()
 	{
 		mlog(MLog::info, "TileManager") << "Running.\n";
@@ -351,7 +373,7 @@ namespace mapgeneration
 		
 		std::map<unsigned int, TraceProcessor*>::iterator search_result = _trace_processors.find(trace_processor_id);
 		if (search_result != _trace_processors.end())
-		{						
+		{
 			delete search_result->second;
 			_trace_processors.erase(search_result);
 			mlog(MLog::debug, "TileManager") << "Deleted TraceProcessor " 

@@ -926,6 +926,15 @@ namespace mapgeneration
 		_filtered_trace.calculate_directions();
 		_filtered_trace.precompute_data();
 		
+		mlog(MLog::debug, "TraceProcessor") << "Processes a " << 
+			_filtered_trace.length_m() << "m long trace.\n";
+		
+		pubsub::Service<double>* service
+			= _service_list->find_service<double>("statistics.received_meters");
+		
+		if (service)
+			service->receive(_filtered_trace.length_m());
+		
 		// All position are relative to the start of the trace and in meters.
 		
 		/* 
@@ -1220,8 +1229,6 @@ namespace mapgeneration
 			
 		delete _trace_log;
 
-		mlog(MLog::info, "TraceProcessor") << "Processed a " << 
-			_filtered_trace.length_m() << "m long trace.\n";
 		mlog(MLog::info, "TraceProcessor") << "Finished (" << _id << ").\n";
 		_tile_manager->trace_processor_finished(_id);
 	}
