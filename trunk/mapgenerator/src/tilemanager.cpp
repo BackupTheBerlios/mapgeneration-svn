@@ -30,13 +30,21 @@ namespace mapgeneration
 		_trace_processors;
 		
 		/* init service for processed filtered traces... */
-		pubsub::GenericService* service
+		pubsub::GenericService* meters_service
 			= new pubsub::ArithmeticService<double>(
-				"statistics.received_meters",
+				"statistics.received_filtered_trace_meters",
 				0.0, mapgeneration_util::add<double>
 			);
 		
-		_service_list->add(service);
+		_service_list->add(meters_service);
+		
+		pubsub::GenericService* times_service
+			= new pubsub::ArithmeticService<double>(
+				"statistics.received_filtered_trace_times",
+				0.0, mapgeneration_util::add<double>
+			);
+		
+		_service_list->add(times_service);
 		/* done. */
 	}
 	
@@ -303,9 +311,15 @@ namespace mapgeneration
 	TileManager::thread_deinit()
 	{
 		double meters;
-		_service_list->get_service_value("statistics.received_meters", meters);
+		_service_list->get_service_value("statistics.received_filtered_trace_meters", meters);
+		
+		double times;
+		_service_list->get_service_value("statistics.received_filtered_trace_times", times);
+		
 		mlog(MLog::info, "TileManager") << "Received filtered trace meters: "
 			<< meters << "m\n";
+		mlog(MLog::info, "TileManager") << "Received filtered trace times: "
+			<< times << "s (= " << (times / 3600.0) << "h)\n";
 	}
 	
 	

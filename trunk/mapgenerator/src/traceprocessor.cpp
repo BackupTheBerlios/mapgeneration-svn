@@ -926,14 +926,28 @@ namespace mapgeneration
 		_filtered_trace.calculate_directions();
 		_filtered_trace.precompute_data();
 		
-		mlog(MLog::debug, "TraceProcessor") << "Processes a " << 
-			_filtered_trace.length_m() << "m long trace.\n";
+		double filtered_trace_duration = _filtered_trace.back().get_time()
+			- _filtered_trace.front().get_time();
+			
+		mlog(MLog::debug, "TraceProcessor") << "Processes a "
+			<< _filtered_trace.length_m() << "m (and "
+			<< filtered_trace_duration << "s) long trace.\n";
 		
-		pubsub::Service<double>* service
-			= _service_list->find_service<double>("statistics.received_meters");
+		/* Add trace meters to statistic... */
+		pubsub::Service<double>* meters_service
+			= _service_list->find_service<double>("statistics.received_filtered_trace_meters");
 		
-		if (service)
-			service->receive(_filtered_trace.length_m());
+		if (meters_service)
+			meters_service->receive(_filtered_trace.length_m());
+		/* done. */
+		
+		/* Add trace time to statistic... */
+		pubsub::Service<double>* times_service
+			= _service_list->find_service<double>("statistics.received_filtered_trace_times");
+		
+		if (times_service)
+			times_service->receive(filtered_trace_duration);
+		/* done. */
 		
 		// All position are relative to the start of the trace and in meters.
 		
