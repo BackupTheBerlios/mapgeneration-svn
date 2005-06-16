@@ -20,7 +20,7 @@ namespace mapgeneration_gui
 	: _modules()
 	{
 		/** @todo make it dynamic */
-		_modules.push_back(new TestModule("TestModule"));
+		_modules.push_back(new TestModule(wxT("TestModule")));
 		_modules.push_back(new MapModule());
 		_modules.push_back(new TraceLogModule());
 	}

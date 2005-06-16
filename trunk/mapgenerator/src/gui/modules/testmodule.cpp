@@ -54,7 +54,7 @@ namespace mapgeneration_gui
 	void
 	TestModule::initialize_module()
 	{
-		wxIcon* icon = new wxIcon("images/cut.xpm", wxBITMAP_TYPE_XPM);
+		wxIcon* icon = new wxIcon(wxT("images/cut.xpm"), wxBITMAP_TYPE_XPM);
 		std::pair<void (wxEvtHandler::*)(wxCommandEvent&), wxEvtHandler*> the_pair;
 		the_pair.first = (void (wxEvtHandler::*)(wxCommandEvent&))(&TestModule::on_tool_click);
 		the_pair.second = this;
@@ -62,7 +62,7 @@ namespace mapgeneration_gui
 		_icons.push_back(icon);
 		_icons_event_handlers.push_back(the_pair);
 
-		wxIcon* icon_2 = new wxIcon("images/cut.xpm", wxBITMAP_TYPE_XPM);
+		wxIcon* icon_2 = new wxIcon(wxT("images/cut.xpm"), wxBITMAP_TYPE_XPM);
 		std::pair<void (wxEvtHandler::*)(wxCommandEvent&), wxEvtHandler*> the_pair_2;
 		the_pair_2.first = (void (wxEvtHandler::*)(wxCommandEvent&))(&TestModule::on_tool_2_click);
 		the_pair_2.second = this;
@@ -234,28 +234,28 @@ namespace mapgeneration_gui
 		 * IMPORTANT: You have to specify a parent for your panel.
 		 * Take PreferencesDialogLogic::tree_item_data_parent()! */
 		wxPanel* test_module_panel = wxXmlResource::Get()->
-			LoadPanel(PreferencesDialogLogic::tree_item_data_parent(), "ID_PANEL_PREFERENCES_GENERAL");
+			LoadPanel(PreferencesDialogLogic::tree_item_data_parent(), wxT("ID_PANEL_PREFERENCES_GENERAL"));
 		
 		/* Build the root node. Make a wxTreeItemData-compatible object from your
 		 * panel, button, checkbox, ... (whatever, but it MUST inherite from
 		 * wxWindow!) by calling PreferencesDialogLogic::build_tree_item_da...
 		 * Quite long. Should think about some macros! */
 		wxTreeItemId root_id = _preferences_tree_item->
-			AddRoot("TestModule", -1, -1,
+			AddRoot(wxT("TestModule"), -1, -1,
 				PreferencesDialogLogic::build_tree_item_data_from_window(test_module_panel)
 			);
 		
 		/* Now build up your tree. You should always link a panel to a tree item
 		 * (so do not copy my examples!).
 		 * Further details how to build a wxTreeCtrl: Look into the docu. */
-		wxTreeItemId another_id = _preferences_tree_item->AppendItem(root_id, "other things");
-		_preferences_tree_item->AppendItem(another_id, "foo");
-		_preferences_tree_item->AppendItem(root_id, "whatever");
+		wxTreeItemId another_id = _preferences_tree_item->AppendItem(root_id, wxT("other things"));
+		_preferences_tree_item->AppendItem(another_id, wxT("foo"));
+		_preferences_tree_item->AppendItem(root_id, wxT("whatever"));
 		
 		/* And one correct example: */
 		wxPanel* panel_2 = wxXmlResource::Get()->
-			LoadPanel(PreferencesDialogLogic::tree_item_data_parent(), "ID_PANEL_PREFERENCES_GENERAL");
-		_preferences_tree_item->AppendItem(another_id, "bar", -1, -1,
+			LoadPanel(PreferencesDialogLogic::tree_item_data_parent(), wxT("ID_PANEL_PREFERENCES_GENERAL"));
+		_preferences_tree_item->AppendItem(another_id, wxT("bar"), -1, -1,
 			PreferencesDialogLogic::build_tree_item_data_from_window(panel_2));
 		
 		return true;

@@ -37,7 +37,7 @@ namespace mapgeneration_gui
 			return false;
 		}
 		
-		label() = "TraceLogModule";
+		label() = wxT("TraceLogModule");
 				
 		wxScrolledWindow* map_panel = XRCCTRL(*_content_panel, "trace_log_panel",
 			wxScrolledWindow);

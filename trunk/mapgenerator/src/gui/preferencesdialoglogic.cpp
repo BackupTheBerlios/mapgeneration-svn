@@ -166,7 +166,7 @@ namespace mapgeneration_gui
 	PreferencesDialogLogic::intern_load_dialog()
 	{
 		if (wxXmlResource::Get()->
-			LoadDialog(this, GetParent(), "ID_DIALOG_PREFERENCES") == false)
+			LoadDialog(this, GetParent(), wxT("ID_DIALOG_PREFERENCES")) == false)
 		{
 			return false;
 		}
@@ -174,17 +174,17 @@ namespace mapgeneration_gui
 		_content_panel = XRCCTRL(*this, "ID_PANEL_CONTENT", wxPanel);
 		
 		_tree_ctrl = XRCCTRL(*this, "ID_TREECTRL", wxTreeCtrl);
-		_tree_ctrl->AddRoot("MGG");
+		_tree_ctrl->AddRoot(wxT("MGG"));
 		
 		wxPanel* general_content_panel = wxXmlResource::Get()->
-			LoadPanel(tree_item_data_parent(), "ID_PANEL_PREFERENCES_GENERAL");
+			LoadPanel(tree_item_data_parent(), wxT("ID_PANEL_PREFERENCES_GENERAL"));
 			
 		wxTreeCtrl* general_tree_item = new_tree_item();
 		wxTreeItemId root_id = general_tree_item->
-			AddRoot("General", -1, -1,
+			AddRoot(wxT("General"), -1, -1,
 				build_tree_item_data_from_window(general_content_panel)
 			);
-		general_tree_item->AppendItem(root_id, "other things");
+		general_tree_item->AppendItem(root_id, wxT("other things"));
 		
 		add_tree_item(general_tree_item);
 		
@@ -196,7 +196,7 @@ namespace mapgeneration_gui
 	wxTreeCtrl*
 	PreferencesDialogLogic::new_tree_item()
 	{
-		wxDialog* dialog = new wxDialog(NULL, _parent_windows_counter, "tree_item_parent");
+		wxDialog* dialog = new wxDialog(NULL, _parent_windows_counter, wxT("tree_item_parent"));
 		--_parent_windows_counter;
 		_tree_item_parent_windows.push_back(dialog);
 		
@@ -239,7 +239,7 @@ namespace mapgeneration_gui
 	wxWindow*
 	PreferencesDialogLogic::tree_item_data_parent()
 	{
-		wxDialog* dialog = new wxDialog(NULL, _parent_windows_counter, "content_parent");
+		wxDialog* dialog = new wxDialog(NULL, _parent_windows_counter, wxT("content_parent"));
 		--_parent_windows_counter;
 		_tree_item_data_parent_windows.push_back(dialog);
 		

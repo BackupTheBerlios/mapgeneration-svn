@@ -145,7 +145,7 @@ namespace mapgeneration_gui
 		if ((_current_host.Len() == 0) || (_current_port.Len() == 0))
 			return;
 		
-		const wxString new_savedsession(_current_host + ":" + _current_port);
+		const wxString new_savedsession(_current_host + wxT(":") + _current_port);
 		
 		bool found_same_item = false;
 		int count = _saved_sessions.GetCount();

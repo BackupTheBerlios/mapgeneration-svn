@@ -280,7 +280,7 @@ namespace mapgeneration_gui
 		if (return_code == wxID_OK)
 		{
 			_last_connections.push(
-				_dialog_open_connection_logic.current_host() + ":" +
+				_dialog_open_connection_logic.current_host() + wxT(":") +
 				_dialog_open_connection_logic.current_port()
 			);
 			reorganize_lastconnections_submenu();
@@ -348,7 +348,7 @@ namespace mapgeneration_gui
 	MainFrameLogic::reorganize_lastconnections_submenu()
 	{
 		wxMenuBar* menu_bar = GetMenuBar();
-		int id = menu_bar->FindMenuItem("File", "Last connections");
+		int id = menu_bar->FindMenuItem(wxT("File"), wxT("Last connections"));
 		wxMenu* submenu_last_connections = menu_bar->FindItem(id)->GetSubMenu();
 		
 		while (submenu_last_connections->GetMenuItemCount() > 0)
@@ -370,7 +370,7 @@ namespace mapgeneration_gui
 			iter_end = _last_connections.end();
 		for (; iter != iter_end; ++iter, --next_id)
 		{
-			submenu_last_connections->Append(next_id, *iter, "Open connection to " + *iter);
+			submenu_last_connections->Append(next_id, *iter, wxT("Open connection to ") + *iter);
 			Connect(
 				next_id,
 				wxEVT_COMMAND_MENU_SELECTED,

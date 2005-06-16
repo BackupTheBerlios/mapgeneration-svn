@@ -38,7 +38,7 @@ namespace mapgeneration_gui
 			return false;
 		}
 		
-		label() = "MapModule";
+		label() = wxT("MapModule");
 				
 		wxScrolledWindow* map_panel = XRCCTRL(*_content_panel, "map_panel",
 			wxScrolledWindow);

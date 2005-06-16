@@ -42,15 +42,16 @@ namespace mapgeneration_gui
 	TraceLogPanelLogic::on_load(wxEvent& event)
 	{
 		wxFileDialog wx_file_dialog(_map_scrolled_window, wxT("Choose a file"), 
-			"", "", "*", wxOPEN | wxFILE_MUST_EXIST, wxDefaultPosition);
+			wxT(""), wxT(""), wxT("*"), wxOPEN | wxFILE_MUST_EXIST, wxDefaultPosition);
 		
 		int dialog_result = wx_file_dialog.ShowModal();
 		
 		if (dialog_result != wxID_OK) return;
 		
-		std::ifstream _file_stream(wx_file_dialog.GetDirectory()+"/"+
-			wx_file_dialog.GetFilename(), std::ifstream::in | 
-			std::ifstream::binary);
+		std::ifstream _file_stream(
+			(wx_file_dialog.GetDirectory()+ wxT("/") + 
+				wx_file_dialog.GetFilename()).mb_str(),
+			std::ifstream::in | std::ifstream::binary);
 			
 		if (_file_stream.good())
 		{
@@ -60,7 +61,7 @@ namespace mapgeneration_gui
 		} else
 		{
 			wxMessageDialog(_map_scrolled_window, wxT("Could not open file!"),
-			"Error!", wxOK, wxDefaultPosition).ShowModal();
+			wxT("Error!"), wxOK, wxDefaultPosition).ShowModal();
 			
 		}
 		
