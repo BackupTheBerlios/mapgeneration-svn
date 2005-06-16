@@ -157,6 +157,12 @@ namespace mapgeneration
 			
 			
 			/**
+			 * @brief The list of already processed nodes.
+			 */
+			std::list< std::pair <Node::Id, double> > _processed_nodes;
+			
+			
+			/**
 			 * @brief The service list.
 			 */
 			pubsub::ServiceList* _service_list;
@@ -290,6 +296,16 @@ namespace mapgeneration
 			void
 			create_nodes(double& completed_position_m, double end_position_m,
 				bool use_end_position, Node::Id& previous_node_id);
+
+
+			/**
+			 * @brief Removes all nodes from the processed nodes list with positions
+			 * smaller than min_position_m
+			 * 
+			 * @param min_position_m Minimal node position not to erase.
+			 */
+			void
+			cut_processed_nodes(double position_m);
 			
 			
 			/**
@@ -303,6 +319,17 @@ namespace mapgeneration
 			 */
 			double
 			distance_from_to(Node::Id node_id_1, Node::Id node_id_2);
+			
+			
+			/**
+			 * @brief Inserts the node_id and position into the processed nodes 
+			 * list.
+			 * 
+			 * @param node_id The id to insert.
+			 * @param position_m The position to insert.
+			 */
+			void
+			insert_into_processed_nodes(Node::Id node_id, double position_m);
 
 			
 			/**
@@ -346,6 +373,17 @@ namespace mapgeneration
 				bool disconnect,
 				std::list< std::list<PathEntry> >& finished_segments,
 				PathEntry* start_entry);
+				
+	
+			/**
+			 * @brief Returns true if the given node id is found in the processed nodes
+			 * list.
+			 * 
+			 * @param node_id Node::Id to search for.
+			 * @return True if the node id is found in the processed nodes.
+			 */
+			bool
+			search_in_processed_nodes(Node::Id node_id);
 			
 			
 			/**

@@ -17,7 +17,8 @@ namespace mapgeneration
 
 	TraceProcessor::TraceProcessor(unsigned int id, TileManager* tile_manager,
 		pubsub::ServiceList* service_list, FilteredTrace& filtered_trace)
-	: _filtered_trace(filtered_trace), _id(id), _service_list(service_list),
+	: _filtered_trace(filtered_trace), _id(id), 
+		_processed_nodes(), _service_list(service_list),
 		_tile_manager(tile_manager), _trace_log(0), _time(0)
 	{
 		_tile_cache = _tile_manager->get_tile_cache();
@@ -226,6 +227,7 @@ namespace mapgeneration
 			Node::Id new_node_id = create_new_node(new_node_position);
 			if (previous_node_id != 0)
 				connect_nodes(previous_node_id, new_node_id);
+			insert_into_processed_nodes(new_node_id, completed_position_m);
 			previous_node_id = new_node_id;
 		}
 		
@@ -241,9 +243,26 @@ namespace mapgeneration
 			Node::Id new_node_id = create_new_node(new_node_position);
 			if (previous_node_id != 0)
 				connect_nodes(previous_node_id, new_node_id);
+			insert_into_processed_nodes(new_node_id, completed_position_m);
 			previous_node_id = new_node_id;
 		}
 		
+	}
+	
+	
+	void
+	TraceProcessor::cut_processed_nodes(double position_m)
+	{
+		std::list< std::pair<Node::Id, double> >::iterator
+			proc_nodes_iter = _processed_nodes.begin();
+		for (; (proc_nodes_iter != _processed_nodes.end()) &&
+			(proc_nodes_iter->second < position_m);
+			++proc_nodes_iter);
+		if (proc_nodes_iter != _processed_nodes.begin())
+		{
+			proc_nodes_iter--;
+			_processed_nodes.erase(_processed_nodes.begin(), proc_nodes_iter);
+		}
 	}
 	
 	
@@ -255,6 +274,26 @@ namespace mapgeneration
 		
 		return (tile_1_pointer->node(node_id_1).
 			distance_default(tile_2_pointer->node(node_id_2))
+			);
+	}
+	
+	
+	void
+	TraceProcessor::insert_into_processed_nodes(Node::Id node_id, 
+		double position_m)
+	{
+		std::list< std::pair<Node::Id, double> >::iterator
+			proc_nodes_iter = _processed_nodes.begin();
+		for (; (proc_nodes_iter != _processed_nodes.end()) &&
+			(proc_nodes_iter->second <= position_m) &&
+			(proc_nodes_iter->first != node_id);
+			++proc_nodes_iter);
+
+		if ((proc_nodes_iter == _processed_nodes.end()) ||
+			(proc_nodes_iter->first != node_id))
+			_processed_nodes.insert(
+				proc_nodes_iter,
+				std::make_pair(node_id, position_m)
 			);
 	}
 	
@@ -792,6 +831,21 @@ namespace mapgeneration
 	}
 	
 	
+	bool	
+	TraceProcessor::search_in_processed_nodes(Node::Id node_id)
+	{
+		std::list< std::pair<Node::Id, double> >::iterator
+			proc_nodes_iter = _processed_nodes.begin();
+		for (; (proc_nodes_iter != _processed_nodes.end()) &&
+			(proc_nodes_iter->first != node_id);
+			++proc_nodes_iter);
+					
+		bool found = (proc_nodes_iter != _processed_nodes.end());
+		
+		return found;
+	}
+	
+	
 	void
 	TraceProcessor::simplify_path(Node::Id start_node_id, 
 		bool disconnect,
@@ -1021,70 +1075,52 @@ namespace mapgeneration
 			);
 			
 			/*
-			 * Each node from the search result is searched in the pass 
-			 * to avoid double entries.
+			 * Each node from the search result is searched in the processed
+			 * nodes list to prevent insertion of already processed nodes into
+			 * the path.
 			 */
+			cut_processed_nodes(scan_position_m - (_search_radius_m * 1.5));
+			
 			new_path_entries.clear();
 			std::list<D_RangeReporting::Id>::iterator new_node_iter
 				= cluster_nodes.begin();
 			while (new_node_iter != cluster_nodes.end())
 			{
-				/*
-				 * This loop checks the last x nodes from the path.
-				 */
 				PathEntry new_entry(scan_position_m, **new_node_iter);
-				std::list<PathEntry>::iterator path_iter = path.end();
-				std::list<PathEntry>::iterator path_iter_begin = path.begin();
-
-				bool insert = true;
-				/*
-				 * @todo: This would be more accurate if we would use meters!
-				 */
-				int checked_nodes = 0;
-				for (; (insert == true) && (checked_nodes < 8) && 
-					(path_iter != path_iter_begin); --path_iter, ++checked_nodes)
-				{
-					if (*path_iter == new_entry)
-					{
-						insert = false;
-						new_node_iter = cluster_nodes.erase(new_node_iter);
-					}
-				}
 				
-				/*
-				 * If we hit the beginning of the path we have to check this
-				 * entry too.
-				 */
-				if ((insert == true) && (checked_nodes < 8) && (*path_iter == new_entry))
-				{
-					insert = false;
-					new_node_iter = cluster_nodes.erase(new_node_iter);
-				}
-
+				bool insert = !(search_in_processed_nodes(new_entry._node_id));
+								
 				/**
-				 * If insert is still true we can insert the entry into the 
-				 * path.
+				 * If insert is true we can insert the entry into the 
+				 * path and processed_nodes.
 				 */
 				if (insert)
 				{
 					double optimal_position = optimal_node_position(new_entry);
 					new_entry._position = optimal_position;
 					
-					path_iter = path.begin();
-					for (; path_iter!=path.end() && 
+					/*
+					 * @todo: Start search at the end of the path, should be
+					 * faster!
+					 */
+					std::list<PathEntry>::iterator path_iter = path.begin();					 
+					std::list<PathEntry>::iterator path_iter_end = path.end();
+					
+					for (; path_iter!=path_iter_end && 
 						path_iter->_position<new_entry._position; ++path_iter);
 
 					new_path_entries.push_back(
 						path.insert(path_iter, new_entry)
 					);
 
+					insert_into_processed_nodes(new_entry._node_id,
+						new_entry._position);
+
 					++new_node_iter;
+				} else
+				{
+					new_node_iter = cluster_nodes.erase(new_node_iter);
 				}
-				
-				/*
-				 *  @todo Implement a more robust system to capture already
-				 * processed nodes.
-				 */
 
 			}
 
@@ -1179,6 +1215,7 @@ namespace mapgeneration
 							gps_point_at(scan_position_m);
 						new_node_id = create_new_node(new_node_position);
 						path.push_back(PathEntry(scan_position_m, new_node_id));
+						insert_into_processed_nodes(new_node_id, scan_position_m);
 					//	std::cout << "Inserted destination point.\n";
 					}
 
