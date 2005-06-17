@@ -14,9 +14,8 @@ Requirements
 ############
 
 General:
-	- commoncpp2: Most versions work. :-)
-	- wxWindows/wxWidgets: xrc-support is required, this is always 
-	  compiled in version 2.5 and optionally available in 2.4
+	- commoncpp2
+	- wxWidgets 2.6 
 
 The optional ODBC backend requires unixODBC on Linux systems.
 
