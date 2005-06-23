@@ -21,7 +21,8 @@ namespace mapgeneration
 
 	TileManager::TileManager(pubsub::ServiceList* service_list, 
 		TileCache* tile_cache)
-	: _tile_cache(tile_cache), _service_list(service_list)
+	: _tile_cache(tile_cache), _service_list(service_list), _trace_queue(),
+		_trace_queue_mutex()
 	{
 		_finished_trace_processor_ids;
 		_locked_tiles;
@@ -150,7 +151,10 @@ namespace mapgeneration
 			"traceprocessor.search_radius_m", search_radius_m
 		);
 		filtered_trace.calculate_needed_tile_ids(search_radius_m * 2.5);
+		
+		_trace_queue_mutex.enterMutex();
 		_trace_queue.push_back(filtered_trace);
+		_trace_queue_mutex.leaveMutex();
 	}
 	
 	
@@ -336,12 +340,15 @@ namespace mapgeneration
 				_finished_trace_processor_ids.pop_back();
 			}
 			
-			int new_trace_processors = 1 - _trace_processors.size();
+			int new_trace_processors = 2 - _trace_processors.size();
 
+			_trace_queue_mutex.enterMutex();
 			std::list<FilteredTrace>::iterator iter = _trace_queue.begin();
-			for (; iter != _trace_queue.end() && new_trace_processors > 0; ++iter)
+			while (iter != _trace_queue.end() && new_trace_processors > 0)
 			{
-				mlog(MLog::debug, "TileManager") << "Trying to create new TraceProcessor.\n";
+				/** @todo: This loop might be expensive, because it will try
+				 * to start the same blocked traces again and again.*/
+				//mlog(MLog::debug, "TileManager") << "Trying to create new TraceProcessor.\n";
 				/* Copy and remove the next FilteredTrace from the queue */
 				FilteredTrace new_filtered_trace(*iter);
 
@@ -352,10 +359,12 @@ namespace mapgeneration
 				{
 					mlog(MLog::debug, "TileManager") << "Created new TraceProcessor "
 						<< new_trace_processor_id << ".\n";
-					_trace_queue.erase(iter);
+					iter = _trace_queue.erase(iter);
 					--new_trace_processors;
-				}
+				} else
+					++iter;
 			}
+			_trace_queue_mutex.leaveMutex();
 			
 			_should_stop_event.wait(100);
 		}

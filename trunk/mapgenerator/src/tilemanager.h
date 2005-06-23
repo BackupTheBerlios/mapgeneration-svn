@@ -148,6 +148,13 @@ namespace mapgeneration
 			 */
 			std::list<FilteredTrace> _trace_queue;
 
+
+			/**
+			 * @brief The mutex that protect the _trace_queue.
+			 */
+			ost::Mutex _trace_queue_mutex;
+			
+			
 			/**
 			 * @brief Pointer to the tile cache.
 			 */
