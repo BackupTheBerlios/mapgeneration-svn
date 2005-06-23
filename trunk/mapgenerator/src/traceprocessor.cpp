@@ -74,9 +74,9 @@ namespace mapgeneration
 			{
 				_tile_cache->insert(*needed_tile_ids_iter, new Tile(*needed_tile_ids_iter));
 				tile = _tile_cache->get(*needed_tile_ids_iter);
-				mlog(MLog::error, "TraceProcessor::calculate_best_cluster_node") 
+				/*mlog(MLog::error, "TraceProcessor::calculate_best_cluster_node") 
 					<< "Created new tile " << (*needed_tile_ids_iter) 
-					<< " (SHOULD NOT HAPPEN HERE!)\n";
+					<< " (SHOULD NOT HAPPEN HERE!)\n";*/
 			}
 			
 			std::vector<D_RangeReporting::Id> new_cluster_nodes_fast;
@@ -172,7 +172,7 @@ namespace mapgeneration
 	void
 	TraceProcessor::create_needed_tiles()
 	{
-		std::vector<unsigned int>::const_iterator tile_ids_iter = 
+		/*std::vector<unsigned int>::const_iterator tile_ids_iter = 
 			_filtered_trace.needed_tile_ids().begin();
 		std::vector<unsigned int>::const_iterator tile_ids_iter_end = 
 			_filtered_trace.needed_tile_ids().end();
@@ -185,7 +185,7 @@ namespace mapgeneration
 				//mlog(MLog::debug, "TraceProcessor::create_needed_tiles") 
 				//	<< "Created new tile " << (*tile_ids_iter) << " \n";
 			}
-		}		
+		}*/		
 	}
 
 
