@@ -56,6 +56,9 @@ namespace mapgeneration
 			std::queue<std::string> _queue;
 			
 			
+			ost::Mutex _queue_mutex;
+			
+			
 			std::queue<FilteredTrace> _working_queue;
 			
 			

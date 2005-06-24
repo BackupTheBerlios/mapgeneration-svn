@@ -18,7 +18,8 @@ namespace mapgeneration
 
 	TraceFilter::TraceFilter(pubsub::ServiceList* service_list,
 		TileManager* tile_manager)
-	: _service_list(service_list), _tile_manager(tile_manager)
+	: _service_list(service_list), _tile_manager(tile_manager),
+		_queue_mutex()
 	{
 	}
 	
@@ -26,7 +27,9 @@ namespace mapgeneration
 	void
 	TraceFilter::new_trace(std::string& nmea_string)
 	{
+		_queue_mutex.enterMutex();
 		_queue.push(nmea_string);
+		_queue_mutex.leaveMutex();
 	}
 	
 	
@@ -46,11 +49,15 @@ namespace mapgeneration
 		mlog(MLog::info, "TraceFilter") << "Waiting for FilteredTrace objects...\n";
 		while (!should_stop())
 		{				
-
+			
+			_queue_mutex.enterMutex();
 			while(_queue.size() > 0)
 			{
 				FilteredTrace filtered_trace(_service_list);
-				if (filtered_trace.parse_nmea_string(_queue.front()))
+				std::string queue_front = _queue.front();
+
+				_queue_mutex.leaveMutex();
+				if (filtered_trace.parse_nmea_string(queue_front))
 				{
 					_working_queue.push(filtered_trace);
 					
@@ -149,8 +156,12 @@ namespace mapgeneration
 							<< "Error parsing NMEA string!\n";
 				}
 				
+				_queue_mutex.enterMutex();
 				_queue.pop();
 			}
+			_queue_mutex.leaveMutex();
+			// WARNING: The above enter leave combination is ok! Look at 
+			// the beginning of the if/loop!
 
 			_should_stop_event.wait(500);
 		}
