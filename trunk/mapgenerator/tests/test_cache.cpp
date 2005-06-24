@@ -38,7 +38,7 @@ class TestCache : public Cache<int, TestObject>
 	
 		TestCache()
 		: Cache<int, TestObject>::Cache(Cache<int, TestObject>::_FIFO, 
-			Cache<int, TestObject>::_STANDARD_CACHE, 1000, 800)
+			Cache<int, TestObject>::_STANDARD_CACHE, 100000, 1000, 800)
 		{
 		}
 		

@@ -23,7 +23,7 @@ namespace mapgeneration
 			std::stringstream::binary),
 		_current_position(-1),
 		_tile_cache(0, 0, TileCache::_FIFO,
-			TileCache::_NON_PERSISTENT | TileCache::_NO_MEMORY_LIMIT)
+			TileCache::_NON_PERSISTENT | TileCache::_NO_MEMORY_LIMIT, 0, 0, 0)
 	{
 	}
 	

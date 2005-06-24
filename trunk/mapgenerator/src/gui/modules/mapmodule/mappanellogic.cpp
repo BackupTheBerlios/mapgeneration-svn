@@ -71,7 +71,7 @@ namespace mapgeneration_gui
 		
 		mlog(MLog::info, "MapPanelLogic") << "Initializing cache.\n";
 		TileCache* tile_cache = new TileCache(_db_connection, tiles_table_id,
-			TileCache::_FIFO, TileCache::_NO_WRITEBACK, 20000000, 18000000);
+			TileCache::_FIFO, TileCache::_NO_WRITEBACK, 500, 60000000, 50000000);
 		tile_cache->start();
 		set_tile_cache(tile_cache);
 		mlog(MLog::info, "MapPanelLogic") << "Cache initialized.\n";

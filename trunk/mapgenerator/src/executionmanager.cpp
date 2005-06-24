@@ -119,7 +119,7 @@ namespace mapgeneration
 		
 		mlog(MLog::info, "ExecutionManager") << "Starting TileCache.\n";
 		_tile_cache = new TileCache(_db_connection, tiles_table_id,
-			TileCache::_FIFO, TileCache::_STANDARD_CACHE, 12000000, 10000000);
+			TileCache::_FIFO, TileCache::_STANDARD_CACHE, 20, 12000000, 10000000);
 		_tile_cache->controlled_start();
 		mlog(MLog::info, "ExecutionManager") << "TileCache started.\n";
 

@@ -16,9 +16,10 @@ namespace mapgeneration
 	TileCache::TileCache(DBConnection* db_connection, 
 		size_t table_id,
 		Strategy strategy,
-		unsigned int options, int hard_max_cached_size, 
-		int soft_max_cached_size)
-	: Cache<unsigned int, Tile>::Cache(strategy, options, hard_max_cached_size, 
+		unsigned int options, int minimal_object_capacity,
+		int hard_max_cached_size, int soft_max_cached_size)
+	: Cache<unsigned int, Tile>::Cache(strategy, options, 
+		minimal_object_capacity, hard_max_cached_size, 
 		soft_max_cached_size), _db_connection(db_connection), 
 		_table_id(table_id)
 	{
@@ -52,11 +53,13 @@ namespace mapgeneration
 	
 	
 	Tile*
-	TileCache::persistent_load(unsigned int id)
+	TileCache::persistent_load(unsigned int id, int& size)
 	{
+		size = 1;
 		std::string* tile_string = _db_connection->load(_table_id, id);
 		if (!tile_string) return 0;
 		
+		size = tile_string->length();
 		Tile* tile = new Tile;
 		Serializer::deserialize(*tile_string, *tile);
 		delete tile_string;
@@ -66,21 +69,11 @@ namespace mapgeneration
 	
 
 	void
-	TileCache::persistent_save(unsigned int id, Tile* tile)
+	TileCache::persistent_save(unsigned int id, Tile* tile, int& size)
 	{
 		std::string tile_string = Serializer::serialize(*tile);
+		size = tile_string.length();
 		_db_connection->save(_table_id, id, tile_string);
-	}
-
-
-	int
-	TileCache::persistent_size_of(Tile* tile)
-	{
-		/** @todo Perhaps this should be implemented more exact. */
-		if (tile == 0)
-			return sizeof(Pointer);
-		else
-			return tile->size_of();
 	}
 
 

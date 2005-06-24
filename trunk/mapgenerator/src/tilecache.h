@@ -34,8 +34,9 @@ namespace mapgeneration
 			 */
 			TileCache::TileCache(DBConnection* db_connection, 
 				size_t table_id,
-				Strategy strategy = _FIFO, unsigned int options = 0, 
-				int hard_max_cached_size=0, int soft_max_cached_size=0);
+				Strategy strategy, unsigned int options, 
+				int minimal_object_capacity,
+				int hard_max_cached_size, int soft_max_cached_size);
 
 
 			/**
@@ -59,16 +60,12 @@ namespace mapgeneration
 			
 		
 			Tile*
-			persistent_load(unsigned int id);
+			persistent_load(unsigned int id, int& size);
 			
 			
 			void
-			persistent_save(unsigned int id, Tile* tile);
+			persistent_save(unsigned int id, Tile* tile, int& size);
 			
-			
-			int
-			persistent_size_of(Tile* tile);
-
 			
 		private:
 		

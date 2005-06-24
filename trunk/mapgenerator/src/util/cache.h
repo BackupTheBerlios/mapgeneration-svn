@@ -29,7 +29,7 @@ namespace mapgeneration_util
 	 * 
 	 * Cache contains just the bare cache logic. The backend is 
 	 * "specified" by the methods load, save,
-	 * erase and size_of are virtual, that have to be implemented by
+	 * erase are virtual, that have to be implemented by
 	 * subclasses.
 	 */
 	template <typename T_ID, typename T_Elem>
@@ -48,6 +48,8 @@ namespace mapgeneration_util
 				ost::AtomicCounter users;	/**< The current number of users of 
 												this object. */
 				bool dirty;					/**< The dirty flag. */
+				
+				int _size;
 			};
 
 		
@@ -169,9 +171,10 @@ namespace mapgeneration_util
 			/**
 			 * The constructor, the default strategy is random.
 			 */
-			Cache(Strategy strategy=_FIFO, 
-				unsigned int options = _STANDARD_CACHE, 
-				int hard_max_cached_size=0, int soft_max_cached_size=0);
+			Cache(Strategy strategy, 
+				unsigned int options, 
+				int minimal_object_capacity,
+				int hard_max_cached_size, int soft_max_cached_size);
 
 
 			/**
@@ -370,7 +373,7 @@ namespace mapgeneration_util
 			 * be loaded.
 			 */
 			virtual T_Elem*
-			persistent_load(T_ID id);
+			persistent_load(T_ID id, int& size);
 			
 
 			/**
@@ -378,18 +381,8 @@ namespace mapgeneration_util
 			 * and should save the element elem.
 			 */
 			virtual void
-			persistent_save(T_ID id, T_Elem* elem);
-
-
-			/**
-			 * \brief This virtual function has to be overloaded.
-			 * 
-			 * @return Size of the element in any unit. The functions has to be
-			 * able to handle 0 pointers!
-			 */
-			virtual int
-			persistent_size_of(T_Elem* elem);
-
+			persistent_save(T_ID id, T_Elem* elem, int& size);
+			
 
 			/**
 			 * \brief The overloaded function for thread deinitialisation.
@@ -428,7 +421,18 @@ namespace mapgeneration_util
 			 */
 			ost::Mutex _prefetch_queue_mutex;
 			
-				
+			
+			/**
+			 * @brief The average object size, calculated from loaded objects
+			 * sizes.
+			 */
+			double _average_object_size;
+			
+			
+			/**
+			 * @brief The counter to calculate the average object size;
+			 */
+			double _average_object_size_counter;
 						
 			/**
 			 * @brief The current size of all cached objects.
@@ -450,6 +454,12 @@ namespace mapgeneration_util
 			 * @brief The hard limit of the cached_size.
 			 */
 			int _hard_max_cached_size;			
+			
+			
+			/**
+			 * @brief The minimal number of objects that fit into the cache.
+			 */
+			int _minimal_object_capacity;
 			
 				
 			/**
@@ -518,7 +528,7 @@ namespace mapgeneration_util
 			 * \brief Creates a new entry.
 			 */
 			std::pair<T_ID, Entry>
-			new_entry_pair(T_ID id, T_Elem* elem, bool dirty);
+			new_entry_pair(T_ID id, T_Elem* elem, bool dirty, int size);
 			
 			
 			/**
@@ -526,6 +536,14 @@ namespace mapgeneration_util
 			 */
 			Entry*
 			search_in_cache(T_ID id);
+			
+			
+			/**
+			 * @brief Updates the average object size variable with a new
+			 * size information.
+			 */
+			void
+			update_average_object_size(int size);
 			
 			
 			/**
@@ -565,16 +583,6 @@ namespace mapgeneration_util
 			 */
 			inline void
 			wrapper_save(T_ID id, T_Elem* elem);
-
-
-			/**
-			 * @brief Wrapper for persistent_size_of.
-			 * 
-			 * @return Size of the element in any unit. The functions has to be
-			 * able to handle 0 pointers!
-			 */
-			inline int
-			wrapper_size_of(T_Elem* elem);
 			
 			
 			/**
@@ -699,10 +707,12 @@ namespace mapgeneration_util
 	 
  	template <typename T_ID, typename T_Elem>
 	Cache<T_ID, T_Elem>::Cache(Strategy strategy, unsigned int options,
+		int minimal_object_capacity, 
 		int hard_max_cached_size, int soft_max_cached_size)
-	: _cached_size(0), _cached_objects(0), _thread_should_work_event(),
-		_hard_max_cached_size(hard_max_cached_size), _mutex(), _objects(),
-		_object_ids(), _options(options), _prefetches(),
+	: _cached_size(0), _cached_objects(0), 
+		_thread_should_work_event(), _hard_max_cached_size(hard_max_cached_size), 
+		_mutex(), _minimal_object_capacity(minimal_object_capacity),
+		_objects(), _object_ids(), _options(options), _prefetches(),
 		_soft_max_cached_size(soft_max_cached_size),
 		_unused_ids()
 	{
@@ -731,13 +741,26 @@ namespace mapgeneration_util
 				"unlimited" << "\n";
 			mlog(MLog::info, "Cache::Cache") << "hard_max_cached_size: " <<
 				"unlimited" << "\n";
+			mlog(MLog::info, "Cache::Cache") << "minimal_object_capacity: " <<
+				"unlimited" << "\n";
 		} else
 		{
 			mlog(MLog::info, "Cache::Cache") << "soft_max_cached_size: " <<
 				_soft_max_cached_size << "\n";
 			mlog(MLog::info, "Cache::Cache") << "hard_max_cached_size: " <<
 				_hard_max_cached_size << "\n";
-		}
+			mlog(MLog::info, "Cache::Cache") << "minimal_object_capacity: " <<
+				_minimal_object_capacity << "\n";
+		}		
+
+		if (_minimal_object_capacity == 0)
+			_average_object_size = _soft_max_cached_size;
+		else
+			_average_object_size = 	_soft_max_cached_size / 
+				_minimal_object_capacity;
+		_average_object_size_counter = 0;		
+		mlog(MLog::info, "Cache::Cache") << "Start for average object size: " <<
+			_average_object_size << "\n";
 		
 	}
 
@@ -928,15 +951,21 @@ namespace mapgeneration_util
 		{
 			typename std::map<T_ID, typename Cache<T_ID, T_Elem>::Entry >::iterator
 				search_result_2 = _objects.find(id);
-			if (search_result_2 != _objects.end() && search_result_2->second.users == 0)		
+			if (search_result_2 != _objects.end() && search_result_2->second.users == 0)
+			{
+				int size = search_result_2->second._size;
 				_objects.erase(search_result_2);
+				_cached_size -= size;
+			}
 			else
 				mlog(MLog::error, "Cache::insert") << "Could not erase "
 					<< "element that should be empty!!!!\n";
 		}
 
 		std::pair<typename std::map<T_ID, typename Cache<T_ID, T_Elem>::Entry >::iterator, bool> result = 
-			_objects.insert(new_entry_pair(id, elem, true));
+			_objects.insert(new_entry_pair(id, elem, true, 
+				(int)_average_object_size));
+		_cached_size += (int)_average_object_size;
 		
 		_mutex.leaveMutex();
 		
@@ -1111,24 +1140,18 @@ namespace mapgeneration_util
 
 	template <typename T_ID, typename T_Elem>
 	T_Elem*
-	Cache<T_ID, T_Elem>::persistent_load(T_ID id)
+	Cache<T_ID, T_Elem>::persistent_load(T_ID id, int& size)
 	{
+		size = 1;
 		return 0;
 	}
 	
 	
 	template <typename T_ID, typename T_Elem>
 	void
-	Cache<T_ID, T_Elem>::persistent_save(T_ID id, T_Elem* elem)
+	Cache<T_ID, T_Elem>::persistent_save(T_ID id, T_Elem* elem, int& size)
 	{
-	}
-
-
-	template <typename T_ID, typename T_Elem>
-	int
-	Cache<T_ID, T_Elem>::persistent_size_of(T_Elem* elem)
-	{
-		return sizeof(T_Elem);
+		size = 1;
 	}
 	
 
@@ -1137,6 +1160,8 @@ namespace mapgeneration_util
 	Cache<T_ID, T_Elem>::thread_deinit()
 	{
 		mlog(MLog::info, "Cache") << "Shutting down...\n";
+		mlog(MLog::info, "Cache") << "Average object size was " << 
+			_average_object_size << "\n";
 		flush();
 		mlog(MLog::info, "Cache") << "Stopped.\n";
 	}
@@ -1161,6 +1186,7 @@ namespace mapgeneration_util
 			write_back();
 			
 			if (cached_size() > soft_max_cached_size() &&
+				_objects.size() > _minimal_object_capacity &&
 				!(_options & _NO_MEMORY_LIMIT))
 			{				
 				_mutex.enterMutex();
@@ -1193,7 +1219,8 @@ namespace mapgeneration_util
 				_prefetch_queue_mutex.leaveMutex();
 				
 				_mutex.enterMutex();
-				if (cached_size() > soft_max_cached_size())
+				if (cached_size() > soft_max_cached_size() &&
+					_objects.size() > _minimal_object_capacity)
 					free_cache_down_to(soft_max_cached_size());				
 				_mutex.leaveMutex();
 			}
@@ -1217,7 +1244,8 @@ namespace mapgeneration_util
 	 	typename std::map<T_ID, Entry>::iterator iter;
 	 	typename std::deque<T_ID>::iterator ids_iter = _object_ids.begin();
 	 	typename std::deque<T_ID>::iterator ids_iter_end = _object_ids.end();
-		while (cached_size() > max_size && _object_ids.size() && 
+		while (cached_size() > max_size && 
+			_object_ids.size() > _minimal_object_capacity && 
 			ids_iter != ids_iter_end)
 		{
 			T_ID delete_element_id = *ids_iter;			
@@ -1251,7 +1279,7 @@ namespace mapgeneration_util
 			
 		if (entry->second.users == 0)
 		{
-			int size_of_object = wrapper_size_of(elem);
+			int size_of_object = entry->second._size;
 			delete elem;
 			_objects.erase(entry);
 			_cached_size -= size_of_object;
@@ -1270,6 +1298,7 @@ namespace mapgeneration_util
 	{
 		_mutex.enterMutex();
 		if (cached_size() >= hard_max_cached_size() && 
+			(_objects.size() + 1) > _minimal_object_capacity &&
 			!(_options & _NO_MEMORY_LIMIT))
 			free_cache_down_to(hard_max_cached_size());
 	
@@ -1278,11 +1307,12 @@ namespace mapgeneration_util
 		{
 			_thread_should_work_event.signal();
 		}
-
+		
+		int size;
 		T_Elem* elem = wrapper_load(id);
 		
 		std::pair<typename std::map<T_ID, typename Cache<T_ID, T_Elem>::Entry>::iterator, bool>
-			result = _objects.insert(new_entry_pair(id, elem, false));
+			result = _objects.insert(new_entry_pair(id, elem, false, size));
 		
 		if (!result.second)
 		{
@@ -1292,7 +1322,7 @@ namespace mapgeneration_util
 			return 0;
 		} else
 		{
-			_cached_size += wrapper_size_of(elem);
+			_cached_size += size;
 			_object_ids.push_back(id);
 			_mutex.leaveMutex();
 			return &((result.first)->second);
@@ -1305,13 +1335,15 @@ namespace mapgeneration_util
 	
 	template <typename T_ID, typename T_Elem>
 	std::pair<T_ID, typename Cache<T_ID, T_Elem>::Entry>
-	Cache<T_ID, T_Elem>::new_entry_pair(T_ID id, T_Elem* elem, bool dirty)
+	Cache<T_ID, T_Elem>::new_entry_pair(T_ID id, T_Elem* elem, bool dirty, 
+		int size)
 	{
 		std::pair<T_ID, typename Cache<T_ID, T_Elem>::Entry> new_pair;
 		new_pair.first = id;
 		new_pair.second.object = elem;
 		new_pair.second.users = 0;
 		new_pair.second.dirty = dirty;
+		new_pair.second._size = size;
 
 		return new_pair;
 	}
@@ -1333,6 +1365,17 @@ namespace mapgeneration_util
 
 		_mutex.leaveMutex();
 		return 0;
+	}
+	
+	
+	template <typename T_ID, typename T_Elem>
+	void
+	Cache<T_ID, T_Elem>::update_average_object_size(int size)
+	{
+		_average_object_size = 
+			((_average_object_size * _average_object_size_counter) + (double)size) /
+			(_average_object_size_counter + 1.0);
+		_average_object_size_counter += 1.0;
 	}
 	
 	
@@ -1384,7 +1427,11 @@ namespace mapgeneration_util
 	{
 		if (!(_options & _NON_PERSISTENT))
 		{
-			return persistent_load(id);
+			int size;
+			T_Elem* elem = persistent_load(id, size);
+			if (elem)
+				update_average_object_size(size);
+			return elem;
 		} else
 			return 0;
 	}
@@ -1396,16 +1443,10 @@ namespace mapgeneration_util
 	{
 		if (!(_options & _NON_PERSISTENT) && !(_options & _NO_WRITEBACK))
 		{
-			persistent_save(id, elem);
+			int size;
+			persistent_save(id, elem, size);
+			update_average_object_size(size);
 		}
-	}
-
-
-	template <typename T_ID, typename T_Elem>
-	inline int
-	Cache<T_ID, T_Elem>::wrapper_size_of(T_Elem* elem)
-	{
-		return persistent_size_of(elem);
 	}
 	
 	

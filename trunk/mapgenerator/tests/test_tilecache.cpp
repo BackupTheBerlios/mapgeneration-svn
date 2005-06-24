@@ -56,7 +56,7 @@ int main()
 	
 	mlog(MLog::debug, "test_tilecache") << "Generating a cache with some content...\n";	
 	TileCache* tile_cache = new TileCache(db_connection, test_table_id, 
-		TileCache::_FIFO, TileCache::_STANDARD_CACHE, 1000000, 800000);
+		TileCache::_FIFO, TileCache::_STANDARD_CACHE, 100, 1000000, 800000);
 
 
 	/*
