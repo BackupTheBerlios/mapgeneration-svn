@@ -8,7 +8,7 @@
 
 # Process this file with autoconf to produce a configure script.
 #AC_PREREQ(2.59)
-AC_INIT([MapGenerator],[0.2.0],[],[mapgenerator])
+AC_INIT([MapGenerator],[0.3.0],[],[mapgenerator])
 AC_CONFIG_SRCDIR([README])
 AC_CONFIG_AUX_DIR([./auxs])
 AC_CONFIG_HEADER([config.h])

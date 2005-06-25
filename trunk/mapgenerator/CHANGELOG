@@ -9,8 +9,44 @@
 CHANGELOG:
 ==========
 
+version 0.3.0 (2005-06-25)
+--------------------------
+
+New features
+
+* (Server) New filter to detect gaps in the input traces.
+* (Server) Calculates and outputs total length and time of processed traces.
+* (Server) Added full support for more than one processing thread, 2 is
+  default now.
+
+
+Changes
+
+* (Server) Rewrote TraceServer and TraceConnection to support commoncpp2 1.0.x.
+* (Server) Server tries to bind to 127.0.0.1 if no interfaces are found.
+* (Server) Added curvature as a criterion for merging -> much better merging!
+* (Server) Improved avoidance of double processing of nodes.
+* (Server) Moved parsing of traces into TraceFilter.
+* (General) Added lots of new methods to handle distances, bearings and
+  interpolation.
+* (General) Configuration system supports boolean values.
+* (Buildsys) Changed parameters to specify config files to --with-wx-config
+  and --with-ccgnu2-config
+  
+
+Bugfixes
+
+* (Server) Protected data handling between thread with mutexs.
+* (GUI) Fixed some string literals for full unicode support.
+* (General) Cache: Fixed all size calculations and the size handling system.
+* (General) Raised requirements for wxWidgets to 2.6 (beta versions since 
+   2.5.3 should work).
+* (General) Some small fixes to build with commoncpp2 1.0.x.
+
+
+
 version 0.2.0 (2005-04-28)
----------------------
+--------------------------
 
 New features
 
@@ -48,7 +84,7 @@ Bugfixes
 
 
 version 0.1.0 (2005-04-19)
---------------------------------
+--------------------------
 
 New features
 

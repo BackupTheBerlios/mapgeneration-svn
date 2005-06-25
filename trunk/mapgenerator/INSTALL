@@ -5,17 +5,12 @@
 * Licensed under the Academic Free License version 2.1                         *
 *******************************************************************************/
 
-
-This program is not intended for the end users and therefore installation 
-_may be_ a bit tricky.
-
-
 Requirements
 ############
 
 General:
 	- commoncpp2
-	- wxWidgets 2.6 
+	- wxWidgets 2.6 (beta versions since 2.5.3 seem to work) 
 
 The optional ODBC backend requires unixODBC on Linux systems.
 
@@ -40,7 +35,7 @@ with
 
 # ./configure --help
 
-Especially --with-wx-config-path and --with-ccgnu2-config-path are interesting.
+Especially --with-wx-config and --with-ccgnu2-config are interesting.
 If you need odbc support under cygwin you will always need to supply the 
 complete name, including the path, to odbc32.dll with --with-odbc32-dll.
 
@@ -90,3 +85,4 @@ server with 'y' to delete the database.
 Further information about using the program and a set of example traces is 
 available online at the MapGeneration Project homepage at 
 mapgeneration.berlios.de.
+
