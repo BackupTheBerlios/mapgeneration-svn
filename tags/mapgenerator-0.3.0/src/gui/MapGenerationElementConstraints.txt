@@ -1,0 +1,68 @@
+MainFrame:
+==========
+
+MainFrame		10000		ID_MAINFRAME
+===============================================================================
+MenuBar			11000	11999	ID_MENUBAR
+-------------------------------------------------------------------------------
+Menu "File"		11100	11199	no id
+MenuItem "Open conn..."	11100		ID_MENUITEM_OPENCONNECTION
+MenuItem "Close con..."	11101		ID_MENUITEM_CLOSECONNECTION
+MenuItem "Preferences"	11102		ID_MENUITEM_PREFERENCES
+SubMenu "Last conne..."	11150	11199	ID_SUBMENU_LASTCONNECTIONS
+	This submenu contains at most 49 recently used connections.
+	The MenuItem are generated dynamically. One Example:
+MenuItem "kupfer.cs..."	11151		ID_MENUITEM_LASTCONNECTION1
+MenuItem "Exit"		11103		ID_MENUITEM_EXIT
+
+Menu "View"		11200	11299	no id
+MenuItem "Show menu..."	11200		ID_MENUITEM_SHOWMENUBAR
+SubMenu "Toolbar"	11250	11269	ID_SUBMENU_TOOLBAR
+MenuItem "Show file..."	11251		ID_MENUITEM_SHOWFILETOOLBAR
+MenuItem "Show ??? ..."	11252		ID_MENUITEM_SHOWXXXTOOLBAR
+MenuItem "Configure..."	11253		ID_MENUITEM_CONFIGURETOOLBAR
+	Now following the view. Generated dynamically. IDs and Examples:
+			11270	11299
+MenuItem "1. Map"	11270		ID_MENUITEM_VIEW1
+MenuItem "2. Tracelog"	11271		ID_MENUITEM_VIEW2
+MenuItem "3. View3"	11272		ID_MENUITEM_VIEW3
+
+Menu "Help"		11300	11399	no id
+MenuItem "Manual ..."	11300		ID_MENUITEM_MANUAL
+MenuItem "About ..."	11301		ID_MENUITEM_ABOUT
+===============================================================================
+Toolbar			12000	12999	ID_TOOLBAR
+Tool "Open connecti..."	12001		ID_TOOL_OPENCONNECTION
+Tool "Close connect..."	12002		ID_TOOL_CLOSECONNECTION
+Tool "Preferences"	12003		ID_TOOL_PREFERENCES
+===============================================================================
+SplitterWindow		13000	13999	ID_SPLITTERWINDOW
+-------------------------------------------------------------------------------
+Notebook		13001	13899	ID_NOTEBOOK
+	Now following the tabs. Generated dynamically. IDs and Examples:
+	(only use Panels!!!)
+Tab "TestPanel"		13002		ID_TESTPANEL
+Tab "MapPanel"		13003		ID_MAPPANEL
+-------------------------------------------------------------------------------
+	Here the LogPanel is inserted. So actually no IDs needed.
+	But I give a reserve.
+Panel			13900	13999	ID_???
+===============================================================================
+StatusBar		14000	14999
+
+
+
+Dialogs:
+========
+
+OpenConnection		15000	15999	ID_DIALOG_OPENCONNECTION
+ListBox "Saved Sess..."	15010		ID_LISTBOX_SAVEDSESSIONS
+Button "Load"		15011		ID_BUTTON_LOAD
+Button "Save"		15012		ID_BUTTON_SAVE
+TextCtrl "Host"		15020		ID_TEXTCTRL_HOST
+TextCtrl "Port"		15021		ID_TEXTCTRL_PORT
+Button "Connect"	15030		ID_BUTTON_CONNECT
+Button "Cancel"		15031		ID_BOTTON_CANCEL
+
+Preferences		16000	16999	ID_DIALOG_PREFERENCES
+

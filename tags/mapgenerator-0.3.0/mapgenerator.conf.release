@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- Test configuration.
+Supported types:
+	- bool
+	- double
+	- int
+	- string
+-->
+
+<mapgenerator_configuration>
+
+	<accepted_licence type="string">no</accepted_licence>
+
+	<db>
+		<type type="string">file</type>
+<!--		<type type="string">odbc</type> -->
+		<file>
+			<directory type="string">filedb</directory>
+		</file>
+		<odbc>
+			<dns type="string">MapGeneration</dns>
+			<user type="string">mapgeneration</user>
+			<password type="string">mg</password>
+		</odbc>
+	</db>
+
+	<traceserver>
+		<port type="int" default="9000">9000</port>
+	</traceserver>
+	
+	<filteredtrace>
+		<size_factor type="double" default="1.0">0.5</size_factor>
+	</filteredtrace>
+	
+	<tracefilter>
+		<longest_tunnel type="double">50000.0</longest_tunnel>
+		<max_acceleration type="double" default="15">15</max_acceleration>
+		<max_distance_gap type="double">15000.0</max_distance_gap>
+		<max_speed type="double" default="70">70</max_speed>
+		<max_time_gap type="double" default="3600.0">3600.0</max_time_gap>
+		<min_trace_length type="int" default="5">5</min_trace_length>
+	</tracefilter>
+	
+	<tracelogwriter>
+		<write_to_file type="bool" default="false">false</write_to_file>
+	</tracelogwriter>
+	
+	<traceprocessor>
+		<search_max_angle_difference_pi type="double">0.25</search_max_angle_difference_pi>
+		<search_radius_m type="double">24</search_radius_m>
+		<search_step_size_m type="double">10</search_step_size_m>
+		<threshold_tile_border type="double">30</threshold_tile_border>
+	</traceprocessor>
+
+</mapgenerator_configuration>
