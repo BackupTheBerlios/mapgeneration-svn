@@ -46,13 +46,29 @@ namespace mapgeneration
 			class PathEntry
 			{
 				public:
-					double _position;
+				
 					Node::Id _node_id;
-					int _time_stamp;
+					Node _node_copy;
+					double _position;
 					
+					bool _is_destination;
 					double _points;
-										
+					int _time_stamp;
 					PathEntry* _connection;
+					
+					
+					PathEntry&
+					operator=(const PathEntry& p)
+					{
+						_node_id = p._node_id;
+						_node_copy = p._node_copy;
+						_position = p._position;
+						_points = p._points;
+						_time_stamp = p._time_stamp;
+						_connection = p._connection;
+						
+						return *this;
+					}
 					
 					
 					bool
@@ -66,14 +82,30 @@ namespace mapgeneration
 					
 					
 					PathEntry()
-					: _position(0), _node_id(0), _connection(0), _time_stamp(0)
+					: _position(0), _node_id(0), _connection(0), _time_stamp(0),
+						_node_copy(), _is_destination(false)
+					{
+					}
+
+
+					PathEntry(const double position, const Node::Id node_id)
+					: _position(position), _node_id(node_id), _connection(0), _time_stamp(0),
+						_node_copy(), _is_destination(false)
 					{
 					}
 					
-					PathEntry(const double position, const Node::Id node_id)
-					: _position(position), _node_id(node_id), _connection(0), _time_stamp(0)
+					
+					PathEntry(const PathEntry& p)
+					: _node_id(p._node_id),
+						_node_copy(p._node_copy),
+						_position(p._position),
+						_points(p._points),
+						_time_stamp(p._time_stamp),
+						_connection(p._connection),
+						_is_destination(p._is_destination)
 					{
 					}
+					
 			};
 
 		
@@ -218,8 +250,7 @@ namespace mapgeneration
 			double
 			build_connections(std::list<PathEntry>& path,
 				std::list<PathEntry>::iterator path_iter, 
-				double previous_direction, bool disconnect, 
-				bool only_connected);
+				double previous_direction);
 
 
 			/**
@@ -254,16 +285,17 @@ namespace mapgeneration
 			connection_from_to(Node::Id node_id_1, Node::Id node_id_2);
 			
 			
-			/**
-			 * @brief Creates all needed tiles.
-			 * 
-			 * This method creates all tiles from the list of needed tiles in
-			 * the filtered trace. This way all tiles already exist when the
-			 * tracelog is started.
-			 */
 			void
-			create_needed_tiles();
-		
+			create_connection(
+				double& completed_position_m, Node::Id& previous_node_id, 
+				double start_position, Node::Id destination_id);			
+
+
+			void
+			create_disconnection(
+				double& completed_position_m, Node::Id& previous_node_id, 
+				Node::Id start_id, double destination_position);		
+
 
 			/**
 			 * @brief Creates a new Node.
@@ -305,20 +337,7 @@ namespace mapgeneration
 			 * @param min_position_m Minimal node position not to erase.
 			 */
 			void
-			cut_processed_nodes(double position_m);
-			
-			
-			/**
-			 * @brief Determines the distance between the nodes with the
-			 * given ids.
-			 * 
-			 * @param node_id_1 Id of the first node.
-			 * @parma node_id_2 Id of the second node.
-			 * 
-			 * @return The distance between the nodes.
-			 */
-			double
-			distance_from_to(Node::Id node_id_1, Node::Id node_id_2);
+			cut_processed_nodes(double position_m);			
 			
 			
 			/**
@@ -330,15 +349,6 @@ namespace mapgeneration
 			 */
 			void
 			insert_into_processed_nodes(Node::Id node_id, double position_m);
-
-			
-			/**
-			 * @brief Merges a Node and a GPSPoint.
-			 * 
-			 * @param first_point if set false, the time is merged too, else not
-			 */
-			void
-			merge_node_and_gps_point(/*bool first_point*/);
 			
 			
 			/**
@@ -369,8 +379,7 @@ namespace mapgeneration
 			 * simplified path.
 			 */
 			void
-			TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,
-				bool disconnect,
+			TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,				
 				std::list< std::list<PathEntry> >& finished_segments,
 				PathEntry* start_entry);
 				
@@ -403,7 +412,6 @@ namespace mapgeneration
 			 */
 			void
 			simplify_path(Node::Id previous_node_id, 
-				bool disconnect,
 				std::list<PathEntry>& path,
 				std::list< std::list<PathEntry> >& finished_segments);
 			

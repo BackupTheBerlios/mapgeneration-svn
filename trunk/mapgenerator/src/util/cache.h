@@ -1184,6 +1184,21 @@ namespace mapgeneration_util
 		while (!should_stop())
 		{
 			write_back();
+		/*	_mutex.enterMutex();
+		 	typename std::map<T_ID, Entry>::iterator iter;
+		 	typename std::deque<T_ID>::iterator ids_iter = _object_ids.begin();
+		 	typename std::deque<T_ID>::iterator ids_iter_end = _object_ids.end();
+			int write_backs = 0;
+			while (ids_iter != ids_iter_end && write_backs < 10)
+			{
+				T_ID delete_element_id = *ids_iter;
+				bool flush_result = true;
+				iter = _objects.find(delete_element_id);
+				if (write_back(iter)) ++write_backs;
+
+				++ids_iter;
+			}
+			_mutex.leaveMutex();*/
 			
 			if (cached_size() > soft_max_cached_size() &&
 				_objects.size() > _minimal_object_capacity &&

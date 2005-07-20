@@ -124,6 +124,10 @@ namespace mapgeneration
 			inline
 			GeoCoordinate(const double latitude, const double longitude,
 				const double altitude = 0);
+				
+	
+			inline
+			GeoCoordinate(const GeoCoordinate& geo_coordinate);
 			
 			
 			double
@@ -492,6 +496,15 @@ namespace mapgeneration
 		_values[_LATITUDE] = latitude;
 		_values[_LONGITUDE] = longitude;
 		_values[_ALTITUDE] = altitude;
+	}
+	
+	
+	inline
+	GeoCoordinate::GeoCoordinate(const GeoCoordinate& geo_coordinate)	
+	{
+		_latitude = geo_coordinate.get_latitude();
+		_longitude = geo_coordinate.get_longitude();
+		_altitude = geo_coordinate.get_altitude();
 	}
 	
 	
