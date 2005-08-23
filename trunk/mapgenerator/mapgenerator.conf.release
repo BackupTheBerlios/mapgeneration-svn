@@ -24,6 +24,12 @@ Supported types:
 		</odbc>
 	</db>
 
+	<tilecache>
+		<min_object_capacity type="int">20</min_object_capacity>
+		<hard_max_size type="int">12000000</hard_max_size>
+		<soft_max_size type="int">10000000</soft_max_size>
+	</tilecache>
+
 	<traceserver>
 		<port type="int" default="9000">9000</port>
 	</traceserver>

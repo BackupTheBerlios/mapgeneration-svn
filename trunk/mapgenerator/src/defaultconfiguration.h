@@ -36,6 +36,10 @@ namespace mapgeneration
 				v.push_back(Parameter("db.odbc.user", "string", "mapgeneration"));
 				v.push_back(Parameter("db.odbc.password", "string", "mg"));
 				
+				v.push_back(Parameter("tilecache.min_object_capacity", "int", "20"));
+				v.push_back(Parameter("tilecache.hard_max_size", "int", "12000000"));
+				v.push_back(Parameter("tilecache.soft_max_size", "int", "10000000"));
+				
 				v.push_back(Parameter("traceserver.port", "int", "9000"));
 				
 				v.push_back(Parameter("traceprocessor.search_step_size_m", "double", "10"));

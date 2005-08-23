@@ -96,12 +96,9 @@ namespace mapgeneration
 #ifdef HAVE_ODBC
 			ODBCDBConnection* odbc_db_connection = new ODBCDBConnection();
 			std::string dns, user, password;
-			if (!_service_list->get_service_value("db.odbc.dns",
-				dns) ||
-				!_service_list->get_service_value("db.odbc.user",
-				user) ||
-				!_service_list->get_service_value("db.odbc.password",
-				password))
+			if (!_service_list->get_service_value("db.odbc.dns", dns) ||
+				!_service_list->get_service_value("db.odbc.user", user) ||
+				!_service_list->get_service_value("db.odbc.password", password))
 				throw("Missing parameters for db connection!");
 			odbc_db_connection->set_parameters(dns, user, password, true);
 			_db_connection = odbc_db_connection;
@@ -118,8 +115,17 @@ namespace mapgeneration
 		mlog(MLog::info, "ExecutionManager") << "DBConnection initialized.\n";
 		
 		mlog(MLog::info, "ExecutionManager") << "Starting TileCache.\n";
+		int min_object_capacity, hard_max_size, soft_max_size;
+		if (!_service_list->get_service_value("tilecache.min_object_capacity",
+				min_object_capacity) ||
+			!_service_list->get_service_value("tilecache.hard_max_size",
+				hard_max_size) ||
+			!_service_list->get_service_value("tilecache.soft_max_size",
+				soft_max_size))
+			throw("Missing parameters for tilecache!");
 		_tile_cache = new TileCache(_db_connection, tiles_table_id,
-			TileCache::_FIFO, TileCache::_STANDARD_CACHE, 20, 12000000, 10000000);
+			TileCache::_FIFO, TileCache::_STANDARD_CACHE, min_object_capacity,
+			hard_max_size, soft_max_size);
 		_tile_cache->controlled_start();
 		mlog(MLog::info, "ExecutionManager") << "TileCache started.\n";
 
