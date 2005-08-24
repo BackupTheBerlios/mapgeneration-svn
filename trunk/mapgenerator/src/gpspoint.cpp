@@ -39,6 +39,11 @@ namespace mapgeneration
 	bool
 	GPSPoint::parse_nmea_string (const std::string& gpgga_string, const std::string& gprmc_string) 
 	{
+		/** @todo We need to reset the GPSPoint. Otherwise an invalid flag is
+		 * never set back to false. But this way is not very elegant! WE
+		 * HAVE TO RE-WRITE THE PARSER!!! */
+		_invalid = false;
+		
 		const char DELIMITER = ',';
 		const int GPGGA_DELIMITERS[8] = {9, -1, 2, 3, 4, 5, -1, 1};
 		const int GPRMC_DELIMITERS[8] = {-1, 2, 3, 4, 5, 6, 9, 1};
