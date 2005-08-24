@@ -63,10 +63,6 @@ namespace mapgeneration
 					
 					/*show_state("Inital state");*/
 					
-					/* apply anti-cumulation filter */
-					apply_anti_cumulation_filter(_working_queue.front());
-					/*show_state("Applied anti-cumulation filter");*/
-					
 					int available_traces;
 					int ready_traces;
 	
@@ -92,6 +88,17 @@ namespace mapgeneration
 						/*show_state("Applied location filter", ready_traces);*/
 					}
 	
+					/* apply anti-cumulation filter */
+					available_traces = _working_queue.size();
+					ready_traces = 0;
+					while(ready_traces < available_traces)
+					{
+						apply_anti_cumulation_filter(_working_queue.front());
+						_working_queue.pop();
+						++ready_traces;
+						/*show_state("Applied anti-cumulation filter");*/
+					}
+					
 					/* Test for gaps */
 					available_traces = _working_queue.size();
 					ready_traces = 0;
@@ -140,8 +147,8 @@ namespace mapgeneration
 						FilteredTrace& trace = _working_queue.front();
 						if (trace.size() < min_trace_length)
 						{
-						mlog(MLog::debug, "TraceFilter")
-							<< "Trace too small. Discard it!\n";
+//						mlog(MLog::debug, "TraceFilter")
+//							<< "Trace too small. Discard it!\n";
 						} else
 						{
 							_tile_manager->new_trace(trace);
@@ -188,7 +195,6 @@ namespace mapgeneration
 		if (filtered_trace.size() < 3)
 		{
 			_working_queue.push(filtered_trace);
-			_working_queue.pop();
 			return;
 		}
 		
@@ -315,6 +321,8 @@ namespace mapgeneration
 			point_1->set(new_latitude, new_longitude, new_altitude);
 			point_1->set_time(new_time);
 		}
+		
+		_working_queue.push(filtered_trace);
 	}
 
 
@@ -324,10 +332,9 @@ namespace mapgeneration
 		if (filtered_trace.size() < 2)
 		{
 			_working_queue.push(filtered_trace);
-			_working_queue.pop();
 			return;
 		}
-
+		
 		/* Now we know: the filtered_trace has a size of 2 at least! */
 		
 		/* We test, if two points have the same coordinate. If true and
@@ -348,9 +355,8 @@ namespace mapgeneration
 				&& (*first_test_point_iter == *second_test_point_iter))
 			{
 				/* invalid flag is set and locations equal */
-				/*mlog(MLog::debug, "TraceFilter") << "Locations are equal "
-				<< "around point " << counter << ". Invalid flag is set.\n";*/
-				/* this mlog above makes the program crash on tine's machine! */
+				mlog(MLog::debug, "TraceFilter") << "Locations are equal "
+					<< "around point " << counter << ". Invalid flag is set.\n";
 				
 				/* Save iterator */
 				FilteredTrace::iterator delete_iter = second_test_point_iter;
@@ -381,7 +387,6 @@ namespace mapgeneration
 		if (filtered_trace.size() < 2)
 		{
 			_working_queue.push(filtered_trace);
-			_working_queue.pop();
 			return;
 		}
 
@@ -452,7 +457,6 @@ namespace mapgeneration
 		if (filtered_trace.size() < 2)
 		{
 			_working_queue.push(filtered_trace);
-			_working_queue.pop();
 			return;
 		}
 		
@@ -576,7 +580,6 @@ namespace mapgeneration
 		if (filtered_trace.size() < 2)
 		{
 			_working_queue.push(filtered_trace);
-			_working_queue.pop();
 			return;
 		}
 		
