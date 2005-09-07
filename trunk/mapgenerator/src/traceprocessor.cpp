@@ -45,16 +45,37 @@ namespace mapgeneration
 	}
 	
 	
-	double
-	TraceProcessor::angle_difference(Node::Id node_id_1, Node::Id node_id_2)
+	void
+	TraceProcessor::build_finished_segment(std::list<PathEntry>& path,
+		std::list<PathEntry>& finished_segment,	PathEntry* start_entry)
 	{
-		TileCache::Pointer tile_1_pointer = _tile_cache->get(Node::tile_id(node_id_1));
-		TileCache::Pointer tile_2_pointer = _tile_cache->get(Node::tile_id(node_id_2));		
+		finished_segment.clear();
 		
-		return (tile_1_pointer->node(node_id_1).
-			minimal_direction_difference_to(tile_2_pointer->node(node_id_2))
-			);
+		PathEntry* position = start_entry;
+		PathEntry* previous_position = 0;
+		bool previous_is_unused = false;
+		while (position != 0)
+		{
+			if ((previous_position != 0) && (previous_position->_node_id == 0)
+				&& (position->_node_id == 0))
+			{
+				previous_is_unused = true;
+			} else 
+			{
+				if (previous_is_unused)
+				{
+					finished_segment.push_back(*previous_position);
+					previous_is_unused = false;
+				}
+				
+				finished_segment.push_back(*position);
+			}
+			
+			previous_position = position;			
+			position = position->_connection;
+		}
 	}
+	
 
 
 	void
@@ -308,60 +329,7 @@ namespace mapgeneration
 		
 		return best_position;
 	}
-	
-	
-	void
-	TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,
-		std::list< std::list<PathEntry> >& finished_segments,
-		PathEntry* start_entry)
-	{
-		/*
-		 * This method expects a simplified path starting at start_entry 
-		 * and splits up the contents of this path into segments and a new path.
-		 */
-		/*
-		 * At first we have to clear the finished_segments list and create a 
-		 * first segment. We may not clear the path here, as this contains
-		 * the PathEntries we will walk through!
-		 */
-		finished_segments.clear();
-		std::list<PathEntry> empty_segment;
-		finished_segments.push_back(empty_segment);
 		
-		/*
-		 * Then we walk through the optimal path, creating new segments, 
-		 * whenever two nodes are not connected.
-		 */
-		std::list< std::list<PathEntry> >::iterator segment_iter =
-			finished_segments.begin();				
-		PathEntry* position = start_entry;
-		PathEntry* previous_position = 0;
-		bool previous_is_unused = false;
-		while (position != 0)
-		{
-			if ((previous_position != 0) && (previous_position->_node_id == 0)
-				&& (position->_node_id == 0))
-			{
-				previous_is_unused = true;
-			} else 
-			{
-				if (previous_is_unused)
-				{
-					segment_iter->push_back(*previous_position);
-					previous_is_unused = false;
-				}
-				
-				segment_iter->push_back(*position);
-			}
-			
-			previous_position = position;			
-			position = position->_connection;
-		}
-		
-		if (segment_iter->empty())
-			finished_segments.erase(segment_iter);
-	}
-	
 	
 	double
 	TraceProcessor::build_connections(std::list<PathEntry>& path,
@@ -412,143 +380,147 @@ namespace mapgeneration
 		while ((path_iter != path_iter_end) && 
 			(path_iter->_position < current_entry->_position + 50.0))
 		{
-			double direction_to_next = current_entry->_node_copy.
-				bearing_default(path_iter->_node_copy);
-			
-			double points = build_connections(path, path_iter, 
-				direction_to_next);
+			if ((path_iter->_node_id != 0) || (current_entry->_node_id != 0) ||
+				(path_iter->_virtual_node_id == (current_entry->_virtual_node_id+1)))
+			{
+				double direction_to_next = current_entry->_node_copy.
+					bearing_default(path_iter->_node_copy);
 				
-			// Let's calculate some values:
-			double step_distance = current_entry->_node_copy.
-				distance_default(path_iter->_node_copy);
-			
-			GPSPoint point_on_trace = _filtered_trace.gps_point_at(current_entry->_position);
-			
-			double distance_to_trace = current_entry->_node_copy.
-				distance_default(point_on_trace);
-				
-			double connection_direction = current_entry->_node_copy.
-				bearing_default(path_iter->_node_copy);
-			
-			double connection_direction_difference =
-				current_entry->_node_copy.minimal_direction_difference_to(
-					Direction(connection_direction)
-				);
-			
-			double connection_direction_next_difference =
-				path_iter->_node_copy.minimal_direction_difference_to(
-					Direction(connection_direction)
-				);
-				
-			// Negative points for:				
-			// Jump from virtual node to existing node.
-			if ((current_entry->_node_id == 0) && (path_iter->_node_id != 0))
-			{
-				points -= step_distance * 5.0;
-				points -= 20.0;
-				points -= connection_direction_difference * 100.0;
-				points -= connection_direction_next_difference * 100.0;
-			}
-				
-			// Jump from existing node to virtual node.
-			if ((current_entry->_node_id != 0) && (path_iter->_node_id == 0))
-			{
-				points -= step_distance * 5.0;
-				points -= 20.0;
-				points -= connection_direction_difference * 100.0;
-				points -= connection_direction_next_difference * 100.0;
-			}
-			
-			// Jump from existing node to existing node, 
-			// without connection
-			if (!current_entry->_node_copy.is_reachable(path_iter->_node_id))
-			{
-				points -= step_distance * 5.0;
-				points -= 20.0;
-				points -= connection_direction_difference * 100.0;
-				points -= connection_direction_next_difference * 100.0;
-			} else //with connection
-			{
-				points -= step_distance * 0.5;
-			}
-				
-			// Jump from virtual node to virtual node.
-			if ((current_entry->_node_id == 0) && (path_iter->_node_id == 0))
-			{
-				points -= step_distance * 1.5;				
-			}
-							
-			// distance between point on trace and node in path
-		/*	GPSPoint point_on_trace = _filtered_trace.gps_point_at(path_iter->_position);
-			points -= point_on_trace.
-				distance_default(path_iter->_node_copy) * 2;*/
-			
-			// distance between point on trace and current node
-			//GPSPoint point_on_trace = _filtered_trace.gps_point_at(current_entry->_position);
-			//points -= point_on_trace.
-			//	distance_default(current_entry->_node_copy);
-			//points -= entry_trace_distance;
-			
-			// direction difference between point and node
-			/*points -= current_entry->_node_copy.
-				minimal_direction_difference_to(point_on_trace) * 20.0;*/
-			
-			// distance between current nodes position and connection
-			//	position
-			//points -= (path_iter->_position - current_entry->_position);
-			
-			// complicated
-			/*if (current_entry->_position < path_iter->_position-20.0)
-			{
-				point_on_trace = _filtered_trace.gps_point_at(current_entry->_position + 10.0);
-				double direction = current_entry->_node_copy.
-					bearing_default(point_on_trace);
-				double diff = current_entry->_node_copy.
-					minimal_direction_difference_to(Direction(direction));
-				points -= diff * 5.0;
-			}*/
-			
-/*			if (previous_direction < 1000.0)
-			{
-				double dir_diff = current_entry->_node_copy.
-					bearing_default(path_iter->_node_copy) - 
-					previous_direction;
-				double edge_length = current_entry->_node_copy.
+				double points = build_connections(path, path_iter, 
+					direction_to_next);
+					
+				// Let's calculate some values:
+				double step_distance = current_entry->_node_copy.
 					distance_default(path_iter->_node_copy);
 				
-				double curvature_on_road = 	dir_diff / edge_length;
-				double curvature_on_trace = _filtered_trace.curvature_at(current_entry->_position);
-				double diff = curvature_on_road - curvature_on_trace;
-				diff = (diff > 0 ? diff : -diff);
-				points -= diff * 100.0;
-			}*/
-			
-			// The two blocks below could be used for smooth connects and disconnects.
-			/*if (current_entry->_position < path_iter->_position-20.0)
-			{
-				Node next_entry_node = _tile_cache->get(
-					Node::tile_id(path_iter->_node_id))->node(path_iter->_node_id);
-				point_on_trace = _filtered_trace.gps_point_at(path_iter->_position - 10.0);
-				double direction = point_on_trace.bearing_default(next_entry_node);
-				double diff = next_entry_node.minimal_direction_difference_to(Direction(direction));
-				points -= diff * 100.0;
-			}
-			
-			if (disconnect && 
-				path_iter->_node_id == destination_iter->_node_id)
-			{
-				Node current_entry_node = _tile_cache->get(
-					Node::tile_id(current_entry->_node_id))->node(current_entry->_node_id);
-				point_on_trace = _filtered_trace.gps_point_at(current_entry->_position + 10.0);
-				double direction = current_entry_node.bearing_default(point_on_trace);
-					double diff = current_entry_node.minimal_direction_difference_to(Direction(direction));
-					points -= diff * 20.0;
+				GPSPoint point_on_trace = _filtered_trace.gps_point_at(current_entry->_position);
+				
+				double distance_to_trace = current_entry->_node_copy.
+					distance_default(point_on_trace);
+					
+				double connection_direction = current_entry->_node_copy.
+					bearing_default(path_iter->_node_copy);
+				
+				double connection_direction_difference =
+					current_entry->_node_copy.minimal_direction_difference_to(
+						Direction(connection_direction)
+					);
+				
+				double connection_direction_next_difference =
+					path_iter->_node_copy.minimal_direction_difference_to(
+						Direction(connection_direction)
+					);
+					
+				// Negative points for:				
+				// Jump from virtual node to existing node.
+				if ((current_entry->_node_id == 0) && (path_iter->_node_id != 0))
+				{
+					points -= step_distance * 5.0;
+					points -= 20.0;
+					points -= connection_direction_difference * 100.0;
+					points -= connection_direction_next_difference * 100.0;
+				}
+					
+				// Jump from existing node to virtual node.
+				if ((current_entry->_node_id != 0) && (path_iter->_node_id == 0))
+				{
+					points -= step_distance * 5.0;
+					points -= 20.0;
+					points -= connection_direction_difference * 100.0;
+					points -= connection_direction_next_difference * 100.0;
+				}
+				
+				// Jump from existing node to existing node, 
+				// without connection
+				if (!current_entry->_node_copy.is_reachable(path_iter->_node_id))
+				{
+					points -= step_distance * 5.0;
+					points -= 20.0;
+					points -= connection_direction_difference * 100.0;
+					points -= connection_direction_next_difference * 100.0;
+				} else //with connection
+				{
+					points -= step_distance * 0.5;
+				}
+					
+				// Jump from virtual node to virtual node.
+				if ((current_entry->_node_id == 0) && (path_iter->_node_id == 0))
+				{
+					points -= step_distance * 1.5;				
+				}
+								
+				// distance between point on trace and node in path
+			/*	GPSPoint point_on_trace = _filtered_trace.gps_point_at(path_iter->_position);
+				points -= point_on_trace.
+					distance_default(path_iter->_node_copy) * 2;*/
+				
+				// distance between point on trace and current node
+				//GPSPoint point_on_trace = _filtered_trace.gps_point_at(current_entry->_position);
+				//points -= point_on_trace.
+				//	distance_default(current_entry->_node_copy);
+				//points -= entry_trace_distance;
+				
+				// direction difference between point and node
+				/*points -= current_entry->_node_copy.
+					minimal_direction_difference_to(point_on_trace) * 20.0;*/
+				
+				// distance between current nodes position and connection
+				//	position
+				//points -= (path_iter->_position - current_entry->_position);
+				
+				// complicated
+				/*if (current_entry->_position < path_iter->_position-20.0)
+				{
+					point_on_trace = _filtered_trace.gps_point_at(current_entry->_position + 10.0);
+					double direction = current_entry->_node_copy.
+						bearing_default(point_on_trace);
+					double diff = current_entry->_node_copy.
+						minimal_direction_difference_to(Direction(direction));
+					points -= diff * 5.0;
 				}*/
-
-			if (points > current_entry->_points)
-			{
-				current_entry->_points = points;
-				current_entry->_connection = &(*path_iter);
+				
+	/*			if (previous_direction < 1000.0)
+				{
+					double dir_diff = current_entry->_node_copy.
+						bearing_default(path_iter->_node_copy) - 
+						previous_direction;
+					double edge_length = current_entry->_node_copy.
+						distance_default(path_iter->_node_copy);
+					
+					double curvature_on_road = 	dir_diff / edge_length;
+					double curvature_on_trace = _filtered_trace.curvature_at(current_entry->_position);
+					double diff = curvature_on_road - curvature_on_trace;
+					diff = (diff > 0 ? diff : -diff);
+					points -= diff * 100.0;
+				}*/
+				
+				// The two blocks below could be used for smooth connects and disconnects.
+				/*if (current_entry->_position < path_iter->_position-20.0)
+				{
+					Node next_entry_node = _tile_cache->get(
+						Node::tile_id(path_iter->_node_id))->node(path_iter->_node_id);
+					point_on_trace = _filtered_trace.gps_point_at(path_iter->_position - 10.0);
+					double direction = point_on_trace.bearing_default(next_entry_node);
+					double diff = next_entry_node.minimal_direction_difference_to(Direction(direction));
+					points -= diff * 100.0;
+				}
+				
+				if (disconnect && 
+					path_iter->_node_id == destination_iter->_node_id)
+				{
+					Node current_entry_node = _tile_cache->get(
+						Node::tile_id(current_entry->_node_id))->node(current_entry->_node_id);
+					point_on_trace = _filtered_trace.gps_point_at(current_entry->_position + 10.0);
+					double direction = current_entry_node.bearing_default(point_on_trace);
+						double diff = current_entry_node.minimal_direction_difference_to(Direction(direction));
+						points -= diff * 20.0;
+					}*/
+	
+				if (points > current_entry->_points)
+				{
+					current_entry->_points = points;
+					current_entry->_connection = &(*path_iter);
+				}
 			}
 			
 			++path_iter;
@@ -579,7 +551,7 @@ namespace mapgeneration
 	void
 	TraceProcessor::simplify_path(Node::Id start_node_id, 
 		std::list<PathEntry>& path, 
-		std::list< std::list<PathEntry> >& finished_segments)
+		std::list<PathEntry>& finished_segment)
 	{
 		/*
 		 * simplify path does a depth first search evaluating each possible
@@ -659,7 +631,7 @@ namespace mapgeneration
 			}
 		}
 			
-		build_path_and_segments(path, finished_segments, best_start_entry);				
+		build_finished_segment(path, finished_segment, best_start_entry);				
 	}
 
 
@@ -755,6 +727,9 @@ namespace mapgeneration
 		 */
 		bool walk_on = true;
 		
+		
+		int next_virtual_node_id = 0;
+		
 		/*
 		 * The main loop. The trace is processed as long as the end is not
 		 * reached.
@@ -762,8 +737,10 @@ namespace mapgeneration
 		while (scan_position_m < _filtered_trace.length_m())
 		{
 			PathEntry virtual_entry(scan_position_m, 0);
-			Node virtual_node(_filtered_trace.gps_point_at(scan_position_m));			
+			Node virtual_node(_filtered_trace.gps_point_at(scan_position_m));
 			virtual_entry._node_copy = virtual_node;
+			virtual_entry._virtual_node_id = next_virtual_node_id;
+			++next_virtual_node_id;
 			path.push_back(virtual_entry);
 			
 			/*
@@ -941,7 +918,7 @@ namespace mapgeneration
 					 * This list will contain the segments calculated by
 					 * simplify path.
 					 */
-					std::list< std::list<PathEntry> > finished_segments;
+					std::list<PathEntry> finished_segment;
 					
 					distinct_position_m = ready_path.back()._position;
 	
@@ -949,14 +926,15 @@ namespace mapgeneration
 					 * We call the simplify algorithm to calculate the optimal
 					 * nodes to use.
 					 */
-					simplify_path(previous_node_id, ready_path, finished_segments);
+					simplify_path(previous_node_id, ready_path, finished_segment);
 						
 					/*
 					 * This method merges the trace to the map as
 					 * described by the segments. previous_node_id and
 					 * completed_position_m are updates as needed.
 					 */					
-					use_segments(finished_segments, completed_position_m, previous_node_id);				
+					use_segment(finished_segment, completed_position_m, 
+						previous_node_id);
 				}
 			}
 
@@ -985,123 +963,74 @@ namespace mapgeneration
 	
 	
 	void
-	TraceProcessor::use_segments(std::list< std::list<PathEntry> >& finished_segments, 
+	TraceProcessor::use_segment(std::list<PathEntry>& finished_segment, 
 		double& completed_position_m, Node::Id& previous_node_id)
 	{
-		/*
-		 * This method gets a list of segments. Each segment contains a list of
-		 * PathEntries that reference nodes. The nodes referenced by the 
-		 * PathEntries in one segment are connected and should be used in the
-		 * order of their appearance. The segments should also be used
-		 * in order, but they (exactly: the last node of 
-		 * one segment and the first node of the next segment) are not
-		 * already connected and the distance between them might require new
-		 * nodes to be created.
-		 * After this method finished:
-		 * - all nodes inside the segments are merged with the trace.
-		 * - new nodes are created to fill the gaps before the segments.
-		 * - the completed_position_m is at the end of the last segment.
-		 */
-		/*
-		 * We start with two layers of iterators, the first for the segments,
-		 * the second for the path entries in the segments.
-		 */
-		std::list< std::list<PathEntry> >::iterator finished_segments_iter =
-			finished_segments.begin();
-		std::list< std::list<PathEntry> >::iterator finished_segments_iter_end =
-			finished_segments.end();		
-
-		for (; finished_segments_iter != finished_segments_iter_end;
-			++finished_segments_iter)
+		std::list<PathEntry>::iterator segment_iter =
+			finished_segment.begin();
+		std::list<PathEntry>::iterator previous_segment_iter = 0;
+		std::list<PathEntry>::iterator segment_iter_end =
+			finished_segment.end();
+		
+		for (; segment_iter != segment_iter_end; ++segment_iter)
 		{
-			std::list<PathEntry>::iterator segment_iter =
-				finished_segments_iter->begin();
-			std::list<PathEntry>::iterator previous_segment_iter = 0;
-			std::list<PathEntry>::iterator segment_iter_end =
-				finished_segments_iter->end();
-			
-			/*
-			 * The method create_nodes creates nodes from the 
-			 * completed_position_m up to the first node of the current segment
-			 * (segment_iter->_position), not actually creating the node at
-			 * this position (false). The previous_node_id is updated.
-			 * After this step the step from the previous_node_id to the
-			 * first node of the segment has a correct length.
-			 */
-/*			create_nodes(completed_position_m, segment_iter->_position, false,
-				previous_node_id);*/
-			
-			/*
-			 * Now we can process the segment, connecting nodes as needed (see
-			 * below) and merging the trace and nodes (in the near future).
-			 */
-			
-			for (; segment_iter != segment_iter_end; ++segment_iter)
+			if (previous_segment_iter != 0)
 			{
-				if (previous_segment_iter != 0)
+				if ((previous_segment_iter->_node_id == 0) &&
+					(segment_iter->_node_id != 0))
 				{
-					if ((previous_segment_iter->_node_id == 0) &&
-						(segment_iter->_node_id != 0))
-					{
-						completed_position_m = segment_iter->_position;
-						create_connection(completed_position_m,
-							previous_node_id, previous_segment_iter->_position, 
-							segment_iter->_node_id);
-					} else if ((previous_segment_iter->_node_id != 0) &&
-						(segment_iter->_node_id == 0))
-					{
-						completed_position_m = segment_iter->_position;
-						create_disconnection(completed_position_m,
-							previous_node_id, previous_segment_iter->_node_id,
-							segment_iter->_position);
-					} else if ((previous_segment_iter->_node_id == 0) &&
-						(segment_iter->_node_id == 0))
-					{
-						create_nodes(completed_position_m, 
-							segment_iter->_position, false, previous_node_id);
-					} else if ((previous_segment_iter->_node_id != 0) &&
-						(segment_iter->_node_id != 0))
-					{
-						if (!previous_segment_iter->_node_copy.is_reachable(
-							segment_iter->_node_id))
-						{
-							create_nodes(completed_position_m, 
-								segment_iter->_position, false, previous_node_id);
-						}
-					}
-				} else if ((previous_node_id != 0) && 
-					(! _tile_cache->get(Node::tile_id(previous_node_id))->
-					node(previous_node_id).is_reachable(segment_iter->_node_id)))
+					completed_position_m = segment_iter->_position;
+					create_connection(completed_position_m,
+						previous_node_id, previous_segment_iter->_position, 
+						segment_iter->_node_id);
+				} else if ((previous_segment_iter->_node_id != 0) &&
+					(segment_iter->_node_id == 0))
+				{
+					completed_position_m = segment_iter->_position;
+					create_disconnection(completed_position_m,
+						previous_node_id, previous_segment_iter->_node_id,
+						segment_iter->_position);
+				} else if ((previous_segment_iter->_node_id == 0) &&
+					(segment_iter->_node_id == 0))
 				{
 					create_nodes(completed_position_m, 
 						segment_iter->_position, false, previous_node_id);
-				}
-				
-				completed_position_m = segment_iter->_position;
-				Node::Id used_node_id = segment_iter->_node_id;
-				
-				if (used_node_id == 0)
+				} else if ((previous_segment_iter->_node_id != 0) &&
+					(segment_iter->_node_id != 0))
 				{
-					GPSPoint new_node_position = _filtered_trace.
-						gps_point_at(segment_iter->_position);
-					used_node_id = create_new_node(new_node_position);
-					insert_into_processed_nodes(used_node_id, completed_position_m);
+					if (!previous_segment_iter->_node_copy.is_reachable(
+						segment_iter->_node_id))
+					{
+						create_nodes(completed_position_m, 
+							segment_iter->_position, false, previous_node_id);
+					}
 				}
-				
-				/*
-				 * We could and should actually just connect the last node
-				 * before the segment and the first node of the segment, but the
-				 * double connection of the nodes inside the segment is captured
-				 * inside connect_nodes.
-				 */
-				if (previous_node_id != 0)
-					connect_nodes(previous_node_id, used_node_id);
-				previous_node_id = used_node_id;
-				
-				previous_segment_iter = segment_iter;
+			} else if ((previous_node_id != 0) && 
+				(! _tile_cache->get(Node::tile_id(previous_node_id))->
+				node(previous_node_id).is_reachable(segment_iter->_node_id)))
+			{
+				create_nodes(completed_position_m, 
+					segment_iter->_position, false, previous_node_id);
 			}
-		
+			
+			completed_position_m = segment_iter->_position;
+			Node::Id used_node_id = segment_iter->_node_id;
+			
+			if (used_node_id == 0)
+			{
+				GPSPoint new_node_position = _filtered_trace.
+					gps_point_at(segment_iter->_position);
+				used_node_id = create_new_node(new_node_position);
+				insert_into_processed_nodes(used_node_id, completed_position_m);
+			}
+			
+			if (previous_node_id != 0)
+				connect_nodes(previous_node_id, used_node_id);
+			previous_node_id = used_node_id;
+			
+			previous_segment_iter = segment_iter;
 		}
+
 	}
 
 

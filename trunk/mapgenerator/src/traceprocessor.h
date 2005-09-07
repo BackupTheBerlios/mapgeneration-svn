@@ -50,6 +50,7 @@ namespace mapgeneration
 					Node::Id _node_id;
 					Node _node_copy;
 					double _position;
+					int _virtual_node_id;
 					
 					bool _is_destination;
 					double _points;
@@ -63,6 +64,7 @@ namespace mapgeneration
 						_node_id = p._node_id;
 						_node_copy = p._node_copy;
 						_position = p._position;
+						_virtual_node_id = p._virtual_node_id;
 						_points = p._points;
 						_time_stamp = p._time_stamp;
 						_connection = p._connection;
@@ -83,14 +85,16 @@ namespace mapgeneration
 					
 					PathEntry()
 					: _position(0), _node_id(0), _connection(0), _time_stamp(0),
-						_node_copy(), _is_destination(false)
+						_node_copy(), _is_destination(false), 
+						_virtual_node_id(0)
 					{
 					}
 
 
 					PathEntry(const double position, const Node::Id node_id)
 					: _position(position), _node_id(node_id), _connection(0), _time_stamp(0),
-						_node_copy(), _is_destination(false)
+						_node_copy(), _is_destination(false), 
+						_virtual_node_id(0)
 					{
 					}
 					
@@ -99,10 +103,11 @@ namespace mapgeneration
 					: _node_id(p._node_id),
 						_node_copy(p._node_copy),
 						_position(p._position),
+						_virtual_node_id(p._virtual_node_id),
 						_points(p._points),
 						_time_stamp(p._time_stamp),
 						_connection(p._connection),
-						_is_destination(p._is_destination)
+						_is_destination(p._is_destination)					
 					{
 					}
 					
@@ -224,18 +229,6 @@ namespace mapgeneration
 			TraceLogWriter* _trace_log;
 			
 			
-			
-			/**
-			 * @brief Calculates the angle difference between the nodes with
-			 * the given ids.
-			 * 
-			 * @param node_id_1 Id of the first node.
-			 * @parma node_id_2 Id of the second node. Really.
-			 */
-			double
-			angle_difference(Node::Id node_id_1, Node::Id node_id_2);
-			
-			
 			/**
 			 * @brief Recursive function to calculate the best path.
 			 * 
@@ -251,6 +244,11 @@ namespace mapgeneration
 			build_connections(std::list<PathEntry>& path,
 				std::list<PathEntry>::iterator path_iter, 
 				double previous_direction);
+				
+				
+			void
+			build_finished_segment(std::list<PathEntry>& path,
+				std::list<PathEntry>& finished_segment,	PathEntry* start_entry);
 
 
 			/**
@@ -359,29 +357,6 @@ namespace mapgeneration
 			 */
 			double
 			optimal_node_position(PathEntry path_entry);
-			
-			
-			
-			/**
-			 * @brief Rebuilds path and segments after a run of simplify path.
-			 * 
-			 * This method is used to build a row of segments and the new
-			 * path after the path was simplified by simplify_path. Each
-			 * segment contains a row of already connected nodes that are
-			 * used in the current trace. Some gps points from the end of
-			 * the simplified path are copied into a new path to be used
-			 * in further computations.
-			 * 
-			 * @param path A reference to the main algorithms' path.
-			 * @param finished_segments A reference to the list that should
-			 * contain the calculated segments.
-			 * @param start_entry A pointer to the first entry of the 
-			 * simplified path.
-			 */
-			void
-			TraceProcessor::build_path_and_segments(std::list<PathEntry>& path,				
-				std::list< std::list<PathEntry> >& finished_segments,
-				PathEntry* start_entry);
 				
 	
 			/**
@@ -413,7 +388,7 @@ namespace mapgeneration
 			void
 			simplify_path(Node::Id previous_node_id, 
 				std::list<PathEntry>& path,
-				std::list< std::list<PathEntry> >& finished_segments);
+				std::list<PathEntry>& finished_segments);
 			
 			
 			/**
@@ -439,7 +414,7 @@ namespace mapgeneration
 			 * @param A reference to the previous_node_id of the main algorithm.
 			 */
 			void
-			use_segments(std::list< std::list<PathEntry> >& finished_segments,
+			use_segment(std::list<PathEntry>& finished_segment,
 				double& complete_position_m, Node::Id& previous_node_id);
 	};
 	
