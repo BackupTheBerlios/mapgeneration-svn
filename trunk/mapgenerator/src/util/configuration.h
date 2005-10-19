@@ -90,7 +90,7 @@ namespace mapgeneration_util
 
 
 			void
-			characters(const unsigned char *text, unsigned int len);
+			characters(const unsigned char *text, size_t len);
 			
 			
 			void

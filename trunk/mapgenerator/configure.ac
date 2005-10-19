@@ -226,12 +226,12 @@ if test "x$enable_gui" = "xyes"; then
 		[ AC_MSG_ERROR([XRC-Header (wx/xrc/xmlres.h) not found!]) ],
 		)
 
-	#WxWidgets XRC support: Library
-	WX_XRC_LIBRARY_NAME="`$WX_CONFIG --basename`_xrc-`$WX_CONFIG --release`"
-	AC_CHECK_LIB($WX_XRC_LIBRARY_NAME, main,
-		WX_LIBS="$WX_LIBS -l`$WX_CONFIG --basename`_xrc-`$WX_CONFIG --release`",
-		[ AC_MSG_ERROR([XRC-Library ($WX_XRC_LIBRARY_NAME) not found!])]
-		)
+#	#WxWidgets XRC support: Library
+#	WX_XRC_LIBRARY_NAME="`$WX_CONFIG --basename`_xrc-`$WX_CONFIG --release`"
+#	AC_CHECK_LIB($WX_XRC_LIBRARY_NAME, main,
+#		WX_LIBS="$WX_LIBS -l`$WX_CONFIG --basename`_xrc-`$WX_CONFIG --release`",
+#		[ AC_MSG_ERROR([XRC-Library ($WX_XRC_LIBRARY_NAME) not found!])]
+#		)
 fi
 
 

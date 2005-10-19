@@ -187,7 +187,7 @@ namespace mapgeneration_util
 
     
 	void
-	Configuration::characters(const unsigned char *text, unsigned int len)
+	Configuration::characters(const unsigned char *text, size_t len)
 	{
 		std::string value(reinterpret_cast<const char*>(text), len);
 		_parse_stack.back()._value = value;
