@@ -93,6 +93,8 @@ namespace rangereporting
 				friend class Quadtree_Def;
 				
 				public:
+				
+					Id(){};
 					
 					inline Id(const T_Id& id, Item* item);
 					

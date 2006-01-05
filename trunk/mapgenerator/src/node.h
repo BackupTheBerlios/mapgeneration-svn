@@ -194,6 +194,10 @@ namespace mapgeneration
 			set_mpi(int mpi);
 			
 			
+			inline void
+			set_weight(int weight);
+			
+			
 			static inline void
 			split_id(Id id, uint32_t& tile_id, LocalId& local_id);
 			
@@ -306,6 +310,13 @@ namespace mapgeneration
 	Node::set_mpi(int mpi)
 	{
 		_multi_purpose_integer = mpi;
+	}
+	
+	
+	inline void
+	Node::set_weight(int weight)
+	{
+		_weight = weight;
 	}
 	
 	

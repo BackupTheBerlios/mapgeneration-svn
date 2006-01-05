@@ -57,6 +57,8 @@ namespace mapgeneration
 					int _time_stamp;
 					PathEntry* _connection;
 					
+					D_RangeReporting::Id _range_id;
+					
 					
 					PathEntry&
 					operator=(const PathEntry& p)
@@ -68,6 +70,7 @@ namespace mapgeneration
 						_points = p._points;
 						_time_stamp = p._time_stamp;
 						_connection = p._connection;
+						_range_id = p._range_id;
 						
 						return *this;
 					}
@@ -85,8 +88,8 @@ namespace mapgeneration
 					
 					PathEntry()
 					: _position(0), _node_id(0), _connection(0), _time_stamp(0),
-						_node_copy(), _is_destination(false), 
-						_virtual_node_id(0)
+						_node_copy(), _is_destination(false),
+						_virtual_node_id(0), _range_id()
 					{
 					}
 
@@ -94,7 +97,7 @@ namespace mapgeneration
 					PathEntry(const double position, const Node::Id node_id)
 					: _position(position), _node_id(node_id), _connection(0), _time_stamp(0),
 						_node_copy(), _is_destination(false), 
-						_virtual_node_id(0)
+						_virtual_node_id(0), _range_id()
 					{
 					}
 					
@@ -107,7 +110,8 @@ namespace mapgeneration
 						_points(p._points),
 						_time_stamp(p._time_stamp),
 						_connection(p._connection),
-						_is_destination(p._is_destination)					
+						_is_destination(p._is_destination),					
+						_range_id(p._range_id)
 					{
 					}
 					

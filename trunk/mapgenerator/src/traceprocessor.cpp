@@ -782,6 +782,8 @@ namespace mapgeneration
 					double optimal_position = optimal_node_position(new_entry);
 					new_entry._position = optimal_position;
 					
+					new_entry._range_id = *new_node_iter;
+					
 					/*
 					 * @todo: Start search at the end of the path, should be
 					 * faster!
@@ -1016,12 +1018,50 @@ namespace mapgeneration
 			completed_position_m = segment_iter->_position;
 			Node::Id used_node_id = segment_iter->_node_id;
 			
+			bool merge = true;
 			if (used_node_id == 0)
 			{
+				merge = false;
 				GPSPoint new_node_position = _filtered_trace.
 					gps_point_at(segment_iter->_position);
 				used_node_id = create_new_node(new_node_position);
 				insert_into_processed_nodes(used_node_id, completed_position_m);
+			}
+			
+			if (merge)
+			{
+				mlog(MLog::notice, "TraceProcessor::use_segment")
+							<< "Merging.\n";
+							
+				GPSPoint merge_node_position = _filtered_trace.
+					gps_point_at(segment_iter->_position);
+				double weight_on_first = (
+					double(segment_iter->_node_copy.get_weight()) /
+					(double(segment_iter->_node_copy.get_weight()) + 1.0));
+				std::cout << "Weight: " << weight_on_first << "\n";
+				GPSPoint merged_position = GeoCoordinate::
+					interpolate_default(
+						segment_iter->_node_copy, 
+						merge_node_position,
+						weight_on_first
+					);
+				Node merged_node(merged_position);
+				
+				TileCache::Pointer tile = _tile_cache->get(Node::tile_id(segment_iter->_node_id));
+				if (tile != 0)
+				{
+					std::cout << "jo!\n";
+					tile.write().node(segment_iter->_node_id).set(
+						merged_position.get_latitude(),
+						merged_position.get_longitude(),
+						merged_position.get_altitude()
+					);
+					bool result = 
+						tile.write().move_node(segment_iter->_range_id, merged_node);
+					if (!result)
+						mlog(MLog::warning, "TraceProcessor::use_segment")
+							<< "Could not move node!\n";
+				}
 			}
 			
 			if (previous_node_id != 0)
