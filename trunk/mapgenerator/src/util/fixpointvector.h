@@ -32,6 +32,12 @@ namespace mapgeneration_util
 	{
 	
 		public:
+			
+			/**
+			 * @brief stl conform size_type defintion
+			 */
+			typedef typename std::vector< std::pair<bool, T_ElemType> >::size_type size_type;
+			
 	
 			/**
 			 * \brief A stl compatible iterator.
@@ -112,7 +118,7 @@ namespace mapgeneration_util
 			 * \brief Returns the current capacity of the FixpointVector.
 			 * @return The current capacity of the FixpointVector.
 			 */
-			inline size_t
+			inline size_type
 			capacity() const;
 			
 			
@@ -167,7 +173,7 @@ namespace mapgeneration_util
 			 * @param index The index pointing at the element to erase.
 			 */
 			iterator
-			erase(int index);
+			erase(size_type index);
 
 
 			/**
@@ -175,7 +181,7 @@ namespace mapgeneration_util
 			 * @return Position of the inserted element.
 			 * @param elem The element to insert.
 			 */
-			int
+			size_type
 			insert(const T_ElemType& elem);
 
 
@@ -186,7 +192,7 @@ namespace mapgeneration_util
 			 * @param pos The position of the element to return.
 			 */
 			inline std::pair<bool, T_ElemType>&
-			operator[] (int pos);
+			operator[] (size_type pos);
 
 
 			/**
@@ -196,7 +202,7 @@ namespace mapgeneration_util
 			 * (false, T_ElemType) otherwise
 			 */
 			inline const std::pair<bool, T_ElemType>&
-			operator[] (int pos) const;
+			operator[] (size_type pos) const;
 
 
 			/**
@@ -212,7 +218,7 @@ namespace mapgeneration_util
 			 * FixpointVector.
 			 * @return Current number of elements.
 			 */
-			inline size_t 
+			inline size_type
 			size() const;
 
 		
@@ -221,7 +227,7 @@ namespace mapgeneration_util
 			 * of holes in the vector.
 			 * @return Size including holes.
 			 */
-			inline size_t
+			inline size_type
 			size_including_holes() const;
 			
 			
@@ -245,7 +251,7 @@ namespace mapgeneration_util
 			 * is stored in the FixpointVector itself,it is a subclass of
 			 * vector.
 			 */
-			std::vector<int> _free_positions;
+			std::vector<size_type> _free_positions;
 	};
 
 
@@ -457,7 +463,8 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	inline size_t FixpointVector<T_ElemType>::capacity() const
+	inline typename FixpointVector<T_ElemType>::size_type
+	FixpointVector<T_ElemType>::capacity() const
 	{
 		/** @todo Check if this works correctly!!! */
 		return std::vector< std::pair<bool, T_ElemType> >::capacity() 
@@ -549,7 +556,7 @@ namespace mapgeneration_util
 	
 	template<typename T_ElemType>
 	typename FixpointVector<T_ElemType>::iterator
-	FixpointVector<T_ElemType>::erase(int index)
+	FixpointVector<T_ElemType>::erase(size_type index)
 	{
 		if (index > size_including_holes() - 1)
 		{
@@ -565,8 +572,8 @@ namespace mapgeneration_util
 	
 	
 	template <typename T_ElemType>
-	int
-	FixpointVector<T_ElemType>::insert (const T_ElemType& elem)
+	typename FixpointVector<T_ElemType>::size_type
+	FixpointVector<T_ElemType>::insert(const T_ElemType& elem)
 	{
 		if (!_free_positions.size())
 		{
@@ -576,7 +583,7 @@ namespace mapgeneration_util
 		}
 		else 
 		{
-			int free_position = _free_positions.back();
+			size_type free_position = _free_positions.back();
 			_free_positions.pop_back();
 			std::vector< std::pair<bool, T_ElemType> >::operator[](free_position) 
 				= std::pair<bool, T_ElemType>(true, elem);
@@ -588,7 +595,7 @@ namespace mapgeneration_util
 	
 	template <typename T_Elem>
 	inline std::pair<bool, T_Elem>&
-	FixpointVector<T_Elem>::operator[] (int pos)
+	FixpointVector<T_Elem>::operator[] (size_type pos)
 	{
 		return std::vector< std::pair<bool, T_Elem> >::operator[](pos);
 	}
@@ -596,7 +603,7 @@ namespace mapgeneration_util
 
 	template <typename T_Elem>
 	inline const std::pair<bool, T_Elem>&
-	FixpointVector<T_Elem>::operator[] (int pos) const
+	FixpointVector<T_Elem>::operator[] (size_type pos) const
 	{
 		return std::vector< std::pair<bool, T_Elem> >::operator[](pos);
 	}
@@ -626,7 +633,7 @@ namespace mapgeneration_util
 	
 
 	template <typename T_ElemType>
-	inline size_t
+	inline typename FixpointVector<T_ElemType>::size_type
 	FixpointVector<T_ElemType>::size() const
 	{
 		return std::vector<std::pair<bool, T_ElemType> >::size() 
@@ -635,7 +642,7 @@ namespace mapgeneration_util
 
 
 	template <typename T_ElemType>
-	inline size_t
+	inline typename FixpointVector<T_ElemType>::size_type
 	FixpointVector<T_ElemType>::size_including_holes() const
 	{
 		return std::vector<std::pair<bool, T_ElemType> >::size();
@@ -646,7 +653,7 @@ namespace mapgeneration_util
 	inline int
 	FixpointVector<T_ElemType>::size_of() const
 	{
-		return (this->size() * sizeof(T_ElemType)) + (_free_positions.size() * sizeof(int)) + sizeof(FixpointVector<T_ElemType>);
+		return (this->size() * sizeof(T_ElemType)) + (_free_positions.size() * sizeof(size_type)) + sizeof(FixpointVector<T_ElemType>);
 	}
 
 
