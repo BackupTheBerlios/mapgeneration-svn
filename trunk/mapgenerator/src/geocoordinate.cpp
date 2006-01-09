@@ -768,7 +768,7 @@ namespace mapgeneration
 				- (gradient * gc_2.get_longitude());
 			if (y_intersection_point != control_y_intersection_point)
 			{
-				mlog(MLog::debug, "GeoCoordinate") << "y intersections point NOT equal.\n";
+//				mlog(MLog::debug, "GeoCoordinate") << "y intersections point NOT equal.\n";
 				
 				const double EPSILON = 0.00000001;
 				double diff = y_intersection_point - control_y_intersection_point;

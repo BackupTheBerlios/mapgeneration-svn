@@ -1029,16 +1029,12 @@ namespace mapgeneration
 			}
 			
 			if (merge)
-			{
-				mlog(MLog::notice, "TraceProcessor::use_segment")
-							<< "Merging.\n";
-							
+			{				
 				GPSPoint merge_node_position = _filtered_trace.
 					gps_point_at(segment_iter->_position);
 				double weight_on_first = (
 					double(segment_iter->_node_copy.get_weight()) /
-					(double(segment_iter->_node_copy.get_weight()) + 1.0));
-				std::cout << "Weight: " << weight_on_first << "\n";
+					(double(segment_iter->_node_copy.get_weight()) + 1.0));				
 				GPSPoint merged_position = GeoCoordinate::
 					interpolate_default(
 						segment_iter->_node_copy, 
@@ -1050,7 +1046,6 @@ namespace mapgeneration
 				TileCache::Pointer tile = _tile_cache->get(Node::tile_id(segment_iter->_node_id));
 				if (tile != 0)
 				{
-					std::cout << "jo!\n";
 					tile.write().node(segment_iter->_node_id).set(
 						merged_position.get_latitude(),
 						merged_position.get_longitude(),
@@ -1075,4 +1070,3 @@ namespace mapgeneration
 
 
 } // namespace mapgeneration
-

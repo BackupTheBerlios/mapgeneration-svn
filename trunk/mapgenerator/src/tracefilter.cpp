@@ -355,8 +355,8 @@ namespace mapgeneration
 				&& (*first_test_point_iter == *second_test_point_iter))
 			{
 				/* invalid flag is set and locations equal */
-				mlog(MLog::debug, "TraceFilter") << "Locations are equal "
-					<< "around point " << counter << ". Invalid flag is set.\n";
+//				mlog(MLog::debug, "TraceFilter") << "Locations are equal "
+//					<< "around point " << counter << ". Invalid flag is set.\n";
 				
 				/* Save iterator */
 				FilteredTrace::iterator delete_iter = second_test_point_iter;
