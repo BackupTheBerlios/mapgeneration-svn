@@ -81,7 +81,7 @@ namespace mapgeneration
 
 	void
 	TraceProcessor::calculate_cluster_nodes(GPSPoint gps_point,
-		std::list<D_RangeReporting::Id>& result_list)
+		std::list<Node::Id>& result_list)
 	{
 		result_list.clear();
 		
@@ -98,7 +98,7 @@ namespace mapgeneration
 				tile = _tile_cache->get(*needed_tile_ids_iter);
 			}
 			
-			std::vector<D_RangeReporting::Id> new_cluster_nodes_fast;
+			std::vector<Node::Id> new_cluster_nodes_fast;
 			tile->fast_cluster_nodes_search(gps_point, _search_radius_m,
 				_search_max_angle_difference_pi * PI, new_cluster_nodes_fast);
 			
@@ -211,10 +211,10 @@ namespace mapgeneration
 			tile = _tile_cache->get(new_tile_id);
 		}
 		
-		std::pair<bool, Node::Id> new_node_id = tile.write().add_node(new_node);
+		Node::Id new_node_id = tile.write().add_node(new_node);
 //		_trace_log->new_node(new_node_id, new_node);
 		
-		return new_node_id.second;
+		return new_node_id;
 	}
 	
 	
@@ -748,7 +748,7 @@ namespace mapgeneration
 			 * At first all nodes in a certain radius around the current 
 			 * position are searched.
 			 */
-			std::list<D_RangeReporting::Id> cluster_nodes;
+			std::list<Node::Id> cluster_nodes;
 			calculate_cluster_nodes(
 				_filtered_trace.gps_point_at(scan_position_m),
 				cluster_nodes
@@ -762,11 +762,11 @@ namespace mapgeneration
 			cut_processed_nodes(scan_position_m - (_search_radius_m * 1.5));
 			
 			new_path_entries.clear();
-			std::list<D_RangeReporting::Id>::iterator new_node_iter
+			std::list<Node::Id>::iterator new_node_iter
 				= cluster_nodes.begin();
 			while (new_node_iter != cluster_nodes.end())
 			{
-				PathEntry new_entry(scan_position_m, **new_node_iter);
+				PathEntry new_entry(scan_position_m, *new_node_iter);
 				
 				bool insert = !(search_in_processed_nodes(new_entry._node_id));
 								

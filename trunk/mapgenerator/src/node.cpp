@@ -29,6 +29,13 @@ namespace mapgeneration
 	}
 	
 			
+	Node::Node(const GeoCoordinate& geo_coordinate)
+	: GeoCoordinate(geo_coordinate), _directions(), 
+		_next_node_ids(), _weight(1)
+	{
+	}
+	
+	
 	Node::Node(const GPSPoint& gps_point)
 	: GeoCoordinate(gps_point), _directions(), 
 		_next_node_ids(), _weight(1)

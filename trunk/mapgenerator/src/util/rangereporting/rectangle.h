@@ -171,26 +171,10 @@ namespace rangereporting
 	
 	
 	template<typename T_Point_2D>
-	inline T_Point_2D&
-	Rectangle<T_Point_2D>::upper_right_corner()
-	{
-		return _urc;
-	}
-	
-	
-	template<typename T_Point_2D>
 	inline const T_Point_2D&
 	Rectangle<T_Point_2D>::lower_left_corner() const
 	{
 		return _llc;
-	}
-	
-	
-	template<typename T_Point_2D>
-	inline const T_Point_2D&
-	Rectangle<T_Point_2D>::upper_right_corner() const
-	{
-		return _urc;
 	}
 	
 	
@@ -202,6 +186,22 @@ namespace rangereporting
 		_llc = llc;
 		_urc = urc;
 		verify_and_correct_corners();
+	}
+	
+	
+	template<typename T_Point_2D>
+	inline T_Point_2D&
+	Rectangle<T_Point_2D>::upper_right_corner()
+	{
+		return _urc;
+	}
+	
+	
+	template<typename T_Point_2D>
+	inline const T_Point_2D&
+	Rectangle<T_Point_2D>::upper_right_corner() const
+	{
+		return _urc;
 	}
 	
 	

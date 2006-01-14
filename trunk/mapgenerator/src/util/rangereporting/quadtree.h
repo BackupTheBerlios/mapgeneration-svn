@@ -9,28 +9,31 @@
 #ifndef QUADTREE_H
 #define QUADTREE_H
 
+
 #include <ostream>
 
-#define Quadtree_Def Quadtree<T_Id, T_Point, T_Id_Point_Mapper>
-#define Quadtree_Type typename Quadtree<T_Id, T_Point, T_Id_Point_Mapper>
+#define Quadtree_Def Quadtree<T_2dPoint>
+#define Quadtree_Type typename Quadtree<T_2dPoint>
+#define Quadtree_Template template<typename T_2dPoint>
 
 namespace rangereporting
 {
 	
-	//-------------------------------------------------------------------------//
-	//--- Declaration section -------------------------------------------------//
-	//-------------------------------------------------------------------------//
+	//------------------------------------------------------------------------//
+	//--- Declaration section ------------------------------------------------//
+	//------------------------------------------------------------------------//
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	class Quadtree;
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	std::ostream&
 	operator<<(std::ostream& out, const Quadtree_Def& quadtree);
 	
 }
 
+#include <cmath>
 #include <iomanip>
 #include <list>
 #include <queue>
@@ -40,15 +43,21 @@ namespace rangereporting
 #include "rectangle.h"
 #include "trapezoid.h"
 
-//#include "util/mlog.h"
-//using mapgeneration_util::MLog;
+#include "util/fixpointvector.h"
+using mapgeneration_util::FixpointVector;
+
+/** @todo Should be in the configuration file.
+ * But the transferation from the ServiceList over the TraceProcessor to the
+ * Tile and onwards to the Quadtree is a very long way. We should think about
+ * a better solution. */
+#define _MIN_DEPTH 3
 
 namespace rangereporting
 {
 	
-	//-------------------------------------------------------------------------//
-	//--- Definition section --------------------------------------------------//
-	//-------------------------------------------------------------------------//
+	//------------------------------------------------------------------------//
+	//--- Definition section -------------------------------------------------//
+	//------------------------------------------------------------------------//
 	
 	/**
 	 * @brief Template class Quadtree provides methods to perform fast range
@@ -71,50 +80,36 @@ namespace rangereporting
 	 * 
 	 * 
 	 */
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	class Quadtree
 	{
 		
-		friend std::ostream& operator<< <> (std::ostream& out,
-			const Quadtree_Def& quadtree);
-		
 		//---------------------------------------------------//
-		//--- Id --------------------------------------------//
+		//--- Item - Declaration ----------------------------//
 		//---------------------------------------------------//
 		protected:
 			
 			class Item;
+		
+		
+		//---------------------------------------------------//
+		//--- Typedefs and friends --------------------------//
+		//---------------------------------------------------//
+		protected:
+		
+			typedef typename std::pair<bool, Item*> D_BoolItemPair;
+			
 			
 		public:
+		
+			typedef typename FixpointVector<T_2dPoint>::size_type D_IndexType;
 			
-			class Id
-			{
-				
-				friend class Quadtree_Def;
-				
-				public:
-				
-					Id(){};
-					
-					inline Id(const T_Id& id, Item* item);
-					
-					
-					inline const T_Id&
-					operator*() const;
-					
-					
-				protected:
-					
-					T_Id _id;
-					
-					
-					Item* _item;
-					
-			};
+			friend std::ostream& operator<< <> (std::ostream& out,
+				const Quadtree_Def& quadtree);
 			
 			
 		//---------------------------------------------------//
-		//--- Item ------------------------------------------//
+		//--- Item - Definition -----------------------------//
 		//---------------------------------------------------//
 		protected:
 			
@@ -129,28 +124,41 @@ namespace rangereporting
 				
 				public:
 					
-					typedef std::list<T_Id> D_Points;
+					typedef typename std::list<D_IndexType> D_PointIndices;
 					
-					inline Item(const Quadtree_Def& quadtree,
-						const Rectangle<T_Point>& my_span_rectangle);
+					
+					Item(const Rectangle<T_2dPoint>& my_span_rectangle,
+						const FixpointVector<T_2dPoint>* quadtree_points);
 					
 					
 					~Item();
 					
 					
-					inline bool
-					contains(const T_Id& point_id) const;
+					bool
+					contains(D_IndexType point) const;
 					
 					
-					inline std::pair<bool, typename D_Points::iterator>
-					find(const T_Id& point_id);
+					std::pair<bool, typename D_PointIndices::iterator>
+					find(D_IndexType point_index)
+					{
+						typename D_PointIndices::iterator iter_end
+							=_my_point_indices.end();
+							
+						typename D_PointIndices::iterator find_iter = std::find(
+							_my_point_indices.begin(), iter_end, point_index);
+						
+						if (find_iter != iter_end)
+							return std::make_pair(true, find_iter);
+						else
+							return std::make_pair(false, iter_end);
+					}
 					
 					
-					inline int
-					find_child(const Item* const child_pointer) const;
+					int
+					find_child(const Item* child_pointer) const;
 					
 					
-					inline int
+					int
 					find_first_child() const;
 					
 					
@@ -159,13 +167,13 @@ namespace rangereporting
 					
 					
 					void
-					range_query(const Rectangle<T_Point>& query_rectangle,
-						const Rectangle<T_Point>& span_rectangle,
-						std::vector<Quadtree_Type::Id>& query_result) const;
+					range_query(const Rectangle<T_2dPoint>& query_rectangle,
+						const Rectangle<T_2dPoint>& span_rectangle,
+						std::vector<D_IndexType>& query_result) const;
 					
 					
 					void
-					report_points(std::vector<Quadtree_Type::Id>& query_result) const;
+					report_points(std::vector<D_IndexType>& query_result) const;
 					
 					
 				protected:
@@ -174,22 +182,22 @@ namespace rangereporting
 					// _children[1] = south east
 					// _children[2] = south west
 					// _children[3] = north west
-					std::vector<Item*> _children;
+					std::vector<Item*> _my_children;
 					
 					
-					Rectangle<T_Point> _my_span_rectangle;
+					int _my_no_of_children;
 					
 					
-					int _no_of_children;
+					Item* _my_parent;
 					
 					
-					Item* _parent;
+					D_PointIndices _my_point_indices;
 					
 					
-					D_Points _point_ids;
+					Rectangle<T_2dPoint> _my_span_rectangle;
 					
 					
-					const Quadtree_Def& _quadtree;
+					const FixpointVector<T_2dPoint>* _quadtree_points;
 					
 			};
 			
@@ -199,33 +207,32 @@ namespace rangereporting
 		//---------------------------------------------------//
 		public:
 			
-			inline
 			Quadtree();
 			
 			
-			inline
-			Quadtree(int max_depth,
-				const Rectangle<T_Point>& span_rectangle,
-				const T_Id_Point_Mapper* points);
+			Quadtree(const Rectangle<T_2dPoint>& span_rectangle);
 			
 
-			inline
 			~Quadtree();
 			
 
+			inline D_IndexType
+			add_point(const T_2dPoint& point);
+			
+			
+			inline void
+			deserialize(std::istream& i_stream);
+			
+			
 			inline bool
-			add_point(const T_Id& id);
+			exists_point(D_IndexType index) const;
 			
 			
 			inline int
 			get_max_depth() const;
 			
 			
-			inline const T_Id_Point_Mapper*
-			get_points() const;
-			
-			
-			inline const Rectangle<T_Point>&
+			inline const Rectangle<T_2dPoint>&
 			get_span_rectangle() const;
 			
 			
@@ -238,21 +245,37 @@ namespace rangereporting
 			
 			
 			bool
-			move_point(Quadtree_Type::Id& from_point, const T_Point& to_point);
+			move_point(D_IndexType from_id, const T_2dPoint& to_point);
+			
+			
+			inline T_2dPoint&
+			point(D_IndexType index);
+			
+			
+			inline const T_2dPoint&
+			point(D_IndexType index) const;
+			
+			
+			inline const FixpointVector<T_2dPoint>&
+			points() const;
 			
 			
 			inline void
-			range_query(const Rectangle<T_Point>& query_rectangle,
-				std::vector<Quadtree_Type::Id>& query_result) const;
+			range_query(const Rectangle<T_2dPoint>& query_rectangle,
+				std::vector<D_IndexType>& query_result) const;
 
 			
 			void
-			range_query(const Trapezoid<T_Point>& query_trapezoid,
-				std::vector<Quadtree_Type::Id> & query_result) const;
+			range_query(const Trapezoid<T_2dPoint>& query_trapezoid,
+				std::vector<D_IndexType>& query_result) const;
 
 			
-			inline bool
-			remove_point(Quadtree_Type::Id& point);
+			inline void
+			remove_point(D_IndexType index);
+			
+			
+			inline void
+			serialize (std::ostream& o_stream) const;
 			
 			
 			inline void
@@ -260,11 +283,11 @@ namespace rangereporting
 			
 			
 			inline void
-			set_points(const T_Id_Point_Mapper* points);
+			set_span_rectangle(const Rectangle<T_2dPoint>& span_rectangle);
 			
 			
-			inline void
-			set_span_rectangle(const Rectangle<T_Point>& span_rectangle);
+			inline size_t
+			size_of() const;
 			
 			
 		protected:
@@ -272,63 +295,76 @@ namespace rangereporting
 			bool _inited;
 			
 			
+			FixpointVector<Item*> _items;
+			
+			
 			int _max_depth;
 			
 			
-			const T_Id_Point_Mapper* _points;
+			FixpointVector<T_2dPoint> _points;
 			
 			
 			Item* _root;
 			
 			
-			Rectangle<T_Point> _span_rectangle;
+			Rectangle<T_2dPoint> _span_rectangle;
 			
 			
-			bool
-			add_point(const T_Id& id, Item* starting_item);
+			void
+			add_point(D_IndexType new_point_index, Item* starting_item);
 			
 			
 			inline static void
-			compute_median_point(const Rectangle<T_Point>& in_span_rectangle,
-				T_Point& out_median_point);
+			compute_median_point(const Rectangle<T_2dPoint>& in_span_rectangle,
+				T_2dPoint& out_median_point);
 			
 			
 			inline static void
 			compute_new_span_rectangle(int in_quarter,
-				const T_Point& in_median_point,
-				Rectangle<T_Point>& out_span_rectangle);
+				const T_2dPoint& in_median_point,
+				Rectangle<T_2dPoint>& out_span_rectangle);
 			
 			
 			inline static int
-			compute_quarter(const T_Point& in_point,
-				const Rectangle<T_Point>& in_span_rectangle,
-				T_Point& out_median_point);
+			compute_quarter(const T_2dPoint& in_point,
+				const Rectangle<T_2dPoint>& in_span_rectangle,
+				T_2dPoint& out_median_point);
 			
 			
-			bool
-			remove_point(Quadtree_Type::Id& point,
-				bool repair_now);
+			inline Item*&
+			item(D_IndexType index);
+			
+			
+			inline const Item*&
+			item(D_IndexType index) const;
 			
 			
 			void
-			repair_tree(Quadtree_Type::Item* starting_item,
+			remove_point(D_IndexType index, bool repair_now);
+			
+			
+			void
+			repair_tree(Item* starting_item,
 				bool starting_item_contains_one_point);
 			
 	};
 	
+} //namespace rangereporting
+
+
+namespace rangereporting
+{
 	
-	
-	//-------------------------------------------------------------------------//
-	//--- Implementation section ----------------------------------------------//
-	//-------------------------------------------------------------------------//
+	//------------------------------------------------------------------------//
+	//--- Implementation section ---------------------------------------------//
+	//------------------------------------------------------------------------//
 	
 	//---------------------------------------------------//
 	//--- Output operator -------------------------------//
 	//---------------------------------------------------//
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	std::ostream&
-	operator<<(std::ostream& out,
-		const Quadtree<T_Id, T_Point, T_Id_Point_Mapper>& quadtree)
+	operator<<(std::ostream& out, const Quadtree<T_2dPoint>& quadtree)
 	{
 		out << "Quadtree:" << std::endl;
 		out << "=========" << std::endl;
@@ -340,10 +376,9 @@ namespace rangereporting
 		out << "\troot: " << quadtree._root << std::endl;
 		out << std::endl;
 		
-		/* Exit on _root being 0 */
+		// Exit on _root being 0
 		if (quadtree._root == 0)
 			return out;
-		/* Exit on _root being 0 */
 		
 		std::queue<Quadtree_Type::Item*> queue;
 		queue.push(quadtree._root);
@@ -354,30 +389,30 @@ namespace rangereporting
 		char state_3;
 
 		Quadtree_Type::Item* item;
-		Quadtree_Type::Item::D_Points::const_iterator iter;
-		Quadtree_Type::Item::D_Points::const_iterator iter_end;
+		Quadtree_Type::Item::D_PointIndices::const_iterator iter;
+		Quadtree_Type::Item::D_PointIndices::const_iterator iter_end;
 
 		while ( !queue.empty() )
 		{
 			item = queue.front();
 			queue.pop();
 			
-			if (item->_children[0] == 0)
+			if (item->_my_children[0] == 0)
 				state_0 = ' ';
 			else
 				state_0 = 'c';
 				
-			if (item->_children[1] == 0)
+			if (item->_my_children[1] == 0)
 				state_1 = ' ';
 			else
 				state_1 = 'c';
 				
-			if (item->_children[2] == 0)
+			if (item->_my_children[2] == 0)
 				state_2 = ' ';
 			else
 				state_2 = 'c';
 				
-			if (item->_children[3] == 0)
+			if (item->_my_children[3] == 0)
 				state_3 = ' ';
 			else
 				state_3 = 'c';
@@ -389,24 +424,24 @@ namespace rangereporting
 			out << "| range:  " << item->_my_span_rectangle.lower_left_corner()
 				<< ", " << item->_my_span_rectangle.upper_right_corner()
 				<< std::endl;
-			out << "| parent: " << item->_parent << std::endl;
+			out << "| parent: " << item->_my_parent << std::endl;
 			
 			out << "|-------------------------------|" << std::endl;
-			out << "| NE = " << std::setw(10) << item->_children[0] << " |    =====" <<std::endl;
-			out << "| SE = " << std::setw(10) << item->_children[1] << " |    |" << state_3 << "|" << state_0 << "|" <<std::endl;
-			out << "|                "        <<                       " |    |---|" << std::endl;
-			out << "| SW = " << std::setw(10) << item->_children[2] << " |    |" << state_2 << "|" << state_1 << "|" << std::endl;
-			out << "| NW = " << std::setw(10) << item->_children[3] << " |    =====" << std::endl;
-			out << "|                "        <<                       " |     " << std::endl;
+			out << "| NE = " << std::setw(10) << item->_my_children[0] << " |    =====" <<std::endl;
+			out << "| SE = " << std::setw(10) << item->_my_children[1] << " |    |" << state_3 << "|" << state_0 << "|" <<std::endl;
+			out << "|                "        <<                          " |    |---|" << std::endl;
+			out << "| SW = " << std::setw(10) << item->_my_children[2] << " |    |" << state_2 << "|" << state_1 << "|" << std::endl;
+			out << "| NW = " << std::setw(10) << item->_my_children[3] << " |    =====" << std::endl;
+			out << "|                "        <<                          " |     " << std::endl;
 			out << "| Points: {";
 			
 			out.flags(original_flags);
 			
-			iter = item->_point_ids.begin();
-			iter_end = item->_point_ids.end();
+			iter = item->_my_point_indices.begin();
+			iter_end = item->_my_point_indices.end();
 			for (; iter != iter_end; ++iter)
 			{
-				out << (*quadtree._points)[*iter];
+				out << quadtree.point(*iter);
 			}
 							
 			out << "}" << std::endl;;
@@ -415,104 +450,70 @@ namespace rangereporting
 			
 			for (int i = 0; i < 4; ++i)
 			{
-				if (item->_children[i] != 0)
-					queue.push(item->_children[i]);
+				if (item->_my_children[i] != 0)
+					queue.push(item->_my_children[i]);
 			}
 		}
 		
 		return out;
 	}
-	
 
 
-	//---------------------------------------------------//
-	//--- Id --------------------------------------------//
-	//---------------------------------------------------//
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline
-	Quadtree_Def::Id::Id(const T_Id& id, Quadtree_Type::Item* item)
-	: _id(id), _item(item)
-	{
-	}
-	
-	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline const T_Id&
-	Quadtree_Def::Id::operator*() const
-	{
-		return _id;
-	}
-	
-	
-	
 	//---------------------------------------------------//
 	//--- Item ------------------------------------------//
 	//---------------------------------------------------//
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline
-	Quadtree_Def::Item::Item(const Quadtree_Def& quadtree,
-		const Rectangle<T_Point>& my_span_rectangle)
-	: _children(4), _my_span_rectangle(my_span_rectangle), _no_of_children(0),
-		_parent(0), _point_ids(), _quadtree(quadtree)
+	Quadtree_Template
+	Quadtree_Def::Item::Item(const Rectangle<T_2dPoint>& my_span_rectangle,
+		const FixpointVector<T_2dPoint>* quadtree_points)
+	: _my_children(4), _my_span_rectangle(my_span_rectangle),
+		_my_no_of_children(0), _my_parent(0), _my_point_indices(),
+		_quadtree_points(quadtree_points)
 	{
-		_children[0] = 0;
-		_children[1] = 0;
-		_children[2] = 0;
-		_children[3] = 0;
+		_my_children[0] = 0;
+		_my_children[1] = 0;
+		_my_children[2] = 0;
+		_my_children[3] = 0;
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	Quadtree_Def::Item::~Item()
 	{
 		for (int i = 0; i < 4 ;++i)
 		{
-			if (_children[i] != 0)
+			if (_my_children[i] != 0)
 			{
-				delete _children[i];
-				_children[i] = 0;
+				delete _my_children[i];
+				_my_children[i] = 0;
 			}
 		}
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline bool
-	Quadtree_Def::Item::contains(const T_Id& point_id) const
+	Quadtree_Template
+	bool
+	Quadtree_Def::Item::contains(Quadtree_Type::D_IndexType point_index) const
 	{
-		Quadtree_Type::Item::D_Points::const_iterator end_iter = _point_ids.end();
-		Quadtree_Type::Item::D_Points::const_iterator find_iter
-			=  std::find(_point_ids.begin(), end_iter, point_id);
+		typename D_PointIndices::const_iterator iter_end
+			=_my_point_indices.end();
+			
+		typename D_PointIndices::const_iterator find_iter
+			= std::find(_my_point_indices.begin(), iter_end, point_index);
 		
-		if (find_iter != end_iter)
+		if (find_iter != iter_end)
 			return true;
 		else
 			return false;
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline std::pair<bool, Quadtree_Type::Item::D_Points::iterator>
-	Quadtree_Def::Item::find(const T_Id& point_id)
-	{
-		Quadtree_Type::Item::D_Points::iterator end_iter = _point_ids.end();
-		Quadtree_Type::Item::D_Points::iterator find_iter
-			=  std::find(_point_ids.begin(), end_iter, point_id);
-		
-		if (find_iter != end_iter)
-			return std::make_pair(true, find_iter);
-		else
-			return std::make_pair(false, end_iter);
-	}
-	
-	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline int
-	Quadtree_Def::Item::find_child(const Item* const child_pointer) const
+	Quadtree_Template
+	int
+	Quadtree_Def::Item::find_child(const Item* child_pointer) const
 	{
 		for(int i = 0; i < 4; ++i)
 		{
-			if (_children[i] == child_pointer)
+			if (_my_children[i] == child_pointer)
 				return i;
 		}
 		
@@ -520,13 +521,13 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	inline int
 	Quadtree_Def::Item::find_first_child() const
 	{
 		for(int i = 0; i < 4; ++i)
 		{
-			if (_children[i] != 0)
+			if (_my_children[i] != 0)
 				return i;
 		}
 		
@@ -534,20 +535,39 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	inline bool
 	Quadtree_Def::Item::is_leaf() const
 	{
-		return _no_of_children == 0;
+		return _my_no_of_children == 0;
 	}
 	
-	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	/** @todo denk mal uebers span_rectangle nach!!! */
+	Quadtree_Template
 	void
 	Quadtree_Def::Item::range_query(
-		const Rectangle<T_Point>& query_rectangle,
-		const Rectangle<T_Point>& span_rectangle,
-		std::vector<Quadtree_Type::Id>& query_result) const
+		const Rectangle<T_2dPoint>& query_rectangle,
+		const Rectangle<T_2dPoint>& span_rectangle,
+		std::vector<Quadtree_Type::D_IndexType>& query_result) const
 	{
 		if (query_rectangle.contains(span_rectangle))
 		{
@@ -557,34 +577,31 @@ namespace rangereporting
 		{
 			if (is_leaf())
 			{
-				Quadtree_Type::Item::D_Points::const_iterator iter
-					= _point_ids.begin();
-				Quadtree_Type::Item::D_Points::const_iterator iter_end
-					= _point_ids.end();
-				for (; iter != iter_end; ++iter)
+				typename D_PointIndices::const_iterator iter
+					= _my_point_indices.begin();
+				for (; iter != _my_point_indices.end(); ++iter)
 				{
-					if ( query_rectangle.contains((*_quadtree._points)[*iter]) )
-					{
-						/** @todo Does this work. It does. But is it save?! */
-						Quadtree_Type::Id result_id(*iter, const_cast<Item*>(this));
-						query_result.push_back(result_id);
-					}
+					const T_2dPoint& test_point
+						= ((*_quadtree_points)[*iter]).second;
+					
+					if (query_rectangle.contains(test_point))
+						query_result.push_back(*iter);
 				}
 			} else
 			{
-				T_Point median_point;
+				T_2dPoint median_point;
 				compute_median_point(span_rectangle, median_point);
 				
 				for (int i = 0; i < 4 ;++i)
 				{
-					if (_children[i] != 0)
+					if (_my_children[i] != 0)
 					{
-						Rectangle<T_Point> new_span_rectangle
+						Rectangle<T_2dPoint> new_span_rectangle
 							= span_rectangle;
 						compute_new_span_rectangle(i, median_point,
 							new_span_rectangle);
 						
-						_children[i]->range_query(query_rectangle,
+						_my_children[i]->range_query(query_rectangle,
 							new_span_rectangle, query_result);
 					}
 				}
@@ -593,31 +610,27 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	void
 	Quadtree_Def::Item::report_points(
-		std::vector<Quadtree_Type::Id>& query_result) const
+		std::vector<Quadtree_Type::D_IndexType>& query_result) const
 	{
 		if (is_leaf())
 		{
-			Quadtree_Type::Item::D_Points::const_iterator iter
-				= _point_ids.begin();
-			Quadtree_Type::Item::D_Points::const_iterator iter_end
-				= _point_ids.end();
-			for (; iter != iter_end; ++iter)
+			typename D_PointIndices::const_iterator iter
+				= _my_point_indices.begin();
+			for (; iter != _my_point_indices.end(); ++iter)
 			{
-				/** @todo Does this work. It does. But is it save?! */
-				Quadtree_Type::Id result_id(*iter, const_cast<Item*>(this));
-				query_result.push_back(result_id);
+				query_result.push_back(*iter);
 			}
 			
 		} else
 		{
 			for (int i = 0; i < 4; ++i)
 			{
-				if (_children[i] != 0)
+				if (_my_children[i] != 0)
 				{
-					_children[i]->report_points(query_result);
+					_my_children[i]->report_points(query_result);
 				}
 			}
 		}
@@ -628,43 +641,109 @@ namespace rangereporting
 	//---------------------------------------------------//
 	//--- Main class: Quadtree --------------------------//
 	//---------------------------------------------------//
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline
+	Quadtree_Template
 	Quadtree_Def::Quadtree()
-	: _inited(false), _max_depth(0), _points(0), _root(0),
+	: _inited(false), _items(), _max_depth(_MIN_DEPTH), _points(), _root(0),
 		_span_rectangle()
 	{
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline
-	Quadtree_Def::Quadtree(int max_depth,
-		const Rectangle<T_Point>& span_rectangle,
-		const T_Id_Point_Mapper* points)
-	: _inited(true), _max_depth(max_depth), _points(points), _root(0),
+	Quadtree_Template
+	Quadtree_Def::Quadtree(const Rectangle<T_2dPoint>& span_rectangle)
+	: _inited(true), _items(), _max_depth(_MIN_DEPTH), _points(), _root(0),
 		_span_rectangle(span_rectangle)
 	{
 	}
 
 
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline
+	Quadtree_Template
 	Quadtree_Def::~Quadtree()
 	{
 		delete _root;
 	}
 	
-	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline bool
-	Quadtree_Def::add_point(const T_Id& id)
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	/** @todo item und point gleichzeitig einfügen!!!!!!!!!! */
+	Quadtree_Template
+	inline Quadtree_Type::D_IndexType
+	Quadtree_Def::add_point(const T_2dPoint& point)
 	{
-		return add_point(id, _root);
+		D_IndexType point_index = _points.insert(point);
+		D_IndexType item_index = _items.insert(0);
+		
+		if (point_index != item_index)
+			throw "Quadtree::add_point: indices NOT equal! Problem!!!";
+		
+		add_point(point_index, _root);
+		
+		return point_index;
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
+	void
+	Quadtree_Def::deserialize(std::istream& i_stream)
+	{
+		// deserialize _points
+		Serializer::deserialize(i_stream, _points);
+		
+		// calculate _max_depth
+		_max_depth = static_cast<int>(ceil(log10(_points.size()) / log10(4)));
+		if (_max_depth < _MIN_DEPTH)
+			_max_depth = _MIN_DEPTH;
+		
+		// calculate _span_rectangle
+		T_2dPoint lower_left_corner;
+		T_2dPoint upper_right_corner;
+		Serializer::deserialize(i_stream, lower_left_corner);
+		Serializer::deserialize(i_stream, upper_right_corner);
+		_span_rectangle.set_corners(lower_left_corner, upper_right_corner);
+		
+		init_ready();
+		
+		// okay, now build up the quadtree:
+		typename FixpointVector<T_2dPoint>::iterator iter
+			= _points.begin();
+		typename FixpointVector<T_2dPoint>::iterator iter_end
+			= _points.end();
+		D_IndexType index = 0;
+		while (iter != iter_end)
+		{
+			_items.insert(0);
+			
+			if ((*iter).first)
+				add_point(index, _root);
+			
+			++iter;
+			++index;
+		}
+		
+	}
+	
+	
+	Quadtree_Template
+	inline bool
+	Quadtree_Def::exists_point(Quadtree_Type::D_IndexType index) const
+	{
+		return _points[index].first;
+	}
+	
+	
+	Quadtree_Template
 	inline int
 	Quadtree_Def::get_max_depth() const
 	{
@@ -672,23 +751,15 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline const T_Id_Point_Mapper*
-	Quadtree_Def::get_points() const
-	{
-		return _points;
-	}
-	
-	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline const Rectangle<T_Point>&
+	Quadtree_Template
+	inline const Rectangle<T_2dPoint>&
 	Quadtree_Def::get_span_rectangle() const
 	{
 		return _span_rectangle;
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	inline void
 	Quadtree_Def::init_ready()
 	{
@@ -696,7 +767,7 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	inline bool
 	Quadtree_Def::is_inited() const
 	{
@@ -704,50 +775,95 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	bool
-	Quadtree_Def::move_point(Quadtree_Type::Id& from_point_id,
-		const T_Point& to_point)
+	Quadtree_Def::move_point(Quadtree_Type::D_IndexType from_point_index,
+		const T_2dPoint& to_point)
 	{
 		if ( !_span_rectangle.contains(to_point) )
-			return false;
-		
-		/* save item and point of from_point_iter */
-		Quadtree_Type::Item* from_point_item = from_point_id._item;
-		
-		std::pair<bool, Quadtree_Type::Item::D_Points::iterator> find_result =
-			from_point_item->find(*from_point_id);
-		if (find_result.first)
 		{
-			if (from_point_item->_my_span_rectangle.contains(to_point))
-			{
-				return true;
-			} else
-			{
-				from_point_item->_point_ids.erase(find_result.second);
-				
-				/* the Id has not changed, but its point's location!
-				 * to stress it, I gave the Id a new name */
-				T_Id to_point_id = *from_point_id;
-				bool return_value = add_point(to_point_id);
-				
-				if (from_point_item->_point_ids.empty())
-					repair_tree(from_point_item, false);
-				else if (from_point_item->_point_ids.size() == 1)
-					repair_tree(from_point_item, true);
-				
-				return return_value;
-			}
+			// this quadtree does not cover to_point. YOU are responsible to
+			// delete to_point from this quadtree and to insert it to the right
+			// one. So really test the return value!
+			return false;
 		}
 		
-		return false;
+		// save item of from_point_index
+		Item* from_point_item = item(from_point_index);
+		
+		// find from_point_index in item
+		std::pair<bool, typename Item::D_PointIndices::iterator> find_result
+			= from_point_item->find(from_point_index);
+		
+		if (find_result.first)
+		{
+			// from_point_item WAS responsible for from_point_index
+			// (and it had to be, otherwise something went wrong!!!)
+			
+			// update _points: now from_point is to_point
+			// BUT: Only update the coodinates. Otherwise we will destroy
+			// other (important) information from from_point!!!
+			T_2dPoint& from_point = point(from_point_index);
+			from_point[0] = to_point[0];
+			from_point[1] = to_point[1];
+			// done.
+			
+			// now check if from_point_item is NOT responsible for to_point
+			if ( !from_point_item->_my_span_rectangle.contains(to_point) )
+			{
+				// then remove from_point_index from from_point_item
+				from_point_item->_my_point_indices.erase(find_result.second);
+				
+				// insert to to_point_index = from_point_index into the quadtree
+				add_point(from_point_index, _root);
+				
+				// repair tree if necessary
+				if (from_point_item->_my_point_indices.empty())
+					repair_tree(from_point_item, false);
+				else if (from_point_item->_my_point_indices.size() == 1)
+					repair_tree(from_point_item, true);
+			}
+			
+			return true;
+		} else
+		{
+			std::string error_msg;
+			error_msg.append("Quadtree::move_point: from_point_index does ");
+			error_msg.append("not correspond to from_point_item. Something ");
+			error_msg.append("was wrong. Consult the programmer.");
+			throw(error_msg);
+		}
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
+	inline T_2dPoint&
+	Quadtree_Def::point(Quadtree_Type::D_IndexType index)
+	{
+		return _points[index].second;
+	}
+	
+	
+	Quadtree_Template
+	inline const T_2dPoint&
+	Quadtree_Def::point(Quadtree_Type::D_IndexType index) const
+	{
+		return _points[index].second;
+	}
+	
+	
+	Quadtree_Template
+	inline const FixpointVector<T_2dPoint>&
+	Quadtree_Def::points() const
+	{
+		return _points;
+	}
+	
+	
+	Quadtree_Template
 	inline void
-	Quadtree_Def::range_query(const Rectangle<T_Point>& query_rectangle,
-		std::vector<Quadtree_Type::Id>& query_result) const
+	Quadtree_Def::range_query(const Rectangle<T_2dPoint>& query_rectangle,
+		std::vector<Quadtree_Type::D_IndexType>& query_result) const
 	{
 		if (_root != 0)
 		{
@@ -756,14 +872,14 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	void
-	Quadtree_Def::range_query(const Trapezoid<T_Point>& trapezoid,
-		std::vector<Quadtree_Type::Id>& query_result) const
+	Quadtree_Def::range_query(const Trapezoid<T_2dPoint>& trapezoid,
+		std::vector<Quadtree_Type::D_IndexType>& query_result) const
 	{
 		range_query(trapezoid.bounding_rectangle(), query_result);
 		
-		typename std::vector<Quadtree_Type::Id>::iterator iter
+		typename std::vector<D_IndexType>::iterator iter
 			= query_result.begin();
 		while (iter != query_result.end())
 		{
@@ -771,11 +887,9 @@ namespace rangereporting
 			
 			for (int i = 0; i < 4; ++i)
 			{
-				const T_Point& iter_point = (*_points)[**iter];
-				
 				int relative_pos =
 					relative_position(trapezoid[i % 4], trapezoid[(i+1) % 4],
-						iter_point);
+						point(*iter));
 				if (relative_pos < 0)
 				{
 					iter = query_result.erase(iter);
@@ -790,15 +904,30 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline bool
-	Quadtree_Def::remove_point(Quadtree_Type::Id& point_id)
+	Quadtree_Template
+	inline void
+	Quadtree_Def::remove_point(Quadtree_Type::D_IndexType point_index)
 	{
-		return remove_point(point_id, true);
+		remove_point(point_index, true);
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
+	void
+	Quadtree_Def::serialize(std::ostream& o_stream) const
+	{
+		Serializer::serialize(o_stream, _points);
+		
+		const T_2dPoint& lower_left_corner
+			= _span_rectangle.lower_left_corner();
+		const T_2dPoint& upper_right_corner
+			=  _span_rectangle.upper_right_corner();
+		Serializer::serialize(o_stream, lower_left_corner);
+		Serializer::serialize(o_stream, upper_right_corner);
+	}
+	
+	
+	Quadtree_Template
 	inline void
 	Quadtree_Def::set_max_depth(int max_depth)
 	{
@@ -807,193 +936,242 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	inline void
-	Quadtree_Def::set_points(const T_Id_Point_Mapper* points)
-	{
-		if ( !is_inited() )
-			_points = points;
-	}
-	
-	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	inline void
-	Quadtree_Def::set_span_rectangle(const Rectangle<T_Point>& span_rectangle)
+	Quadtree_Def::set_span_rectangle(const Rectangle<T_2dPoint>& span_rectangle)
 	{
 		if ( !is_inited() )
 			_span_rectangle = span_rectangle;
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	bool
-	Quadtree_Def::add_point(const T_Id& point_id,
+	Quadtree_Template
+	inline size_t
+	Quadtree_Def::size_of() const
+	{
+		size_t the_size = sizeof(Quadtree<T_2dPoint>);
+		
+		the_size += _items.size_of();
+		the_size += _points.size_of();
+		
+		return the_size;
+	}
+	
+	
+		//---------------------------------------------------//
+		//--- Main class: protected methods -----------------//
+		//---------------------------------------------------//
+	
+	Quadtree_Template
+	void
+	Quadtree_Def::add_point(Quadtree_Type::D_IndexType new_point_index,
 		Quadtree_Type::Item* starting_item)
 	{
 		if (starting_item == 0)
 		{
-			/* We are definitely at _root. Otherwise the stupid programmer
-			 * has made a mistake!!! */
-			_root = new Quadtree_Type::Item(*this, _span_rectangle);
-			_root->_point_ids.push_back(point_id);
-			return true;
+			// We are definitely at _root. Otherwise the programmer
+			// has made a mistake!!!
+			_root = new Item(_span_rectangle, &_points);
+			_root->_my_point_indices.push_back(new_point_index);
+			item(new_point_index) = _root;
+			
+			return;
 		}
 		
-		Quadtree_Type::Item* current_item = starting_item;
-		Rectangle<T_Point> current_span_rectangle
+		Item* current_item = starting_item;
+		Rectangle<T_2dPoint> current_span_rectangle
 			= starting_item->_my_span_rectangle;
 		
-		/* calculate current depth... */
+		// calculate current depth...
 		int current_depth = 0;
 		Quadtree_Type::Item* test_item = starting_item;
-		while (test_item->_parent != 0)
+		while (test_item->_my_parent != 0)
 		{
 			++current_depth;
-			test_item = test_item->_parent;
+			test_item = test_item->_my_parent;
 		}
-		/* done */
+		// done
 		
-		/* insert point to quad tree */
+		// insert point to quad tree
 		while (current_depth < _max_depth)
 		{
 			if (current_item->is_leaf())
 			{
-				Quadtree_Type::Item::D_Points::iterator
-					old_point_id_iter = current_item->_point_ids.begin();
-				T_Id old_point_id = *old_point_id_iter;
+				typename Item::D_PointIndices::iterator existent_point_index_iter
+					= current_item->_my_point_indices.begin();
+				D_IndexType existent_point_index = *existent_point_index_iter;
 				
-				if (old_point_id == point_id)
+				if (new_point_index == existent_point_index)
 				{
-					return false;
+					// this case would never ever happen.
+					// as a precaution an exception is thrown
+					std::string error_msg;
+					error_msg.append("Quadtree::add_point: it occured an error ");
+					error_msg.append("that should never ever occur. ");
+					error_msg.append("Ask your programmer or examine the ");
+					error_msg.append("code. Thank you :-)");
+					throw error_msg;
 					
-				} else // explicit: if (*old_point != *point)
+					return;
+					
+				} else // explicit: if (new_point_index != existent_point_index)
 				{
-					current_item->_point_ids.erase(old_point_id_iter);
+					current_item->_my_point_indices.erase(existent_point_index_iter);
 
 					while (current_depth < _max_depth)
 					{
-						T_Point median_point;
-						int point_quarter = compute_quarter(
-							(*_points)[point_id],
-							current_span_rectangle, median_point);
-						int old_point_quarter = compute_quarter(
-							(*_points)[old_point_id], current_span_rectangle,
+						T_2dPoint median_point;
+						int new_point_quarter = compute_quarter(
+							point(new_point_index), current_span_rectangle,
+							median_point);
+						int existent_point_quarter = compute_quarter(
+							point(existent_point_index), current_span_rectangle,
 							median_point);
 						
-						if (point_quarter == old_point_quarter)
+						if (new_point_quarter == existent_point_quarter)
 						{
-							compute_new_span_rectangle(point_quarter,
+							compute_new_span_rectangle(new_point_quarter,
 								median_point, current_span_rectangle);
-							current_item->_children[point_quarter]
-								= new Quadtree_Type::Item(*this, current_span_rectangle);
-							current_item->_children[point_quarter]->_parent
+							current_item->_my_children[new_point_quarter]
+								= new Item(current_span_rectangle, &_points);
+							current_item->_my_children[new_point_quarter]->_my_parent
 								= current_item;
-							++(current_item->_no_of_children);
 							
-							current_item = current_item->_children[point_quarter];
+							++(current_item->_my_no_of_children);
+							current_item = current_item->_my_children[new_point_quarter];
 							++current_depth;
 							
-						} else // explicit: if (point_quarter != old_point_quarter)
+						} else // explicit: if (new_point_quarter != existent_point_quarter)
 						{
-							Rectangle<T_Point> saved_current_span_rectangle
+							// quarters are different: save point indices:
+							
+							// the existent point
+							Rectangle<T_2dPoint> saved_current_span_rectangle
 								= current_span_rectangle;
-							
-							compute_new_span_rectangle(point_quarter,
-								median_point, current_span_rectangle);
-							current_item->_children[point_quarter]
-								= new Quadtree_Type::Item(*this, current_span_rectangle);
-							current_item->_children[point_quarter]->_parent
-								= current_item;
-							++(current_item->_no_of_children);
-			
-							current_item->_children[point_quarter]
-								->_point_ids.push_back(point_id);
-							
-							compute_new_span_rectangle(old_point_quarter,
+							compute_new_span_rectangle(existent_point_quarter,
 								median_point, saved_current_span_rectangle);
-							current_item->_children[old_point_quarter]
-								= new Quadtree_Type::Item(*this, saved_current_span_rectangle);
-							current_item->_children[old_point_quarter]->_parent
+							current_item->_my_children[existent_point_quarter]
+								= new Item(saved_current_span_rectangle, &_points);
+							current_item->_my_children[existent_point_quarter]->_my_parent
 								= current_item;
-							++(current_item->_no_of_children);
+							++(current_item->_my_no_of_children);
+							current_item->_my_children[existent_point_quarter]
+								->_my_point_indices.push_back(existent_point_index);
 							
-							current_item->_children[old_point_quarter]
-								->_point_ids.push_back(old_point_id);
+							// finally update the item pointer in _points!
+							item(existent_point_index)
+								= current_item->_my_children[existent_point_quarter];
 							
-							return true;
 							
-						} // end: if (point_quarter == old_point_quarter)
-					} // end: while (current_depth >= _max_depth)
+							// the new point
+							compute_new_span_rectangle(new_point_quarter,
+								median_point, current_span_rectangle);
+							current_item->_my_children[new_point_quarter]
+								= new Item(current_span_rectangle, &_points);
+							current_item->_my_children[new_point_quarter]->_my_parent
+								= current_item;
+							++(current_item->_my_no_of_children);
+							current_item->_my_children[new_point_quarter]
+								->_my_point_indices.push_back(new_point_index);
+							
+							// finally insert the item pointer in _points!
+							item(new_point_index)
+								= current_item->_my_children[new_point_quarter];
+							
+							// and exit this method
+							return;
+							
+						} // end: if (new_point_quarter == existent_point_quarter)
+					} // end: while (current_depth < _max_depth)
 			
-					current_item->_point_ids.push_back(point_id);
-					current_item->_point_ids.push_back(old_point_id);
-			
-					return true;
+					current_item->_my_point_indices.push_back(new_point_index);
+					item(new_point_index) = current_item;
 					
-				} // end: if (*old_point == *point)
+					current_item->_my_point_indices.push_back(existent_point_index);
+					item(existent_point_index) = current_item;
+			
+					return;
+					
+				} // end: if (new_point_id == existent_point_id)
 				
 			} else // explicit: if ( !current_item->is_leaf() )
 			{
-				T_Point median_point;
-				int point_quarter = compute_quarter( (*_points)[point_id],
-					current_span_rectangle, median_point );
+				T_2dPoint median_point;
+				int new_point_quarter = compute_quarter(point(new_point_index),
+					current_span_rectangle, median_point);
 				
-				compute_new_span_rectangle(point_quarter, median_point,
+				compute_new_span_rectangle(new_point_quarter, median_point,
 					current_span_rectangle);
 				
-				if (current_item->_children[point_quarter] == 0)
+				if (current_item->_my_children[new_point_quarter] == 0)
 				{
 					// this child is 0: insert point and be happy!
-					current_item->_children[point_quarter]
-						= new Quadtree_Type::Item(*this, current_span_rectangle);
-					current_item->_children[point_quarter]->_parent
+					current_item->_my_children[new_point_quarter]
+						= new Item(current_span_rectangle, &_points);
+					current_item->_my_children[new_point_quarter]->_my_parent
 						= current_item;
-					++(current_item->_no_of_children);
+					++(current_item->_my_no_of_children);
 					
-					current_item->_children[point_quarter]
-						->_point_ids.push_back(point_id);
-					return true;
+					current_item->_my_children[new_point_quarter]
+						->_my_point_indices.push_back(new_point_index);
 					
-				} else // explicit: if (current_item->_children[point_quarter] != 0)
+					item(new_point_index)
+						= current_item->_my_children[new_point_quarter];
+					
+					return;
+					
+				} else // explicit: if (current_item->_children[new_point_quarter] != 0)
 				{
 					// child already exists: descend the tree...
-					current_item = current_item->_children[point_quarter];
+					current_item = current_item->_my_children[new_point_quarter];
 					++current_depth;
-				} // end: if (current_item->_children[point_quarter] == 0)
+				} // end: if (current_item->_children[new_point_quarter] == 0)
 			}// end: if (current_item->is_leaf())
 		} // end: while (current_depth < _max_depth)
 		
-		if (current_item->contains(point_id))
-			return false;
+		if (current_item->contains(new_point_index))
+		{
+			// this case would never ever happen.
+			// as a precaution an exception is thrown
+			std::string error_msg;
+			error_msg.append("Quadtree::add_point: it occured an error ");
+			error_msg.append("that should never ever occur. ");
+			error_msg.append("Ask your programmer or examine the ");
+			error_msg.append("code. Thank you :-)");
+			throw error_msg;
+			
+			return;
+		}
 		
-		current_item->_point_ids.push_back(point_id);
-		return true;
+		current_item->_my_point_indices.push_back(new_point_index);
+		item(new_point_index) = current_item;
 		
-		/** @todo fast data structure for D_Points? */
+		return;
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	inline void
 	Quadtree_Def::compute_median_point(
-		const Rectangle<T_Point>& in_span_rectangle, T_Point& out_median_point)
+		const Rectangle<T_2dPoint>& in_span_rectangle,
+		T_2dPoint& out_median_point)
 	{
-		const T_Point& llc = in_span_rectangle.lower_left_corner();
-		const T_Point& urc = in_span_rectangle.upper_right_corner();
+		const T_2dPoint& llc = in_span_rectangle.lower_left_corner();
+		const T_2dPoint& urc = in_span_rectangle.upper_right_corner();
 		
 		out_median_point[0] = (urc[0] + llc[0]) / 2.0;
 		out_median_point[1] = (urc[1] + llc[1]) / 2.0;
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	inline void
 	Quadtree_Def::compute_new_span_rectangle(int in_quarter,
-		const T_Point& in_median_point,
-		Rectangle<T_Point>& out_span_rectangle)
+		const T_2dPoint& in_median_point,
+		Rectangle<T_2dPoint>& out_span_rectangle)
 	{
-		T_Point& llc = out_span_rectangle.lower_left_corner();
-		T_Point& urc = out_span_rectangle.upper_right_corner();
+		T_2dPoint& llc = out_span_rectangle.lower_left_corner();
+		T_2dPoint& urc = out_span_rectangle.upper_right_corner();
 		
 		switch (in_quarter)
 		{
@@ -1020,15 +1198,14 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	inline int
-	Quadtree_Def::compute_quarter(const T_Point& in_point,
-		const Rectangle<T_Point>& in_span_rectangle,
-		T_Point& out_median_point)
+	Quadtree_Def::compute_quarter(const T_2dPoint& in_point,
+		const Rectangle<T_2dPoint>& in_span_rectangle,
+		T_2dPoint& out_median_point)
 	{
 		compute_median_point(in_span_rectangle, out_median_point);
 		
-		int next_item;
 		if (in_point[0] >= out_median_point[0])
 		{
 			if (in_point[1] >= out_median_point[1])
@@ -1046,36 +1223,47 @@ namespace rangereporting
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
-	bool
-	Quadtree_Def::remove_point(Quadtree_Type::Id& point_id, bool repair_now)
+	Quadtree_Template
+	inline Quadtree_Type::Item*&
+	Quadtree_Def::item(Quadtree_Type::D_IndexType index)
 	{
-		/* find point in given point_id.item() and remove it... */
-		Quadtree_Type::Item* current_item = point_id._item;
-		
-		std::pair<bool, Quadtree_Type::Item::D_Points::iterator> find_result
-			= current_item->find(*point_id);
-		if ( !find_result.first )
-			return false;
-		
-		current_item->_point_ids.erase(find_result.second);
+		return _items[index].second;
+	}
+	
+	
+	Quadtree_Template
+	inline const Quadtree_Type::Item*&
+	Quadtree_Def::item(Quadtree_Type::D_IndexType index) const
+	{
+		return _items[index].second;
+	}
+	
+	
+	Quadtree_Template
+	void
+	Quadtree_Def::remove_point(Quadtree_Type::D_IndexType point_index,
+		bool repair_now)
+	{
+		/* find the point to the given point_id and remove it... */
+		Quadtree_Type::Item* current_item = item(point_index);
+		current_item->_my_point_indices.erase(
+			current_item->find(point_index).second);
+		_points.erase(point_index);
 		/* done! */
 		
 		/* if current_item is "empty", repair the tree if desired... */
 		if (repair_now)
 		{
-			if (current_item->_point_ids.empty())
+			if (current_item->_my_point_indices.empty())
 				repair_tree(current_item, false);
-			else if (current_item->_point_ids.size() == 1)
+			else if (current_item->_my_point_indices.size() == 1)
 				repair_tree(current_item, true);
 		}
 		/* done */
-		
-		return true;
 	}
 	
 	
-	template<typename T_Id, typename T_Point, typename T_Id_Point_Mapper>
+	Quadtree_Template
 	void
 	Quadtree_Def::repair_tree(Quadtree_Type::Item* starting_item,
 		bool starting_item_contains_one_point)
@@ -1102,14 +1290,14 @@ namespace rangereporting
 		}
 		
 		/* Delete starting item... */
-		Quadtree_Type::Item* parent_item = starting_item->_parent;
+		Quadtree_Type::Item* parent_item = starting_item->_my_parent;
 		int child_id = parent_item->find_child(starting_item);
 		
 		if ( !starting_item_contains_one_point )
 		{
-			delete (parent_item->_children[child_id]);
-			parent_item->_children[child_id] = 0;
-			--(parent_item->_no_of_children);
+			delete (parent_item->_my_children[child_id]);
+			parent_item->_my_children[child_id] = 0;
+			--(parent_item->_my_no_of_children);
 		}
 		/* done */
 		
@@ -1118,24 +1306,24 @@ namespace rangereporting
 		 * be shorted now. Then we have to find the other end of the chain.
 		 * 
 		 * But step-by-step... */
-		if (parent_item->_no_of_children == 1)
+		if (parent_item->_my_no_of_children == 1)
 		{
 			/* find the sibling... */
 			child_id = parent_item->find_first_child();
 			/* done */
 			
 			/* test if that sibling is a leaf... */
-			if (parent_item->_children[child_id]->is_leaf())
+			if (parent_item->_my_children[child_id]->is_leaf())
 			{
 				/* it is a leaf: we can short the chain... */
 				
 				/* save pointer */
 				Quadtree_Type::Item* end_of_chain_item
-					= parent_item->_children[child_id];
+					= parent_item->_my_children[child_id];
 				
 				/* Break the tree. That is necessary, when applying the
 				 * "delete" operator (cf. below) */
-				parent_item->_children[child_id] = 0;
+				parent_item->_my_children[child_id] = 0;
 				
 				/* Now search the start of the chain... */
 				Quadtree_Type::Item* start_of_chain_item = parent_item;
@@ -1143,12 +1331,12 @@ namespace rangereporting
 					= end_of_chain_item;
 				
 				bool exited_on_children = false;
-				while (start_of_chain_item->_parent != 0)
+				while (start_of_chain_item->_my_parent != 0)
 				{
 					previous_start_of_chain_item = start_of_chain_item;
-					start_of_chain_item = start_of_chain_item->_parent;
+					start_of_chain_item = start_of_chain_item->_my_parent;
 					
-					if (start_of_chain_item->_no_of_children > 1)
+					if (start_of_chain_item->_my_no_of_children > 1)
 					{
 						exited_on_children = true;
 						break;
@@ -1161,7 +1349,7 @@ namespace rangereporting
 					/* We did! */
 					end_of_chain_item->_my_span_rectangle
 						= _root->_my_span_rectangle;
-					end_of_chain_item->_parent = 0;
+					end_of_chain_item->_my_parent = 0;
 					
 					delete _root;
 					
@@ -1179,17 +1367,17 @@ namespace rangereporting
 					
 					/* delete that item (that will automatically delete
 					 * every descendant; end_of_chain_item exclusively) */
-					delete start_of_chain_item->_children[child_id];
+					delete start_of_chain_item->_my_children[child_id];
 					
 					/* link end_of_chain_item to start_of_chain_item->_children[j]... */
-					start_of_chain_item->_children[child_id] = end_of_chain_item;
-					end_of_chain_item->_parent = start_of_chain_item;
+					start_of_chain_item->_my_children[child_id] = end_of_chain_item;
+					end_of_chain_item->_my_parent = start_of_chain_item;
 					
 					/* set correct end_of_chain_item->_my_span_rectangle */
 					end_of_chain_item->_my_span_rectangle
 						= start_of_chain_item->_my_span_rectangle;
 					
-					T_Point median_point;
+					T_2dPoint median_point;
 					compute_median_point(start_of_chain_item->_my_span_rectangle,
 						median_point);
 					compute_new_span_rectangle(child_id, median_point,
@@ -1200,20 +1388,19 @@ namespace rangereporting
 				/* if there are more than one point in end_of_chain_item, split
 				 * that item... */
 				/** @todo DO NOT USE std::list::size()!!! */
-				if (end_of_chain_item->_point_ids.size() > 1)
+				if (end_of_chain_item->_my_point_indices.size() > 1)
 				{
-					Quadtree_Type::Item::D_Points::iterator
-						begin_splice_iter = end_of_chain_item->_point_ids.begin();
+					typename Item::D_PointIndices::iterator begin_splice_iter
+						= end_of_chain_item->_my_point_indices.begin();
 					++begin_splice_iter;
 					
-					Quadtree_Type::Item::D_Points points;
-					points.splice(points.begin(), end_of_chain_item->_point_ids,
-						begin_splice_iter, end_of_chain_item->_point_ids.end());
+					typename Item::D_PointIndices points;
+					points.splice(points.begin(),
+						end_of_chain_item->_my_point_indices, begin_splice_iter,
+						end_of_chain_item->_my_point_indices.end());
 					
-					Quadtree_Type::Item::D_Points::iterator
-						iter = points.begin();
-					Quadtree_Type::Item::D_Points::iterator
-						iter_end = points.end();
+					typename Item::D_PointIndices::iterator iter = points.begin();
+					typename Item::D_PointIndices::iterator iter_end = points.end();
 					
 					for (; iter != iter_end; ++iter)
 					{
@@ -1228,6 +1415,6 @@ namespace rangereporting
 		} // end: if (parent_item->_no_of_children == 1)
 	}
 	
-}
+} //namespace rangereporting
 
 #endif //QUADTREE_H

@@ -57,7 +57,8 @@ namespace mapgeneration
 					int _time_stamp;
 					PathEntry* _connection;
 					
-					D_RangeReporting::Id _range_id;
+//					D_RangeReporting::Id _range_id;
+					Node::Id _range_id;
 					
 					
 					PathEntry&
@@ -89,7 +90,7 @@ namespace mapgeneration
 					PathEntry()
 					: _position(0), _node_id(0), _connection(0), _time_stamp(0),
 						_node_copy(), _is_destination(false),
-						_virtual_node_id(0), _range_id()
+						_virtual_node_id(0), _range_id(0)
 					{
 					}
 
@@ -97,7 +98,7 @@ namespace mapgeneration
 					PathEntry(const double position, const Node::Id node_id)
 					: _position(position), _node_id(node_id), _connection(0), _time_stamp(0),
 						_node_copy(), _is_destination(false), 
-						_virtual_node_id(0), _range_id()
+						_virtual_node_id(0), _range_id(0)
 					{
 					}
 					
@@ -264,7 +265,7 @@ namespace mapgeneration
 			 */
 			void
 			calculate_cluster_nodes(GPSPoint gps_point,
-				std::list<D_RangeReporting::Id>& result_vector);
+				std::list<Node::Id>& result_vector);
 			
 
 			/**

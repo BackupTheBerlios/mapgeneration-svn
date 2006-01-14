@@ -340,7 +340,7 @@ namespace mapgeneration
 				_finished_trace_processor_ids.pop_back();
 			}
 			
-			int new_trace_processors = 2 - _trace_processors.size();
+			int new_trace_processors = 1 - _trace_processors.size();
 
 			_trace_queue_mutex.enterMutex();
 			std::list<FilteredTrace>::iterator iter = _trace_queue.begin();

@@ -71,6 +71,14 @@ namespace mapgeneration
 			
 			
 			/**
+			 * @brief Copy constructor dealing a Node.
+			 * 
+			 * @param node the node that will be copied
+			 */
+			Node(const GeoCoordinate& geo_coordinate);
+			
+			
+			/**
 			 * @brief Copy constructor dealing a GPSPoint.
 			 * 
 			 * @param gps_point the gps point that will be copied

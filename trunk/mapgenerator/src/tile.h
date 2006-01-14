@@ -17,9 +17,7 @@
 	#include "stdint.h"
 #endif
 
-#include "gpspoint.h"
 #include "node.h"
-#include "util/fixpointvector.h"
 #include "util/serializer.h"
 #include "util/rangereporting/quadtree.h"
 #include "util/rangereporting/segment.h"
@@ -28,77 +26,26 @@ using namespace mapgeneration_util;
 using rangereporting::Quadtree;
 using rangereporting::Segment;
 
-/** @todo Should be in the configuration file.
- * But the transferation from the ServiceList over the TraceProcessor to the
- * Tile and onwards to the Quadtree is a very long way. We should think about
- * a better solution. */
-#define _MIN_DEPTH 3
-
 namespace mapgeneration
 {
 
-	class Tile;
-	
-	typedef Quadtree<Node::Id, GeoCoordinate, Tile> D_RangeReporting;
-	
-	
 	/**
 	 * @brief Tile implements a tile containing Nodes.
 	 * 
 	 * This class provides mainly the method to calculate the nearest neighbour.
-	 * At the moment this is done brute force.
-	 * 
-	 * @todo Speed up nearest neighbour search.
 	 */
 	class Tile {
-
+		
 		public:
 		
 			typedef uint32_t Id;
-			
-			
-			class const_iterator
-			{
-				
-				public:
-					
-					inline
-					const_iterator(FixpointVector<Node>::const_iterator start,
-						FixpointVector<Node>::const_iterator end,
-						FixpointVector<Node>::const_iterator position);
-					
-					inline bool
-					operator==(const const_iterator& iter) const;
-					
-					inline bool
-					operator!=(const const_iterator& iter) const;
-					
-					inline const_iterator
-					operator++();
-					
-					inline const_iterator
-					operator++(int dummy);
-					
-					inline const std::pair<bool, Node>&
-					operator*() const;
-					
-					inline const std::pair<bool, Node>*
-					operator->() const;
-					
-					
-				private:
-					
-					FixpointVector<Node>::const_iterator _start;
-
-					FixpointVector<Node>::const_iterator _end;
-
-					FixpointVector<Node>::const_iterator _position;
-					
-			};
+			typedef Quadtree<Node>::D_IndexType D_IndexType;
 			
 			
 			/**
 			 * @brief Empty constructor.
+			 * 
+			 * @todo DO NOT USE DIRECTLY. Otherwise no Id is assigned!
 			 */
 			Tile();
 			
@@ -108,19 +55,11 @@ namespace mapgeneration
 			 * 
 			 * @param tile_id the ID
 			 */
-			Tile(unsigned int tile_id);
+			Tile(Id tile_id);
 			
 			
-			inline std::pair<bool, Node::Id>
+			inline Node::Id
 			add_node(const Node& node);
-			
-			
-			inline Tile::const_iterator
-			begin() const;
-			
-			
-			void
-			build_range_reporting_system();
 			
 			
 			/**
@@ -134,21 +73,15 @@ namespace mapgeneration
 			 * @return the vector
 			 */
 			void
-			cluster_nodes_search(const GPSPoint& in_gps_point,
-				const double in_search_radius, const double in_search_angle,
-				std::vector<D_RangeReporting::Id>& query_result) const;
-			
-			
-			void
 			fast_cluster_nodes_search(const Segment<GeoCoordinate>& in_segment,
 				const double in_search_distance, const double in_search_angle,
-				std::vector<D_RangeReporting::Id>& query_result) const;
+				std::vector<Node::Id>& out_query_results) const;
 			
 		
 			void
 			fast_cluster_nodes_search(const GPSPoint& in_gps_point,
 				const double in_search_radius, const double in_search_angle,
-				std::vector<D_RangeReporting::Id>& query_result) const;
+				std::vector<Node::Id>& out_query_results) const;
 			
 		
 			/**
@@ -156,10 +89,6 @@ namespace mapgeneration
 			 */
 			void
 			deserialize(std::istream& i_stream);
-			
-			
-			inline Tile::const_iterator
-			end() const;
 			
 			
 			inline bool
@@ -173,12 +102,18 @@ namespace mapgeneration
 			/**
 			 * @return the id
 			 */
-			inline unsigned int
+			inline Id
 			get_id() const;
 			
 			
 			inline bool
-			move_node(D_RangeReporting::Id& from_node_id, const Node& to_node);
+			move_node(Node::Id from_node_id,
+				const GeoCoordinate& to_geo_coordinate);
+
+
+			inline bool
+			move_node(Node::LocalId from_node_id,
+				const GeoCoordinate& to_geo_coordinate);
 
 
 			inline Node&
@@ -197,6 +132,11 @@ namespace mapgeneration
 			node(Node::LocalId node_local_id) const;
 			
 			
+			/** @todo This is only a hack for the gui!!! */
+			inline const FixpointVector<Node>&
+			nodes() const;
+			
+			
 			inline Node&
 			operator[](Node::Id node_id);
 			
@@ -213,8 +153,12 @@ namespace mapgeneration
 			operator[](Node::LocalId node_local_id) const;
 			
 			
-			inline bool
-			remove_node(D_RangeReporting::Id& node_id);
+			inline void
+			remove_node(Node::Id node_id);
+			
+			
+			inline void
+			remove_node(Node::LocalId node_id);
 			
 			
 			/**
@@ -224,7 +168,7 @@ namespace mapgeneration
 			serialize (std::ostream& o_stream) const;
 			
 			
-			inline int
+			inline size_t
 			size_of() const;
 		
 
@@ -233,15 +177,23 @@ namespace mapgeneration
 			/**
 			 * @brief the ID of the tile
 			 */
-			unsigned int _id;
+			Id _id;
 			
-			/**
-			 * @brief a Fixpointvector of all nodes in the tile
-			 */
-			FixpointVector<Node> _nodes;
+			Quadtree<Node> _quadtree;
 			
 			
-			D_RangeReporting _range_reporting;
+			void
+			init_quadtree() const;
+			
+			
+			inline bool
+			within_search_distance(const GPSPoint& gps_point, const Node& node,
+				const double search_radius) const;
+			
+			
+			inline bool
+			within_search_angle(const GPSPoint& gps_point, const Node& node,
+				const double search_angle) const;
 			
 	};
 	
@@ -249,7 +201,7 @@ namespace mapgeneration
 	//---------------------------------------------------//
 	//--- Iterator --------------------------------------//
 	//---------------------------------------------------//
-	inline
+/*	inline
 	Tile::const_iterator::const_iterator(
 		FixpointVector<Node>::const_iterator start,
 		FixpointVector<Node>::const_iterator end,
@@ -303,16 +255,21 @@ namespace mapgeneration
 	Tile::const_iterator::operator->() const
 	{
 		return _position.operator->();
-	}
+	}*/
 	
 	
 	//---------------------------------------------------//
 	//--- Main class: Tile ------------------------------//
 	//---------------------------------------------------//
-	inline std::pair<bool, Node::Id>
+	inline Node::Id
 	Tile::add_node(const Node& node)
 	{
-		Node::LocalId node_local_id
+		D_IndexType index = _quadtree.add_point(node);
+		Node::Id id = Node::merge_id_parts(_id, index);
+		
+		return id;
+		
+/*		Node::LocalId node_local_id
 			= static_cast<Node::LocalId>(_nodes.insert(node));
 		Node::Id node_id = Node::merge_id_parts(_id, node_local_id);
 		
@@ -324,11 +281,11 @@ namespace mapgeneration
 			_nodes.erase(node_local_id);
 			
 			return std::make_pair(false, 0);
-		}
+		}*/
 	}
 	
 	
-	inline Tile::const_iterator
+/*	inline Tile::const_iterator
 	Tile::begin() const
 	{
 		FixpointVector<Node>::const_iterator start = _nodes.begin();
@@ -343,7 +300,7 @@ namespace mapgeneration
 		FixpointVector<Node>::const_iterator start = _nodes.begin();
 		FixpointVector<Node>::const_iterator end = _nodes.end();
 		return Tile::const_iterator(start, end, end);
-	}
+	}*/
 	
 	
 	inline bool
@@ -360,7 +317,7 @@ namespace mapgeneration
 	inline bool
 	Tile::exists_node(Node::LocalId node_local_id) const
 	{
-		return _nodes[static_cast<int>(node_local_id)].first;
+		return _quadtree.exists_point(node_local_id);
 	}
 	
 	
@@ -372,9 +329,24 @@ namespace mapgeneration
 	
 	
 	inline bool
-	Tile::move_node(D_RangeReporting::Id& from_node_id, const Node& to_node)
+	Tile::move_node(Node::Id from_node_id,
+		const GeoCoordinate& to_geo_coordinate)
 	{
-		return _range_reporting.move_point(from_node_id, to_node);
+		Tile::Id tile_id;
+		Node::LocalId node_local_id;
+		Node::split_id(from_node_id, tile_id, node_local_id);
+		
+		return move_node(node_local_id, to_geo_coordinate);
+	}
+	
+	
+	inline bool
+	Tile::move_node(Node::LocalId from_node_local_id,
+		const GeoCoordinate& to_geo_coordinate)
+	{
+		Node to_node(to_geo_coordinate);
+		
+		return _quadtree.move_point(from_node_local_id, to_node);
 	}
 	
 	
@@ -406,6 +378,13 @@ namespace mapgeneration
 	}
 	
 	
+	inline const FixpointVector<Node>&
+	Tile::nodes() const
+	{
+		return _quadtree.points();
+	}
+	
+	
 	inline Node&
 	Tile::operator[](Node::Id node_id)
 	{
@@ -428,45 +407,62 @@ namespace mapgeneration
 	}
 	
 	
+	/** @todo NEVER change the coordinates of the returned node.
+	 * That will definitely DESTROY the quadtree!!! */
 	inline Node&
 	Tile::operator[](Node::LocalId node_local_id)
 	{
-		return _nodes[static_cast<int>(node_local_id)].second;
+		return _quadtree.point(node_local_id);
 	}
 	
 	
 	inline const Node&
 	Tile::operator[](Node::LocalId node_local_id) const
 	{
-		return _nodes[static_cast<int>(node_local_id)].second;
+		return _quadtree.point(node_local_id);
+	}
+	
+	
+	inline void
+	Tile::remove_node(Node::Id node_id)
+	{
+		Tile::Id tile_id;
+		Node::LocalId node_local_id;
+		Node::split_id(node_id, tile_id, node_local_id);
+		
+		remove_node(node_local_id);
+	}
+	
+	
+	inline void
+	Tile::remove_node(Node::LocalId node_local_id)
+	{
+		_quadtree.remove_point(node_local_id);
+	}
+	
+	
+	inline size_t
+	Tile::size_of() const
+	{
+		return sizeof(Tile) + _quadtree.size_of();
 	}
 	
 	
 	inline bool
-	Tile::remove_node(D_RangeReporting::Id& node_id)
+	Tile::within_search_distance(const GPSPoint& gps_point, const Node& node,
+		const double search_radius) const
 	{
-		bool removed_from_range_reporting = _range_reporting.remove_point(node_id);
-		if ( !removed_from_range_reporting )
-		{
-			mlog(MLog::error, "Tile") << "Cannot remove node with id=" << *node_id
-				<< " from the range reporting system. Blame your programer. S/he made"
-				<< " a mistake. Somewhere...\n";
-		}
-		
-		Tile::Id tile_id;
-		Node::LocalId node_local_id;
-		Node::split_id(*node_id, tile_id, node_local_id);
-		
-		_nodes.erase(static_cast<int>(node_local_id));
-		
-		return removed_from_range_reporting;
+		return (node.distance_approximated(gps_point) <= search_radius);
 	}
 	
 	
-	inline int
-	Tile::size_of() const
+	inline bool
+	Tile::within_search_angle(const GPSPoint& gps_point, const Node& node,
+		const double search_angle) const
 	{
-		return _nodes.size_of();
+		double min_angle = node.minimal_direction_difference_to(gps_point);
+		
+		return (min_angle <= search_angle);
 	}
 	
 } // namespace mapgeneration

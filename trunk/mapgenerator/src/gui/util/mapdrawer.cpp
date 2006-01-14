@@ -104,8 +104,9 @@ namespace mapgeneration_gui
 		{
 //			Tile::const_iterator node_iter = current_tile.write().begin();
 //			Tile::const_iterator node_iter_end = current_tile.write().end();
-			Tile::const_iterator node_iter = current_tile->begin();
-			Tile::const_iterator node_iter_end = current_tile->end();
+			const FixpointVector<Node>& nodes = current_tile->nodes();
+			FixpointVector<Node>::const_iterator node_iter = nodes.begin();
+			FixpointVector<Node>::const_iterator node_iter_end = nodes.end();
 			for (; node_iter != node_iter_end; ++node_iter)
 			{
 				std::vector<Node::Id>::const_iterator next_node_id_iter = 

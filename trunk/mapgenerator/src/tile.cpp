@@ -19,65 +19,42 @@ namespace mapgeneration
 {
 	
 	Tile::Tile()
-	: _id(), _nodes(), _range_reporting()
+	: _id(), _quadtree()
 	{
 	}
 
 	
-	Tile::Tile(unsigned int tile_id)
-	: _id(tile_id), _nodes(), _range_reporting()
+	Tile::Tile(Tile::Id tile_id)
+	: _id(tile_id), _quadtree()
 	{
-		build_range_reporting_system();
-	}
-	
-	
-	void
-	Tile::build_range_reporting_system()
-	{
-		/* compute span rectangle... */
+		// compute span rectangle:
 		int northing;
 		int easting;
-		GeoCoordinate::split_tile_id(_id, northing, easting);
+		GeoCoordinate::split_tile_id(get_id(), northing, easting);
 		
-		double lower_left_latitude = static_cast<double>(northing - 9000) / 100.0;
-		double lower_left_longitude = static_cast<double>(easting - 18000) / 100.0;
+		double lower_left_latitude
+			= static_cast<double>(northing - 9000) / 100.0;
+		double lower_left_longitude
+			= static_cast<double>(easting - 18000) / 100.0;
 		
-		GeoCoordinate llc;
+		Node llc;
 		llc.set_latitude(lower_left_latitude);
 		llc.set_longitude(lower_left_longitude);
 		
-		GeoCoordinate urc;
+		Node urc;
 		urc.set_latitude(lower_left_latitude + 0.01);
 		urc.set_longitude(lower_left_longitude + 0.01);
 		
-		rangereporting::Rectangle<GeoCoordinate> rectangle;
-		rectangle.set_corners(llc, urc);
-		/* done. */
+		rangereporting::Rectangle<Node> span_rectangle;
+		span_rectangle.set_corners(llc, urc);
+		_quadtree.set_span_rectangle(span_rectangle);
+		// done.
 		
-		/* compute max depth... */
-		int max_depth = static_cast<int>(ceil(log10(_nodes.size()) / log10(4)));
-		if (max_depth < _MIN_DEPTH)
-			max_depth = _MIN_DEPTH;
-		/* done. */
-		
-		/* set the values for _range_reporting... */
-		_range_reporting.set_max_depth(max_depth);
-		_range_reporting.set_points(this);
-		_range_reporting.set_span_rectangle(rectangle);
-		_range_reporting.init_ready();
-		/* done. */
-		
-		FixpointVector<Node>::iterator iter = _nodes.begin();
-		FixpointVector<Node>::iterator iter_end = _nodes.end();
-		for(; iter != iter_end; ++iter)
-		{
-			_range_reporting.add_point( Node::merge_id_parts(_id,
-				static_cast<Node::LocalId>(iter.position_number())) );
-		}
+		_quadtree.init_ready();
 	}
 	
 	
-	void
+/*	void
 	Tile::cluster_nodes_search(const GPSPoint& in_gps_point,
 		const double in_search_radius, const double in_search_angle,
 		std::vector<D_RangeReporting::Id>& out_query_result) const
@@ -97,125 +74,157 @@ namespace mapgeneration
 				out_query_result.push_back(id);
 			}
 		}
-	}
+	}*/
 	
 	
 	void
 	Tile::fast_cluster_nodes_search(const GPSPoint& in_gps_point,
 		const double in_search_radius, const double in_search_angle,
-		std::vector<D_RangeReporting::Id>& out_query_result) const
+		std::vector<Node::Id>& out_query_results) const
 	{
-		/* everything in radian! */
-		
-		/* compute corner distance.
-		 * + 2.0 is needed to provide 100% compatibility to cluster_node_search! */
+		// compute corner distance.
+		// + 2.0 is needed to provide 100% compatibility to cluster_node_search!
 		double corner_dist = (in_search_radius + 2.0) * sqrt(2.0);
-		GeoCoordinate llc = in_gps_point.compute_geo_coordinate_default(225.0,
-			corner_dist, GeoCoordinate::_DEGREE, GeoCoordinate::_METER);
-		GeoCoordinate urc = in_gps_point.compute_geo_coordinate_default(45.0,
-			corner_dist, GeoCoordinate::_DEGREE, GeoCoordinate::_METER);
+		Node llc(
+			in_gps_point.compute_geo_coordinate_default(
+				225.0,corner_dist, GeoCoordinate::_DEGREE, GeoCoordinate::_METER
+			)
+		);
+		Node urc(
+			in_gps_point.compute_geo_coordinate_default(
+				45.0, corner_dist, GeoCoordinate::_DEGREE, GeoCoordinate::_METER
+			)
+		);
 		
-		/* set query rectangle and start the query... */
-		rangereporting::Rectangle<GeoCoordinate> query_rectangle;
+		// set query rectangle, set up temporary result vector
+		// and start the query...
+		rangereporting::Rectangle<Node> query_rectangle;
 		query_rectangle.set_corners(llc, urc);
 		
-		out_query_result.clear();
-		_range_reporting.range_query(query_rectangle, out_query_result);
-		/* done. */
+		std::vector<Node::LocalId> temp_results;
+		_quadtree.range_query(query_rectangle, temp_results);
+//		std::cout << "\t\t" << temp_results.size() << " TEMP CLUSTER NODES FOUND!" << std::endl;
+		// done.
 		
-		/* compare distance and angles... */
-		std::vector<D_RangeReporting::Id>::iterator iter
-			= out_query_result.begin();
-		while (iter != out_query_result.end())
+		// compose Node::Ids, compare distance and angles...
+		out_query_results.clear();
+		
+		std::vector<Node::LocalId>::iterator iter = temp_results.begin();
+		while (iter != temp_results.end())
 		{
 			bool erased = false;
-			const Node& the_node = node(**iter);
+			const Node& the_node = node(*iter);
+//			std::cout << "\t\t\t" << *iter << ": "
+//				<< the_node.distance_approximated(in_gps_point) << "m, "
+//				<< the_node.minimal_direction_difference_to(in_gps_point)
+//				<< "rad." << std::endl;
 			
-			if (the_node.distance_approximated(in_gps_point) > in_search_radius)
+			if ( !within_search_distance(in_gps_point, the_node, in_search_radius) )
 			{
-				iter = out_query_result.erase(iter);
+				iter = temp_results.erase(iter);
 				erased = true;
 			} else
 			{
-				double min_angle = the_node.minimal_direction_difference_to(in_gps_point);
-				if (min_angle > in_search_angle)
+				if ( !within_search_angle(in_gps_point, the_node, in_search_angle) )
 				{
-					iter = out_query_result.erase(iter);
+					iter = temp_results.erase(iter);
 					erased = true;
 				}
 			}
-				
+			
 			if ( !erased )
+			{
+				Node::Id node_id = Node::merge_id_parts(get_id(), *iter);
+				out_query_results.push_back(node_id);
+				
 				++iter;
+			}
 		}
-		/* done. */
+		
+//		std::vector<Node::Id>::iterator iter2 = out_query_results.begin();
+//		for(; iter2 != out_query_results.end(); ++iter2)
+//		{
+//			const Node& the_node = node(*iter2);
+//			std::cout << "\t\t\t\t" << *iter2 << ": "
+//				<< the_node.distance_approximated(in_gps_point) << std::endl;
+//		}
+		
 	}
 	
 	
 	void
 	Tile::fast_cluster_nodes_search(const Segment<GeoCoordinate>& in_segment,
 		const double in_search_distance, const double in_search_angle,
-		std::vector<D_RangeReporting::Id>& out_query_result) const
+		std::vector<Node::Id>& out_query_results) const
 	{
-		/* everything in radian! */
+		// everything in radian!
 		
-		/* get points... */
+		// get points...
 		GeoCoordinate point_1 = in_segment.get_points().first;
 		GeoCoordinate point_2 = in_segment.get_points().second;
-		/* done. */
+		// done.
 		
-		/* compute distance and bearing... */
+		// compute distance and bearing...
 		double p2p_bearing = point_1.bearing_default(point_2);
-
 		double corner_dist = (sqrt(2.0) * in_search_distance) / EARTH_RADIUS_M;
-		/* done. */
+		// done.
 		
-		/* compute the four corners of the trapezoid... */
+		// compute the four corners of the trapezoid...
 		double current_bearing;
 		
 		current_bearing = p2p_bearing - (0.75 * PI); // bearing - 135 degree
-		GeoCoordinate corner_1 = point_1.compute_geo_coordinate_default(
-			current_bearing, corner_dist);
+		Node corner_1(
+			point_1.compute_geo_coordinate_default(current_bearing, corner_dist)
+		);
 		
 		current_bearing = p2p_bearing + (0.75 * PI);
-		GeoCoordinate corner_2 = point_1.compute_geo_coordinate_default(
-			current_bearing, corner_dist);
+		Node corner_2(
+			point_1.compute_geo_coordinate_default(current_bearing, corner_dist)
+		);
 		
 		current_bearing = p2p_bearing + (0.25 * PI);
-		GeoCoordinate corner_3 = point_2.compute_geo_coordinate_default(
-			current_bearing, corner_dist);
+		Node corner_3(
+			point_2.compute_geo_coordinate_default(current_bearing, corner_dist)
+		);
 		
 		current_bearing = p2p_bearing - (0.25 * PI);
-		GeoCoordinate corner_4 = point_2.compute_geo_coordinate_default(
-			current_bearing, corner_dist);
-		/* done. */
+		Node corner_4(
+			point_2.compute_geo_coordinate_default(current_bearing, corner_dist)
+		);
+		// done.
 		
-		/* start the query... */
-		rangereporting::Trapezoid<GeoCoordinate> query_trapezoid(
+		// set query trapezoid, set up temporary result vector
+		// and start the query...
+		rangereporting::Trapezoid<Node> query_trapezoid(
 			corner_1, corner_2, corner_3, corner_4);
 		
-		out_query_result.clear();
-		_range_reporting.range_query(query_trapezoid, out_query_result);
-		/* done. */
+		std::vector<Node::LocalId> temp_results;
+		_quadtree.range_query(query_trapezoid, temp_results);
+		// done.
 		
-		/* compare angles... */
-/*		std::vector<D_RangeReporting::Id>::iterator iter
-			= out_query_result.begin();
-		while (iter != out_query_result.end())
+		// compose Node::Ids, compare distance and angles...
+		out_query_results.clear();
+
+		std::vector<Node::LocalId>::iterator iter = temp_results.begin();
+		while (iter != temp_results.end())
 		{
-			bool erased = false;
+			const Node& the_node = node(*iter);
+			mapgeneration_util::Direction segment_direction(p2p_bearing);
+			double min_direction_difference
+				= the_node.minimal_direction_difference_to(segment_direction);
 			
-			double min_angle = node(**iter).minimal_direction_difference_to(in_gps_point);
-			if (min_angle > in_search_angle)
+			if (min_direction_difference > in_search_angle)
 			{
-				iter = out_query_result.erase(iter);
-				erased = true;
-			}
-			
-			if ( !erased )
+				iter = temp_results.erase(iter);
+			} else
+			{
+				Node::Id node_id = Node::merge_id_parts(get_id(), *iter);
+				out_query_results.push_back(node_id);
+				
 				++iter;
-		}*/
-		/* done. */
+			}
+		}
+		// done.
 	}
 	
 	
@@ -223,9 +232,7 @@ namespace mapgeneration
 	Tile::deserialize(std::istream& i_stream)
 	{
 		Serializer::deserialize(i_stream, _id);
-		Serializer::deserialize(i_stream, _nodes);
-		
-		build_range_reporting_system();
+		Serializer::deserialize(i_stream, _quadtree);
 	}
 	
 	
@@ -234,8 +241,7 @@ namespace mapgeneration
 	Tile::serialize(std::ostream& o_stream) const
 	{
 		Serializer::serialize(o_stream, _id);
-		Serializer::serialize(o_stream, _nodes);
+		Serializer::serialize(o_stream, _quadtree);
 	}
-
-
+		
 } // namespace mapgeneration
