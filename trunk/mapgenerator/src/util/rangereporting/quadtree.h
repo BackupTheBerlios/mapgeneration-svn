@@ -256,6 +256,10 @@ namespace rangereporting
 			point(D_IndexType index) const;
 			
 			
+			inline FixpointVector<T_2dPoint>&
+			points();
+			
+			
 			inline const FixpointVector<T_2dPoint>&
 			points() const;
 			
@@ -853,6 +857,14 @@ namespace rangereporting
 	
 	
 	Quadtree_Template
+	inline FixpointVector<T_2dPoint>&
+	Quadtree_Def::points()
+	{
+		return _points;
+	}
+	
+	
+	Quadtree_Template
 	inline const FixpointVector<T_2dPoint>&
 	Quadtree_Def::points() const
 	{
@@ -1249,6 +1261,7 @@ namespace rangereporting
 		current_item->_my_point_indices.erase(
 			current_item->find(point_index).second);
 		_points.erase(point_index);
+		_items.erase(point_index);
 		/* done! */
 		
 		/* if current_item is "empty", repair the tree if desired... */
