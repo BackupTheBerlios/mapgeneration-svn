@@ -1044,21 +1044,70 @@ namespace mapgeneration
 					);
 				Node merged_node(merged_position);
 				
-				TileCache::Pointer tile = _tile_cache->get(Node::tile_id(segment_iter->_node_id));
+				TileCache::Pointer tile
+					= _tile_cache->get(Node::tile_id(segment_iter->_node_id));
 				if (tile != 0)
 				{
-					tile.write().node(segment_iter->_node_id).set(
-						merged_position.get_latitude(),
-						merged_position.get_longitude(),
-						merged_position.get_altitude()
-					);
-					bool result = 
-						tile.write().move_node(segment_iter->_range_id, merged_node);
+					bool result = tile.write().move_node(
+						segment_iter->_range_id, merged_node);
+					
 					if (!result)
-						mlog(MLog::warning, "TraceProcessor::use_segment")
+					{
+						mlog(MLog::notice, "TraceProcessor::use_segment")
 							<< "Could not move node!\n";
-				}
-			}
+						
+						// Test implementation.
+						// Well, in 99.9% this will work. But when there are
+						// connections from other tiles than "tile", it will
+						// (and have to) crash.
+						// First solution idea: Double-linked nodes.
+						
+						
+/*						// save moving_node and its ids:
+						Node moving_node = tile->node(segment_iter->_range_id);
+						Node::Id moving_node_old_id = segment_iter->_range_id;
+						// done.
+						
+						// remove moving_node from old tile:
+						tile.write().remove_node(segment_iter->_range_id);
+						// done.
+						
+						// get new tile and save moving_point there:
+						Tile::Id moving_node_tile_id = moving_node.get_tile_id();
+						TileCache::Pointer new_tile
+							= _tile_cache->get(moving_node_tile_id);
+						Node::Id moving_node_new_id
+							= new_tile.write().add_node(moving_node);
+						// done.
+						
+						// change next_node_ids of moving_node's predecessors:
+						FixpointVector<Node>& old_tile_nodes = tile.write().nodes();
+						FixpointVector<Node>::iterator old_tile_nodes_iter
+							= old_tile_nodes.begin();
+						FixpointVector<Node>::iterator old_tile_nodes_iter_end
+							= old_tile_nodes.end();
+						for(; old_tile_nodes_iter != old_tile_nodes_iter_end;
+							++old_tile_nodes_iter)
+						{
+							std::pair<bool, Node> the_pair = *old_tile_nodes_iter;
+							if(the_pair.first &&
+								the_pair.second.is_reachable(moving_node_old_id))
+							{
+								std::vector<Node::Id>::iterator iter
+									= the_pair.second.next_node_ids().begin();
+								std::vector<Node::Id>::iterator iter_end
+									= the_pair.second.next_node_ids().end();
+								
+								while((iter != iter_end) && (*iter != moving_node_old_id))
+									++iter;
+								*iter = moving_node_new_id;
+							}
+						}
+						// done.
+						*/
+					} // end if(!result)
+				} // end if(tile != 0)
+			} // end if(merge)
 			
 			if (previous_node_id != 0)
 				connect_nodes(previous_node_id, used_node_id);

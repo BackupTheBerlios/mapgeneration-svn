@@ -132,7 +132,13 @@ namespace mapgeneration
 			node(Node::LocalId node_local_id) const;
 			
 			
-			/** @todo This is only a hack for the gui!!! */
+			/** @todo This is needed for moving nodes. DO NOT ALTER THE NODES'
+			 * COORDINATES. THIS WILL DEFINITALY DESTROY THE QUADTREE!!! */
+			inline FixpointVector<Node>&
+			nodes();
+			
+			
+			/** @todo This is needed for the gui!!! */
 			inline const FixpointVector<Node>&
 			nodes() const;
 			
@@ -375,6 +381,13 @@ namespace mapgeneration
 	Tile::node(Node::LocalId node_local_id) const
 	{
 		return operator[](node_local_id);
+	}
+	
+	
+	inline FixpointVector<Node>&
+	Tile::nodes()
+	{
+		return _quadtree.points();
 	}
 	
 	
