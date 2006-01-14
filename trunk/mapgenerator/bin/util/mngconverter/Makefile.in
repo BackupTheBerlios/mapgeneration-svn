@@ -14,8 +14,8 @@ objects := mngconverter.o mngconvertermain.o
 top_builddir := @top_builddir@
 bindir := @top_builddir@bin
 srcdir := @top_builddir@src
-mngbindir = $(bindir)/util/mngconverter
-mngsrcdir = $(srcdir)/util/mngconverter
+mngbindir = $(bindir)/util/mngconverter/
+mngsrcdir = $(srcdir)/util/mngconverter/
 
 # Variables from autoconf
 CXX = @CXX@
