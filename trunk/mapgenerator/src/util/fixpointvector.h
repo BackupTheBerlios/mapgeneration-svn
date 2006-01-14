@@ -236,7 +236,7 @@ namespace mapgeneration_util
 			 * accurate.
 			 * @return Memory usage in byte.
 			 */
-			inline int
+			inline size_t
 			size_of() const;
 
 	
@@ -650,10 +650,10 @@ namespace mapgeneration_util
 	
 	
 	template <typename T_ElemType>
-	inline int
+	inline size_t
 	FixpointVector<T_ElemType>::size_of() const
 	{
-		return (this->size() * sizeof(T_ElemType)) + (_free_positions.size() * sizeof(size_type)) + sizeof(FixpointVector<T_ElemType>);
+		return (this->size_including_holes() * sizeof(T_ElemType)) + (_free_positions.size() * sizeof(size_type)) + sizeof(FixpointVector<T_ElemType>);
 	}
 
 
