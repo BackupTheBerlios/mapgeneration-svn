@@ -21,15 +21,17 @@ objects := extendedgenericvalidator.o dialoglogic.o \
 	util/mapscrolledwindowlogic.o \
 	modules/testmodule.o \
 	modules/mapmodule/mapmodule.o \
-	modules/mapmodule/mappanellogic.o \
-	modules/tracelogmodule/tracelogmodule.o \
-	modules/tracelogmodule/tracelogpanellogic.o
+	modules/mapmodule/mappanellogic.o
+# removed modules/tracelogmodule/tracelogmodule.o
+# removed modules/tracelogmodule/tracelogpanellogic.o
 mainobjects := util/configuration.o util/pubsub/servicelist.o \
 	util/pubsub/genericservice.o \
 	util/mlog.o util/controlledthread.o tile.o node.o \
-	geocoordinate.o tracelog.o \
+	geocoordinate.o \
 	dbconnection/filedbconnection.o tilecache.o
-	
+# removed tracelog.o
+
+
 ifeq (@have_odbc@, yes)
 	mainobjects := $(mainobjects) dbconnection/odbcdbconnection.o
 endif

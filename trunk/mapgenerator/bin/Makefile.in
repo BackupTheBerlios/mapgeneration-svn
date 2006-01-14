@@ -12,13 +12,14 @@ objects := util/configuration.o \
 	util/controlledthread.o util/mlog.o \
 	util/pubsub/genericservice.o util/pubsub/servicelist.o \
 	dbconnection/filedbconnection.o \
-	geocoordinate.o gpspoint.o node.o edge.o \
+	geocoordinate.o gpspoint.o node.o \
 	tile.o tilecache.o \
-	tracelog.o tracelogwriter.o \
 	filteredtrace.o traceprocessor.o \
 	tilemanager.o traceconnection.o traceserver.o tracefilter.o \
 	executionmanager.o \
 	main.o
+# removed edge.o, tracelog.o, tracelogwriter.o
+
 
 ifeq (@have_odbc@, yes)
 	objects := $(objects) dbconnection/odbcdbconnection.o

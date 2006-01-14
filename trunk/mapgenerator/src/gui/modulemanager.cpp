@@ -11,7 +11,7 @@
 #include "module.h"
 #include "modules/testmodule.h"
 #include "modules/mapmodule/mapmodule.h"
-#include "modules/tracelogmodule/tracelogmodule.h"
+//#include "modules/tracelogmodule/tracelogmodule.h"
 
 namespace mapgeneration_gui
 {
@@ -22,7 +22,7 @@ namespace mapgeneration_gui
 		/** @todo make it dynamic */
 		_modules.push_back(new TestModule(wxT("TestModule")));
 		_modules.push_back(new MapModule());
-		_modules.push_back(new TraceLogModule());
+//		_modules.push_back(new TraceLogModule());
 	}
 	
 	

@@ -130,7 +130,7 @@ namespace mapgeneration_gui
 
 		register_module(_module_manager[0]);
 		register_module(_module_manager[1]);
-		register_module(_module_manager[2]);	
+//		register_module(_module_manager[2]);	
 //		unregister_module(_module_manager[0]);
 //		register_module(_module_manager[0]);
 

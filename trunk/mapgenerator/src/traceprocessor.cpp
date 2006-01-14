@@ -19,7 +19,8 @@ namespace mapgeneration
 		pubsub::ServiceList* service_list, FilteredTrace& filtered_trace)
 	: _filtered_trace(filtered_trace), _id(id), 
 		_processed_nodes(), _service_list(service_list),
-		_tile_manager(tile_manager), _trace_log(0), _time(0)
+//		_tile_manager(tile_manager), _trace_log(0), _time(0)
+		_tile_manager(tile_manager), _time(0)
 	{
 		_tile_cache = _tile_manager->get_tile_cache();
 
@@ -640,11 +641,11 @@ namespace mapgeneration
 	{
 		mlog(MLog::info, "TraceProcessor") << "Started (" << _id << ").\n";
 	
-		std::ostringstream tracelog_filename;
-		tracelog_filename << "tracelog" << _id;
-		tracelog_filename.flush();
-		_trace_log = new TraceLogWriter(_tile_manager, 
-			tracelog_filename.str(), _filtered_trace, _service_list);
+//		std::ostringstream tracelog_filename;
+//		tracelog_filename << "tracelog" << _id;
+//		tracelog_filename.flush();
+//		_trace_log = new TraceLogWriter(_tile_manager, 
+//			tracelog_filename.str(), _filtered_trace, _service_list);
 
 		_filtered_trace.calculate_directions();
 		_filtered_trace.precompute_data();
@@ -950,7 +951,7 @@ namespace mapgeneration
 			scan_position_m += 10.0;
 		}
 			
-		delete _trace_log;
+//		delete _trace_log;
 
 		mlog(MLog::info, "TraceProcessor") << "Finished (" << _id << ").\n";
 		_tile_manager->trace_processor_finished(_id);

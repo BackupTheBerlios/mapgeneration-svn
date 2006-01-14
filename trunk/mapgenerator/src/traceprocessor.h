@@ -20,7 +20,7 @@ namespace mapgeneration
 #include "node.h"
 #include "tile.h"
 #include "tilemanager.h"
-#include "tracelogwriter.h"
+//#include "tracelogwriter.h"
 #include "util/constants.h"
 #include "util/fixedsizequeue.h"
 #include "util/mlog.h"
@@ -230,7 +230,7 @@ namespace mapgeneration
 			/**
 			 * @brief The TraceProcessorLogger for this TraceProcessor
 			 */
-			TraceLogWriter* _trace_log;
+//			TraceLogWriter* _trace_log;
 			
 			
 			/**
