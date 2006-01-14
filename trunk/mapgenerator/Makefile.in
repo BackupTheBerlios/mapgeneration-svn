@@ -29,6 +29,11 @@ gui:
 mng:
 	$(MAKE) -C $(bindir) mng
 
+# Compiles the PeterRoosenTracks converter
+.PHONY: prt
+prt:
+	$(MAKE) -C $(bindir) prt
+
 # Compiles the tests
 .PHONY: tests
 tests:

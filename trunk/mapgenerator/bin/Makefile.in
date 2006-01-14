@@ -68,6 +68,11 @@ gui:
 mng:
 	$(MAKE) -C ./util/mngconverter
 
+# Compiles the PeterRoosenTracks converter
+.PHONY: prt
+prt:
+	$(MAKE) -C ./util/prtconverter
+
 # Compiles the tests
 .PHONY: tests
 tests:
@@ -90,6 +95,8 @@ clean:
 	$(MAKE) -C ./tests clean
 	$(MAKE) -C ./gui clean
 	$(MAKE) -C ./gpstrans clean
+	$(MAKE) -C ./util/mngconverter clean
+	$(MAKE) -C ./util/prtconverter clean
 	-rm -f *.o *.lo *.d ./main@EXEEXT@ ./util/*.o ./util/*.lo ./util/*.d
 	-rm -f ./util/pubsub/*.o ./util/pubsub/*.lo ./util/pubsub/*.d
 	-rm -f ./dbconnection/*.o ./dbconnection/*.lo ./dbconnection/*.d

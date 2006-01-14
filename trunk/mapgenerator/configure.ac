@@ -246,6 +246,6 @@ AC_TYPE_SIZE_T
 AC_FUNC_STRTOD
 
 
-AC_CONFIG_FILES([Makefile bin/Makefile bin/tests/Makefile bin/gui/Makefile bin/gpstrans/Makefile bin/util/mngconverter/Makefile])
+AC_CONFIG_FILES([Makefile bin/Makefile bin/tests/Makefile bin/gui/Makefile bin/gpstrans/Makefile bin/util/mngconverter/Makefile bin/util/prtconverter/Makefile])
 AC_OUTPUT
 
