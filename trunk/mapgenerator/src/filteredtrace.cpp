@@ -88,7 +88,7 @@ namespace mapgeneration
 		if (size() == 1)
 		{
 			std::vector<unsigned int> temp_vector
-				= front().get_needed_tile_ids(radius);
+				= Tile::get_needed_tile_ids(front(), radius);
 			temp_set.insert(temp_vector.begin(), temp_vector.end());
 			
 			_needed_tile_ids.clear();
@@ -109,8 +109,7 @@ namespace mapgeneration
 			/* the iterator invokes the method get_needed_tile_ids with the 
 			 * threshold "30" and puts values into the vector needed_tile_ids */
 			std::vector<unsigned int> temp_vector
-				= GeoCoordinate::get_needed_tile_ids(*previous_iter, *iter,
-					radius);
+				= Tile::get_needed_tile_ids(*previous_iter, *iter, radius);
 			temp_set.insert(temp_vector.begin(), temp_vector.end());
 		}
 		

@@ -17,6 +17,7 @@
 	#include "stdint.h"
 #endif
 
+#include "geocoordinate.h"
 #include "node.h"
 #include "util/serializer.h"
 #include "util/rangereporting/quadtree.h"
@@ -91,6 +92,19 @@ namespace mapgeneration
 			deserialize(std::istream& i_stream);
 			
 			
+			/**
+			 * @brief Calculates the distances to the tile borders that attach at
+			 * the specified heading.
+			 * 
+			 * @param heading the heading
+			 * @return the distance (in meter)
+			 */
+			static double
+			distance_to_tile_border(const GeoCoordinate& geo_coordinate,
+				const GeoCoordinate::Heading heading,
+				const GeoCoordinate::Representation output_representation);
+			
+			
 			inline bool
 			exists_node(Node::Id node_id) const;
 
@@ -104,6 +118,70 @@ namespace mapgeneration
 			 */
 			inline Id
 			get_id() const;
+			
+			
+			/**
+			 * @brief Calculates the needed tile IDs for the GeoCoordinate.
+			 * 
+			 * Threshold should be smaller than half of the height of a tile.
+			 * 
+			 * @param geo_coordinate the GeoCoordinate
+			 * @param radius_threshold the threshold of the radius
+			 * 
+			 * @return a vector of tile IDs that are within the radius_threshold
+			 */
+			static std::vector<Tile::Id>
+			get_needed_tile_ids(const GeoCoordinate& geo_coordinate,
+				const double radius_threshold);
+			
+			
+			/**
+			 * @brief Calculates the needed tile IDs for the line between two
+			 * GeoCoordinates.
+			 * 
+			 * Threshold should be smaller than half of the height of a tile.
+			 * 
+			 * @param gc_1 first GeoCoordinate
+			 * @param gc_2 second GeoCoordinate
+			 * @param radius_threshold the threshold of the radius
+			 * 
+			 * @return a vector of tile IDs that are within the radius_threshold
+			 */
+			static std::vector<Tile::Id>
+			get_needed_tile_ids(const GeoCoordinate& gc_1,
+				const GeoCoordinate& gc_2, const double radius_threshold);
+			
+			
+			/**
+			 * @brief Calculates the Tile::Id of the given coordinates.
+			 * 
+			 * @return the Tile::Id
+			 */
+			inline static Tile::Id
+			get_tile_id_for(double latitude, double longitude);
+			
+			
+			/**
+			 * @brief Calculates the Tile::Id of the given GeoCoordinate.
+			 * 
+			 * @return the Tile::Id
+			 */
+			inline static Tile::Id
+			get_tile_id_of(const GeoCoordinate& geo_coordiante);
+			
+			
+			/**
+			 * @brief Merges the northing part and the easting part to one
+			 * Tile::Id
+			 * 
+			 * @param northing the northing part of a tile ID
+			 * @param easting the easting part of a tile ID
+			 * @return the whole tile ID
+			 * 
+			 * @todo Explain the algorithm of tile ID generation.
+			 */
+			inline static Tile::Id
+			merge_tile_id_parts(Tile::Id northing, Tile::Id easting);
 			
 			
 			inline bool
@@ -176,8 +254,18 @@ namespace mapgeneration
 			
 			inline size_t
 			size_of() const;
-		
-
+			
+			
+			/**
+			 * @brief Splits tile_id to the northing and easting part.
+			 * 
+			 * @param tile_id the Tile::Id
+			 * @param northing_part a reference to the northing part
+			 * @param easting_part a reference to the easting part
+			 */
+			inline static void
+			split_tile_id(Id tile_id, Id& northing_part, Id& easting_part);
+			
 		private:
 			
 			/**
@@ -190,6 +278,16 @@ namespace mapgeneration
 			
 			void
 			init_quadtree() const;
+			
+			
+			/**
+			 * @brief Splits my Tile::Id to the northing and easting part.
+			 * 
+			 * @param northing_part a reference to the northing part
+			 * @param easting_part a reference to the easting part
+			 */
+			inline void
+			split_tile_id(Id& northing_part, Id& easting_part) const;
 			
 			
 			inline bool
@@ -327,10 +425,41 @@ namespace mapgeneration
 	}
 	
 	
-	inline unsigned int
+	inline Tile::Id
 	Tile::get_id() const
 	{
 		return _id;
+	}
+	
+	
+	inline Tile::Id
+	Tile::get_tile_id_for(double latitude, double longitude)
+	{
+		Tile::Id northing = static_cast<Tile::Id>((latitude + 90.0) * 100.0);
+		Tile::Id easting = static_cast<Tile::Id>((longitude + 180.0) * 100.0);		
+	   
+		return merge_tile_id_parts(northing, easting);
+	}
+	
+	
+	inline Tile::Id
+	Tile::get_tile_id_of(const GeoCoordinate& geo_coordinate)
+	{
+		return get_tile_id_for(
+			geo_coordinate.get_latitude(), geo_coordinate.get_longitude());
+	}
+	
+	
+	inline Tile::Id
+	Tile::merge_tile_id_parts(Tile::Id northing, Tile::Id easting)
+	{
+		if (northing < 0 || northing > 18000)
+			throw ("Pole regions are not supported!!! (merge_tile_id_parts)");
+		
+		easting = easting % 36000;
+		if (easting < 0) easting += 36000;
+		
+		return ((northing << 16) + easting);
 	}
 	
 	
@@ -458,6 +587,22 @@ namespace mapgeneration
 	Tile::size_of() const
 	{
 		return sizeof(Tile) + _quadtree.size_of();
+	}
+	
+	
+	inline void
+	Tile::split_tile_id(Tile::Id& northing_part, Tile::Id& easting_part) const
+	{
+		split_tile_id(get_id(), northing_part, easting_part);
+	}
+	
+	
+	inline void
+	Tile::split_tile_id(Tile::Id tile_id, Tile::Id& northing_part,
+		Tile::Id& easting_part)
+	{
+		northing_part =	tile_id >> 16;
+		easting_part = tile_id % (1 << 16);
 	}
 	
 	

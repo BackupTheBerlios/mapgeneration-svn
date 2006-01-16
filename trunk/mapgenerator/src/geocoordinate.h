@@ -9,8 +9,7 @@
 #ifndef GEOCOORDINATE_H
 #define GEOCOORDINATE_H
 
-#include <iostream>
-#include <vector>
+//#include <vector>
 
 #include "util/constants.h"
 #include "util/mlog.h"
@@ -111,7 +110,7 @@ namespace mapgeneration
 			/**
 			 * @brief Empty Constructor.
 			 */
-			inline GeoCoordinate() ;
+			GeoCoordinate() ;
 			
 			
 			/**
@@ -121,48 +120,141 @@ namespace mapgeneration
 			 * @param longitude a value for the longitude
 			 * @param altitude a value for the altitude (default: 0)
 			 */
-			inline
 			GeoCoordinate(const double latitude, const double longitude,
 				const double altitude = 0);
 				
-	
-			inline
+			
+			/**
+			 * @brief Copy constructor.
+			 * 
+			 * @param geo_coordinate the GeoCoordinate that is copied
+			 */
 			GeoCoordinate(const GeoCoordinate& geo_coordinate);
 			
 			
+			/**
+			 * @brief Calculates an approximated value for the bearing
+			 * from this to the given GeoCoordinate.
+			 * 
+			 * @param geo_coordinate the given GeoCoordinate
+			 * @param output_representation a switch to control the
+			 * representation of the return value. Default is radian. You can
+			 * choose between radian, degree, meter (only where appropriate!).
+			 * 
+			 * @return the approximated value for bearing
+			 */
 			double
 			bearing_approximated(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _RADIAN) const;
 			
 			
+			/**
+			 * @brief Calculates the exact value for the bearing
+			 * from this to the given GeoCoordinate on a Great Circle.
+			 * As this value changes with every infitesimal movement on the
+			 * Great Circle, you can state a proportional value
+			 * (within [0, 1]) that specify the position where you are on the
+			 * Great Circle "at the moment".
+			 * 
+			 * @param geo_coordinate the given GeoCoordinate
+			 * @param output_representation a switch to control the
+			 * representation of the return value. Default is radian. You can
+			 * choose between radian, degree, meter (only where appropriate!).
+			 * @param at_point the proportional value
+			 * 
+			 * @return the exact value for bearing on a Great Circle
+			 * 
+			 * @see bearing_on_rhumb_line
+			 */
 			double
 			bearing_on_great_circle(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _RADIAN,
 				const double at_point = 0.0) const;
 			
 			
+			/**
+			 * @brief Loxodrom = Rhumbline.
+			 * @see bearing_on_rhumb_line
+			 */
 			inline double
 			bearing_on_loxodrom(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _RADIAN) const;
 			
 			
+			/**
+			 * @brief Orthodrom = Great Circle.
+			 * @see bearing_on_great_circle
+			 */
 			inline double
 			bearing_on_orthodrom(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _RADIAN,
 				const double at_point = 0.0) const;
 			
 			
+			/**
+			 * @brief Calculates the exact value for the bearing
+			 * from this to the given GeoCoordinate on a Rhumbline.
+			 * As navigation on a Rhumbline is easier then on a Great Circle,
+			 * you calculate a bearing value in advance and follow it until you
+			 * reach your destination, a proportional value need not to be
+			 * specified. But as you know every advantage has a drawback: the
+			 * travel distance on a rhumbline is longer then on a Great Circle.
+			 * 
+			 * @param geo_coordinate the given GeoCoordinate
+			 * @param output_representation a switch to control the
+			 * representation of the return value. Default is radian. You can
+			 * choose between radian and degree.
+			 * 
+			 * @return the exact value for bearing on a Rhumbline
+			 * 
+			 * @see bearing_on_great_circle
+			 */
 			double
 			bearing_on_rhumb_line(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _RADIAN) const;
 			
 			
+			/**
+			 * @brief Computes an approximated GeoCoordinate given the polar
+			 * coordinates (bearing and distance).
+			 * You can specify in which representation these values are given.
+			 * 
+			 * @param bearing the bearing
+			 * @param distance the distance
+			 * @param bearing_representation the representation of the bearing
+			 * value. You can choose between radian and degree. Default is
+			 * radian.
+			 * @param distance_representation the representation of the distance
+			 * value. You can choose between radian, degree and meter. Default
+			 * is meter.
+			 * 
+			 * @return the approximated GeoCoodinate
+			 */
 			GeoCoordinate
 			compute_geo_coordinate_approximated(double bearing, double distance,
 				const Representation bearing_representation = _RADIAN,
 				const Representation distance_representation = _METER) const;
 			
 			
+			/**
+			 * @brief Computes an exact GeoCoordinate following the Great
+			 * Circle which yield from the starting value for the bearing. On
+			 * this Great Circle the given distance is travelled.
+			 * You can specify in which representation these values are given.
+			 * 
+			 * @param starting_bearing the starting value for the bearing
+			 * @param distance the distance
+			 * @param bearing_representation the representation of the bearing
+			 * value. You can choose between radian and degree. Default is
+			 * radian.
+			 * @param distance_representation the representation of the distance
+			 * value. You can choose between radian, degree and meter. Default
+			 * is meter.
+			 * 
+			 * @return the exact GeoCoodinate
+			 * 
+			 * @see compute_geo_coordinate_on_rhumb_line
+			 */
 			GeoCoordinate
 			compute_geo_coordinate_on_great_circle(double starting_bearing,
 				double distance,
@@ -170,12 +262,40 @@ namespace mapgeneration
 				const Representation distance_representation = _METER) const;
 			
 			
+			/**
+			 * @brief Computes an exact GeoCoordinate given the polar
+			 * coordinates (bearing and distance) on the resulting Rhumbline.
+			 * You can specify in which representation these values are given.
+			 * 
+			 * @param bearing the bearing
+			 * @param distance the distance
+			 * @param bearing_representation the representation of the bearing
+			 * value. You can choose between radian and degree. Default is
+			 * radian.
+			 * @param distance_representation the representation of the distance
+			 * value. You can choose between radian, degree and meter. Default
+			 * is meter.
+			 * 
+			 * @return the exact GeoCoodinate
+			 * 
+			 * @see compute_geo_coordinate_on_great_circle
+			 */
 			GeoCoordinate
 			compute_geo_coordinate_on_rhumb_line(double bearing, double distance,
 				const Representation bearing_representation = _RADIAN,
 				const Representation distance_representation = _METER) const;
 			
 			
+			/**
+			 * @brief Converts the given value from one representation to
+			 * another one.
+			 * 
+			 * @param value the given value
+			 * @param from_representation the initial representation of the
+			 * given value
+			 * @param to_representation the representation the given value
+			 * is converted to
+			 */
 			inline static void
 			convert(double& value, const Representation from_representation,
 				const Representation to_representation);
@@ -189,47 +309,72 @@ namespace mapgeneration
 			
 			
 			/**
-			 * @brief Calculates the distance between two geocoordinates.
+			 * @brief Calculates the approximated distance between this and
+			 * the given GeoCoordinate.
+			 * You can specify in which representation the output value
+			 * should be: radian, degree, meter (default is meter).
 			 * 
-			 * @return the distance (in meter)
+			 * @param geo_coordinate the given GeoCoordinate
+			 * 
+			 * @return the approximated distance in the chosen representation.
 			 */
-			 
 			double
 			distance_approximated(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _METER) const;
 			
 			
-			
+			/**
+			 * @brief Calculates the exact distance between this and
+			 * the given GeoCoordinate on a Great Circle.
+			 * You can specify in which representation the output value
+			 * should be: radian, degree, meter (default is meter).
+			 * 
+			 * @param geo_coordinate the given GeoCoordinate
+			 * 
+			 * @return the exact distance on the Great Circle in the chosen
+			 * representation
+			 * 
+			 * @see distance_on_rhumb_line
+			 */
 			double
 			distance_on_great_circle(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _METER) const;
 			
 			
+			/**
+			 * @brief Loxodrom = Rhumbline.
+			 * @see distance_on_rhumb_line
+			 */
 			inline double
 			distance_on_loxodrom(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _METER) const;
 			
 			
+			/**
+			 * @brief Orthodrom = Great Circle.
+			 * @see distance_on_rhumb_line
+			 */
 			inline double
 			distance_on_orthodrom(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _METER) const;
 			
 			
+			/**
+			 * @brief Calculates the exact distance between this and
+			 * the given GeoCoordinate on a Rhumbline.
+			 * You can specify in which representation the output value
+			 * should be: radian, degree, meter (default is meter).
+			 * 
+			 * @param geo_coordinate the given GeoCoordinate
+			 * 
+			 * @return the exact distance on the Rhumbline in the chosen
+			 * representation
+			 * 
+			 * @see distance_on_great_circle
+			 */
 			double
 			distance_on_rhumb_line(const GeoCoordinate& geo_coordinate,
 				const Representation output_representation = _METER) const;
-			
-			
-			/**
-			 * @brief Calculates the distances to the tile borders that attach at
-			 * the specified heading.
-			 * 
-			 * @param heading the heading
-			 * @return the distance (in meter)
-			 */
-			double
-			distance_to_tile_border(const Heading heading,
-				const Representation output_representation) const;
 			
 			
 			/**
@@ -254,54 +399,7 @@ namespace mapgeneration
 			
 			
 			/**
-			 * @brief Calculates the needed tile IDs for the GeoCoordinate.
-			 * 
-			 * Threshold should be smaller than half of the height of a tile.
-			 * 
-			 * @param radius_threshold the threshold of the radius
-			 * @return a vector of tile IDs that are within the radius_threshold
-			 */
-			std::vector<unsigned int>
-			get_needed_tile_ids(const double radius_threshold) const;
-			
-			
-			/**
-			 * @brief Calculates the needed tile IDs for the line between two
-			 * GeoCoordinates.
-			 * 
-			 * Threshold should be smaller than half of the height of a tile.
-			 * 
-			 * @param gc_1 first GeoCoordinate
-			 * @param gc_2 second GeoCoordinate
-			 * @param radius_threshold the threshold of the radius
-			 * @return a vector of tile IDs that are within the radius_threshold
-			 */
-			static std::vector<unsigned int>
-			get_needed_tile_ids(const GeoCoordinate& gc_1,
-				const GeoCoordinate& gc_2, const double radius_threshold);
-			
-			
-			/**
-			 * @brief A wrapper to call static get_tile_id for the object 
-			 * itself.
-			 * 
-			 * @return the tile ID
-			 */
-			inline unsigned int
-			get_tile_id() const;
-			
-			
-			/**
-			 * @brief Returns the tile ID the given coordinate is on.
-			 * 
-			 * @return the tile ID
-			 */
-			inline static unsigned int
-			get_tile_id(const double latitude, const double longitude);
-			
-			
-			/**
-			 * @brief Interpolates a new GeoCoordinate.
+			 * @brief Interpolates a new approximated GeoCoordinate.
 			 * 
 			 * The new GeoCoordinate is located between the two specified
 			 * GeoCoordinates according to the specified weight.
@@ -311,37 +409,57 @@ namespace mapgeneration
 			 * @param weight_on_first the weight on the first GeoCoordinate;
 			 * 0 <= weight_on_first <= 1 (weight_on_second result in 1 -
 			 * weight_on_first)
-			 * @return the new GeoCoordinate
+			 * @return the new approximated GeoCoordinate
 			 */
 			static GeoCoordinate
 			interpolate_approximated(const GeoCoordinate& gc_1,
 				const GeoCoordinate& gc_2, const double weight_on_first);
 			
 			
+			/**
+			 * @brief Interpolates a new exact GeoCoordinate. The interpolated
+			 * CeoCoordinate is situated on the initiated Great Circle.
+			 * 
+			 * The new GeoCoordinate is located between the two specified
+			 * GeoCoordinates according to the specified weight.
+			 * 
+			 * @param gc_1 a reference to the first GeoCoordinate
+			 * @param gc_2 a reference to the second GeoCoordiante
+			 * @param weight_on_first the weight on the first GeoCoordinate;
+			 * 0 <= weight_on_first <= 1 (weight_on_second result in 1 -
+			 * weight_on_first)
+			 * @return the new exact GeoCoordinate
+			 */
 			static GeoCoordinate
 			interpolate_on_great_circle(const GeoCoordinate& gc_1,
 				const GeoCoordinate& gc_2, const double weight_on_first);
 			
 			
+			/**
+			 * @brief Interpolates a new exact GeoCoordinate. The interpolated
+			 * CeoCoordinate is situated on the initiated Rhumbline.
+			 * 
+			 * The new GeoCoordinate is located between the two specified
+			 * GeoCoordinates according to the specified weight.
+			 * 
+			 * @param gc_1 a reference to the first GeoCoordinate
+			 * @param gc_2 a reference to the second GeoCoordiante
+			 * @param weight_on_first the weight on the first GeoCoordinate;
+			 * 0 <= weight_on_first <= 1 (weight_on_second result in 1 -
+			 * weight_on_first)
+			 * @return the new exact GeoCoordinate
+			 */
 			static GeoCoordinate
 			interpolate_on_rhumb_line(const GeoCoordinate& gc_1,
 				const GeoCoordinate& gc_2, const double weight_on_first);
 			
 			
 			/**
-			 * @brief Merges the northing part and the easting part to one
-			 * unsigned int
+			 * @brief Normalise the given arc to be within [0, 2PI)
 			 * 
-			 * @param northing the northing part of a tile ID
-			 * @param easting the easting part of a tile ID
-			 * @return the whole tile ID
-			 * 
-			 * @todo Explain the algorithm of tile ID generation.
+			 * @param arc the arc which is normalised
+			 * @param the representation of the arc
 			 */
-			inline static unsigned int
-			merge_tile_id_parts(const int northing, const int easting);
-			
-			
 			inline static void
 			normalise_arc(double& arc, const Representation representation);
 			
@@ -398,8 +516,17 @@ namespace mapgeneration
 			operator[](int dimension);
 			
 			
+			/**
+			 * @brief Computed the nearest GeoCoordinate to the segment which
+			 * results from the two given GeoCoordinates.
+			 * 
+			 * @param start_gc the first GeoCoordinate
+			 * @param end_gc the second GeoCoordinate
+			 * 
+			 * @return the nearest GeoCoordinate
+			 */
 			GeoCoordinate
-			nearest_geo_coordinate_on_segment_on_great_circle(
+			nearest_geo_coordinate_to_segment_on_great_circle(
 				const GeoCoordinate& start_gc, const GeoCoordinate& end_gc) const;
 			
 			
@@ -457,19 +584,6 @@ namespace mapgeneration
 			 */
 			inline void
 			set_longitude(const double value);
-			
-			
-			/**
-			 * @brief Splits the merged unsigned integer of the tile ID to the
-			 * northing and easting part.
-			 * 
-			 * @param tile_id the tile ID
-			 * @param northing_part a reference to the northing part
-			 * @param easting_part a reference to the easting part
-			 */
-			static inline void
-			split_tile_id(const unsigned int tile_id, int& northing_part,
-				int& easting_part);
 			
 			
 		protected:
@@ -599,35 +713,6 @@ namespace mapgeneration
 	}
 	
 	
-	inline unsigned int 
-	GeoCoordinate::get_tile_id() const
-	{
-		return get_tile_id(_latitude, _longitude);
-	}
-	
-	
-	inline unsigned int
-	GeoCoordinate::get_tile_id(const double latitude, const double longitude)
-	{
-		int northing = (int)((latitude + 90) * 100);
-		int easting = (int)((longitude + 180) * 100);		
-	   
-		return merge_tile_id_parts(northing, easting);
-	}
-	
-	
-	inline unsigned int
-	GeoCoordinate::merge_tile_id_parts(int northing, int easting)
-	{
-		if (northing < 0 || northing > 18000) throw ("Pole regions are not supported!!! (merge_tile_id_parts)");
-		
-		easting = easting % 36000;
-		if (easting < 0) easting += 36000;
-		
-		return ((northing << 16) + easting);
-	}
-	
-	
 	inline void
 	GeoCoordinate::normalise_arc(double& arc, const Representation representation)
 	{
@@ -730,14 +815,6 @@ namespace mapgeneration
 		Serializer::serialize(o_stream, _latitude);
 		Serializer::serialize(o_stream, _longitude);
 		Serializer::serialize(o_stream, _altitude);
-	}
-		
-	
-	inline void
-	GeoCoordinate::split_tile_id(const unsigned int tile_id, int& northing_part, int& easting_part)
-	{
-		northing_part = tile_id >> 16;
-		easting_part = tile_id % (1 << 16);
 	}
 	
 }  //namespace mapgeneration

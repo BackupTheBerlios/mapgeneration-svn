@@ -85,9 +85,13 @@ namespace mapgeneration
 	{
 		result_list.clear();
 		
-		std::vector<unsigned int> needed_tile_ids  = gps_point.get_needed_tile_ids(_search_radius_m * 2.0);
-		std::vector<unsigned int>::iterator needed_tile_ids_iter = needed_tile_ids.begin();
-		std::vector<unsigned int>::iterator needed_tile_ids_iter_end = needed_tile_ids.end();
+		std::vector<Tile::Id> needed_tile_ids
+			= Tile::get_needed_tile_ids(gps_point, _search_radius_m * 2.0);
+		std::vector<Tile::Id>::iterator needed_tile_ids_iter
+			= needed_tile_ids.begin();
+		std::vector<Tile::Id>::iterator needed_tile_ids_iter_end
+			= needed_tile_ids.end();
+		
 		for (; needed_tile_ids_iter != needed_tile_ids_iter_end; ++needed_tile_ids_iter)
 		{
 			/* Load the tiles or create a new one if none could be loaded. */
@@ -202,7 +206,7 @@ namespace mapgeneration
 	TraceProcessor::create_new_node(GPSPoint& gps_point)
 	{
 		Node new_node(gps_point);
-		unsigned int new_tile_id = new_node.get_tile_id();
+		Tile::Id new_tile_id = Tile::get_tile_id_of(new_node);
 		
 		TileCache::Pointer tile = _tile_cache->get(new_tile_id);
 		if (tile == 0)

@@ -8,8 +8,6 @@
 
 #include "mapgenerationdraw.h"
 
-#include "geocoordinate.h"
-
 
 namespace mapgeneration_gui
 {
@@ -33,14 +31,14 @@ namespace mapgeneration_gui
 
 
 	void
-	MapGenerationDraw::tile_border(GPSDraw* gps_draw, const unsigned int tile_id, 
+	MapGenerationDraw::tile_border(GPSDraw* gps_draw, const Tile::Id tile_id, 
 	const unsigned int width_and_height)
 	{
-		int northing, easting;
-		GeoCoordinate::split_tile_id(tile_id, northing, easting);
+		Tile::Id northing, easting;
+		Tile::split_tile_id(tile_id, northing, easting);
 		
 		double latitude1=((double)northing) / 100.0 - 90.0;
-		double longitude1=((double) easting) / 100.0 - 180.0;
+		double longitude1=((double)easting) / 100.0 - 180.0;
 		double latitude2=(((double)northing) + (double)width_and_height) / 100.0 - 90.0;
 		double longitude2=((double)easting) / 100.0 - 180.0;
 		double latitude3=(((double)northing) + (double)width_and_height) / 100.0 - 90.0;

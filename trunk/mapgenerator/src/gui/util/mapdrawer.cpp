@@ -90,12 +90,12 @@ namespace mapgeneration_gui
 	
 	
 	void
-	MapDrawer::draw_tile(unsigned int tile_id,
-		unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
-		unsigned int max_tile_id_northing, unsigned int max_tile_id_easting)
+	MapDrawer::draw_tile(Tile::Id tile_id,
+		Tile::Id min_tile_id_northing, Tile::Id min_tile_id_easting, 
+		Tile::Id max_tile_id_northing, Tile::Id max_tile_id_easting)
 	{
-		int northing, easting;
-		GeoCoordinate::split_tile_id(tile_id, northing, easting);
+		Tile::Id northing, easting;
+		Tile::split_tile_id(tile_id, northing, easting);
 		if ((northing < min_tile_id_northing) || (northing > max_tile_id_northing) ||
 			(easting < min_tile_id_easting) || (easting > max_tile_id_easting))
 			return;
@@ -115,9 +115,9 @@ namespace mapgeneration_gui
 					node_iter->second.next_node_ids().end();
 				for (; next_node_id_iter != next_node_id_iter_end; ++next_node_id_iter)
 				{
-					int nnorthing;
-					int neasting;
-					GeoCoordinate::split_tile_id(Node::tile_id(*next_node_id_iter),
+					Tile::Id nnorthing;
+					Tile::Id neasting;
+					Tile::split_tile_id(Node::tile_id(*next_node_id_iter),
 						nnorthing, neasting);
 					if (nnorthing>=min_tile_id_northing &&
 						nnorthing<=max_tile_id_northing &&
@@ -174,13 +174,13 @@ namespace mapgeneration_gui
 			_gps_draw->reproject(view_start_x, view_start_y, max_latitude, min_longitude);
 			_gps_draw->reproject(view_end_x, view_end_y, min_latitude, max_longitude);
 
-			unsigned int min_tile_id = 
-				GeoCoordinate::get_tile_id(min_latitude, min_longitude);
-			unsigned int max_tile_id =
-				GeoCoordinate::get_tile_id(max_latitude, max_longitude);
+			Tile::Id min_tile_id =
+				Tile::get_tile_id_for(min_latitude, min_longitude);
+			Tile::Id max_tile_id =
+				Tile::get_tile_id_for(max_latitude, max_longitude);
 										
-			GeoCoordinate::split_tile_id(min_tile_id, _min_tile_id_northing, _min_tile_id_easting);
-			GeoCoordinate::split_tile_id(max_tile_id, _max_tile_id_northing, _max_tile_id_easting);
+			Tile::split_tile_id(min_tile_id, _min_tile_id_northing, _min_tile_id_easting);
+			Tile::split_tile_id(max_tile_id, _max_tile_id_northing, _max_tile_id_easting);
 				
 			_tiles_to_display = 
 				((long)(_max_tile_id_northing - _min_tile_id_northing)) * 
@@ -247,27 +247,27 @@ namespace mapgeneration_gui
 					_gps_draw->line((double)x, (double)y, (double)x, (double)y+10);
 				}
 
-			unsigned int min_tile_id = 
-				GeoCoordinate::get_tile_id(min_latitude, min_longitude);
-			unsigned int max_tile_id =
-				GeoCoordinate::get_tile_id(max_latitude, max_longitude);
+			Tile::Id min_tile_id = 
+				Tile::get_tile_id_for(min_latitude, min_longitude);
+			Tile::Id max_tile_id =
+				Tile::get_tile_id_for(max_latitude, max_longitude);
 
-			int min_tile_id_northing, min_tile_id_easting;
-			int max_tile_id_northing, max_tile_id_easting;
+			Tile::Id min_tile_id_northing, min_tile_id_easting;
+			Tile::Id max_tile_id_northing, max_tile_id_easting;
 						
-			GeoCoordinate::split_tile_id(min_tile_id, min_tile_id_northing, min_tile_id_easting);
-			GeoCoordinate::split_tile_id(max_tile_id, max_tile_id_northing, max_tile_id_easting);
+			Tile::split_tile_id(min_tile_id, min_tile_id_northing, min_tile_id_easting);
+			Tile::split_tile_id(max_tile_id, max_tile_id_northing, max_tile_id_easting);
 	
 			if (_tiles_to_display <= 100000L)
 			{				
-				for (int y=min_tile_id_northing; y<=max_tile_id_northing; y+=1)
-					for (int x=min_tile_id_easting; x<=max_tile_id_easting; x+=1)
+				for (Tile::Id y=min_tile_id_northing; y<=max_tile_id_northing; y+=1)
+					for (Tile::Id x=min_tile_id_easting; x<=max_tile_id_easting; x+=1)
 					{
 						if (_used_tile_blocks_50[x/50].test(y/50))
 						{
 							if (_used_tile_blocks_5[x/5].test(y/5))
 							{
-								unsigned int tile_id = GeoCoordinate::merge_tile_id_parts(y, x);
+								Tile::Id tile_id = Tile::merge_tile_id_parts(y, x);
 								
 								TileCache::Pointer tile_pointer;
 								if (_use_prefetch)
@@ -298,14 +298,14 @@ namespace mapgeneration_gui
 			else if (_tiles_to_display <= 6480000L)
 			{
 				dc.SetPen(*wxThePenList->FindOrCreatePen(wxColour(0, 0, 0), 1, wxSOLID));
-				for (int y=(min_tile_id_northing/5)*5; y<=max_tile_id_northing; y+=5)
-					for (int x=(min_tile_id_easting/5)*5; x<=max_tile_id_easting; x+=5)
+				for (Tile::Id y=(min_tile_id_northing/5)*5; y<=max_tile_id_northing; y+=5)
+					for (Tile::Id x=(min_tile_id_easting/5)*5; x<=max_tile_id_easting; x+=5)
 					{
 						if (_used_tile_blocks_50[x/50].test(y/50))
 						{
 							if (_used_tile_blocks_5[x/5].test(y/5))
 							{
-								unsigned int tile_id = GeoCoordinate::merge_tile_id_parts(y, x);
+								Tile::Id tile_id = Tile::merge_tile_id_parts(y, x);
 								MapGenerationDraw::tile_border(_gps_draw, tile_id, 5);
 							}
 						} else
@@ -317,12 +317,12 @@ namespace mapgeneration_gui
 			else // if (tiles_to_display <= 648000000L)
 			{
 				dc.SetPen(*wxThePenList->FindOrCreatePen(wxColour(0, 0, 0), 1, wxSOLID));
-				for (int y=(min_tile_id_northing/50)*50; y<=max_tile_id_northing; y+=50)
-					for (int x=(min_tile_id_easting/50)*50; x<=max_tile_id_easting; x+=50)
+				for (Tile::Id y=(min_tile_id_northing/50)*50; y<=max_tile_id_northing; y+=50)
+					for (Tile::Id x=(min_tile_id_easting/50)*50; x<=max_tile_id_easting; x+=50)
 					{
 						if (_used_tile_blocks_50[x/50].test(y/50))
 						{
-							unsigned int tile_id = GeoCoordinate::merge_tile_id_parts(y, x);
+							Tile::Id tile_id = Tile::merge_tile_id_parts(y, x);
 							MapGenerationDraw::tile_border(_gps_draw, tile_id, 50);
 						}
 					}
@@ -351,7 +351,7 @@ namespace mapgeneration_gui
 
 
 	void
-	MapDrawer::tile_prefetched(unsigned int id)
+	MapDrawer::tile_prefetched(Tile::Id id)
 	{
 		_prefetched_queue_mutex.enterMutex();
 		_prefetched_tile_ids.push_back(id);	
@@ -396,14 +396,13 @@ namespace mapgeneration_gui
 		
 		if (_tile_cache == 0) return;
 		
-		std::vector<unsigned int> used_tile_ids = _tile_cache->get_used_ids();
-		std::vector<unsigned int>::iterator iter = used_tile_ids.begin();
-		std::vector<unsigned int>::iterator iter_end = used_tile_ids.end();		
+		std::vector<Tile::Id> used_tile_ids = _tile_cache->get_used_ids();
+		std::vector<Tile::Id>::iterator iter = used_tile_ids.begin();
+		std::vector<Tile::Id>::iterator iter_end = used_tile_ids.end();		
 		for (; iter!=iter_end; ++iter)
 		{
-			int tile_id_northing, tile_id_easting;
-			GeoCoordinate::split_tile_id
-				(*iter, tile_id_northing, tile_id_easting);
+			Tile::Id tile_id_northing, tile_id_easting;
+			Tile::split_tile_id(*iter, tile_id_northing, tile_id_easting);
 			_used_tile_blocks_5[tile_id_easting/5].set(tile_id_northing/5);
 			_used_tile_blocks_50[tile_id_easting/50].set(tile_id_northing/50);
 		}

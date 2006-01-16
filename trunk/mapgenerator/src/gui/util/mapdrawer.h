@@ -16,8 +16,9 @@
 #include <wx/event.h>
 
 #include "gpsdraw.h"
-#include "geocoordinate.h"
+//#include "geocoordinate.h"
 #include "dbconnection/dbconnection.h"
+#include "tile.h"
 #include "tilecache.h"
 #include "util/controlledthread.h"
 #include "util/pubsub/asynchronousproxy.h"
@@ -81,8 +82,8 @@ namespace mapgeneration_gui
 			_map_scrolled_window;
 			
 			
-			int _min_tile_id_northing, _min_tile_id_easting;
-			int _max_tile_id_northing, _max_tile_id_easting;
+			Tile::Id _min_tile_id_northing, _min_tile_id_easting;
+			Tile::Id _max_tile_id_northing, _max_tile_id_easting;
 			
 			
 			ost::Mutex _prefetched_queue_mutex;
@@ -96,7 +97,7 @@ namespace mapgeneration_gui
 			_tile_cache;
 						
 			
-			pubsub::ClassCallSubscriber<MapDrawer, unsigned int> 
+			pubsub::ClassCallSubscriber<MapDrawer, Tile::Id> 
 			_tile_prefetch_notifier;
 			
 			
@@ -116,9 +117,9 @@ namespace mapgeneration_gui
 			
 			
 			void
-			draw_tile(unsigned int tile_id,
-				unsigned int min_tile_id_northing, unsigned int min_tile_id_easting, 
-				unsigned int max_tile_id_northing, unsigned int max_tile_id_easting);
+			draw_tile(Tile::Id tile_id,
+				Tile::Id min_tile_id_northing, Tile::Id min_tile_id_easting, 
+				Tile::Id max_tile_id_northing, Tile::Id max_tile_id_easting);
 			
 						
 			void

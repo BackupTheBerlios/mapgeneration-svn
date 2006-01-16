@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "geocoordinate.h"
-#include "node.h"
+#include "tile.h"
 
 
 using namespace mapgeneration;
@@ -37,7 +37,7 @@ namespace mapgeneration_gui
 
 			
 			static void
-			tile_border(GPSDraw* gps_draw, const unsigned int tile_id, 
+			tile_border(GPSDraw* gps_draw, const Tile::Id tile_id, 
 				const unsigned int width_and_height=1);
 								
 		private:
