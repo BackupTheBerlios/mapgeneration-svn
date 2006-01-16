@@ -9,7 +9,6 @@
 #ifndef GPSPOINT_H
 #define GPSPOINT_H
 
-#include <iostream>
 #include <string>
 #include "geocoordinate.h"
 #include "util/direction.h"
@@ -47,7 +46,8 @@ namespace mapgeneration
 			 * @param altitude a value for the altitude (default: 0)
 			 * @param time a value for the time (default: 0)
 			 */
-			GPSPoint(double latitude, double longitude, double altitude = 0, double time = 0);
+			GPSPoint(double latitude, double longitude, double altitude = 0,
+				double time = 0);
 			
 			
 			/**
@@ -77,7 +77,8 @@ namespace mapgeneration
 			 * @return true, if parsing was successful and no error occured
 			 */ 
 			bool
-			parse_nmea_string (const std::string& gpgga_string, const std::string& gprmc_string);
+			parse_nmea_string (const std::string& gpgga_string,
+				const std::string& gprmc_string);
 	
 
 			/**
@@ -111,7 +112,8 @@ namespace mapgeneration
 			 * @see GeoCoordinate::interpolate
 			 */
 			static GPSPoint
-			interpolate(const GPSPoint& gpsp_1, const GPSPoint& gpsp_2, const double weight_on_first);
+			interpolate(const GPSPoint& gpsp_1, const GPSPoint& gpsp_2,
+				const double weight_on_first);
 			
 			
 			/**
@@ -124,7 +126,8 @@ namespace mapgeneration
 			/**
 			 * @param value the time
 			 */
-			void set_time (double value);
+			void
+			set_time (double value);
 			
 			
 		private:
@@ -143,8 +146,10 @@ namespace mapgeneration
 			
 			/**
 			 * @brief Tests if the specified string is numeric.
+			 * 
+			 * @return true, if string is numeric
 			 */
-			bool
+			static bool
 			is_numeric(const std::string& test_string);
 			
 			
@@ -153,7 +158,7 @@ namespace mapgeneration
 			 * 
 			 * @return true, if parsing was successful and no error occured
 			 */
-			bool
+			inline bool
 			parse_altitude(const std::string& altitude_string);
 			
 			
@@ -163,7 +168,8 @@ namespace mapgeneration
 			 * @return true, if parsing was successful and no error occured
 			 */
 			bool
-			parse_latitude(const std::string& latitude_string, const Heading heading);
+			parse_latitude(const std::string& latitude_string,
+				const Heading heading);
 			
 			
 			/**
@@ -172,7 +178,8 @@ namespace mapgeneration
 			 * @return true, if parsing was successful and no error occured
 			 */
 			bool
-			parse_longitude(const std::string& longitude_string, const Heading heading);
+			parse_longitude(const std::string& longitude_string,
+				const Heading heading);
 			
 			
 			/**
@@ -181,7 +188,8 @@ namespace mapgeneration
 			 * @return true, if parsing was successful and no error occured
 			 */
 			bool
-			parse_date_time(const std::string& date_string, const std::string& time_string);
+			parse_date_time(const std::string& date_string,
+				const std::string& time_string);
 
 	};
 	
@@ -223,7 +231,18 @@ namespace mapgeneration
 	{
 		_time = value;
 	}
-
+	
+	
+	inline bool
+	GPSPoint::parse_altitude(const std::string& altitude_string)
+	{
+		if (!is_numeric(altitude_string))
+			return false;
+		
+		_altitude = atof(altitude_string.c_str());
+		return true;
+	}
+	
 }  //namespace mapgeneration
 
 #endif //GPSPOINT_H

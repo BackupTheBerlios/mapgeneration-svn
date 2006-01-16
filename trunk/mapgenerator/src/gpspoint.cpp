@@ -37,7 +37,8 @@ namespace mapgeneration
   
 
 	bool
-	GPSPoint::parse_nmea_string (const std::string& gpgga_string, const std::string& gprmc_string) 
+	GPSPoint::parse_nmea_string (const std::string& gpgga_string,
+		const std::string& gprmc_string) 
 	{
 		/** @todo We need to reset the GPSPoint. Otherwise an invalid flag is
 		 * never set back to false. But this way is not very elegant! WE
@@ -334,12 +335,14 @@ namespace mapgeneration
 	
 	
 	GPSPoint
-	GPSPoint::interpolate(const GPSPoint& gpsp_1, const GPSPoint& gpsp_2, const double weight_on_first)
+	GPSPoint::interpolate(const GPSPoint& gpsp_1, const GPSPoint& gpsp_2,
+		const double weight_on_first)
 	{
 		/* interpolation of two GPSPoints with the aid of the weight on
 		 * the first GPSPoint */
 		double weight_on_second = 1 - weight_on_first;
-		GPSPoint interpolated_gps_point(GeoCoordinate::interpolate_default(gpsp_1, gpsp_2, weight_on_first));
+		GPSPoint interpolated_gps_point(
+			GeoCoordinate::interpolate_default(gpsp_1, gpsp_2, weight_on_first));
 		interpolated_gps_point.set_time(gpsp_1.get_time() * weight_on_first + 
 			gpsp_2.get_time() * weight_on_second);
 		interpolated_gps_point.set_direction(
@@ -351,7 +354,7 @@ namespace mapgeneration
 	}
 	
 	
-	inline bool
+	bool
 	GPSPoint::is_numeric(const std::string& test_string)
 	{
 		bool found_dot = false;
@@ -370,19 +373,9 @@ namespace mapgeneration
 	}
 	
 
-	inline bool
-	GPSPoint::parse_altitude(const std::string& altitude_string)
-	{
-		if (!is_numeric(altitude_string))
-			return false;
-		
-		_altitude = atof(altitude_string.c_str());
-		return true;
-	}
-	
-	
-	inline bool
-	GPSPoint::parse_latitude(const std::string& latitude_string, const Heading heading)
+	bool
+	GPSPoint::parse_latitude(const std::string& latitude_string,
+		const Heading heading)
 	{
 		if (!is_numeric(latitude_string))
 			return false;
@@ -402,8 +395,9 @@ namespace mapgeneration
 	}
 	
 	
-	inline bool
-	GPSPoint::parse_longitude(const std::string& longitude_string, const Heading heading)
+	bool
+	GPSPoint::parse_longitude(const std::string& longitude_string,
+		const Heading heading)
 	{
 		if (!is_numeric(longitude_string))
 			return false;
@@ -423,8 +417,9 @@ namespace mapgeneration
 	}
 	
 	
-	inline bool
-	GPSPoint::parse_date_time(const std::string& date_string, const std::string& time_string)
+	bool
+	GPSPoint::parse_date_time(const std::string& date_string,
+		const std::string& time_string)
 	{
 //		std::cout << "parse_date_time; ";
 //		std::cout << "date=" << date_string << "; time=" << time_string << "; ";
@@ -482,10 +477,8 @@ namespace mapgeneration
 		
 		if (mktime_result == -1)
 			return false;
-			
 		
-		
-		_time = (double)mktime_result; /** @todo Use correct cast here! */
+		_time = static_cast<double>(mktime_result);
 		return true;
 	}
 	
