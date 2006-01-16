@@ -16,15 +16,14 @@
 
 #include "gui/util/gpsdraw.h"
 #include "mapdrawer.h"
-#include "geocoordinate.h"
 #include "dbconnection/dbconnection.h"
 #include "tilecache.h"
+#include "util/geocoordinate.h"
 #include "util/pubsub/asynchronousproxy.h"
 #include "util/pubsub/classcallsubscriber.h"
 
-
 using namespace mapgeneration;
-
+using mapgeneration_util::GeoCoordinate;
 
 namespace mapgeneration_gui
 {

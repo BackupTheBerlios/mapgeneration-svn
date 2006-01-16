@@ -12,22 +12,23 @@ xrcs := mainframe.xrc openconnectiondialog.xrc preferencesdialog.xrc \
 	testmodule.xrc mappanel.xrc tracelogpanel.xrc \
 	preferencesgeneralpanel.xrc
 images := open.xpm cut.xpm
-objects := extendedgenericvalidator.o dialoglogic.o \
-	openconnectiondialoglogic.o \
-	preferencesdialoglogic.o module.o modulemanager.o \
-	mainframelogic.o  mgg.o \
-	util/gpsdraw.o \
+objects := 	util/gpsdraw.o \
 	util/mapgenerationdraw.o util/mapdrawer.o \
 	util/mapscrolledwindowlogic.o \
 	modules/testmodule.o \
 	modules/mapmodule/mapmodule.o \
-	modules/mapmodule/mappanellogic.o
+	modules/mapmodule/mappanellogic.o \
+	extendedgenericvalidator.o dialoglogic.o \
+	openconnectiondialoglogic.o \
+	preferencesdialoglogic.o module.o modulemanager.o \
+	mainframelogic.o  mgg.o
 # removed modules/tracelogmodule/tracelogmodule.o
 # removed modules/tracelogmodule/tracelogpanellogic.o
+
 mainobjects := util/configuration.o util/pubsub/servicelist.o \
 	util/pubsub/genericservice.o \
-	util/mlog.o util/controlledthread.o tile.o node.o \
-	geocoordinate.o \
+	util/mlog.o util/controlledthread.o util/geocoordinate.o \
+	tile.o node.o \
 	dbconnection/filedbconnection.o tilecache.o
 # removed tracelog.o
 

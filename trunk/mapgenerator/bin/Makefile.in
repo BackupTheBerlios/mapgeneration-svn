@@ -8,12 +8,11 @@
 # Makefile for the MapGenerator
 
 # Objectfiles to use for the main executable
-objects := util/configuration.o \
-	util/controlledthread.o util/mlog.o \
+objects := util/configuration.o util/controlledthread.o \
+	util/geocoordinate.o util/mlog.o \
 	util/pubsub/genericservice.o util/pubsub/servicelist.o \
 	dbconnection/filedbconnection.o \
-	geocoordinate.o gpspoint.o node.o \
-	tile.o tilecache.o \
+	gpspoint.o node.o tile.o tilecache.o \
 	filteredtrace.o traceprocessor.o \
 	tilemanager.o traceconnection.o traceserver.o tracefilter.o \
 	executionmanager.o \

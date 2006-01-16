@@ -9,13 +9,9 @@
 #ifndef GEOCOORDINATE_H
 #define GEOCOORDINATE_H
 
-//#include <vector>
-
 #include "util/constants.h"
 #include "util/mlog.h"
 #include "util/serializer.h"
-
-using namespace mapgeneration_util;
 
 #define _altitude _values[_ALTITUDE]
 #define _latitude _values[_LATITUDE]
@@ -41,7 +37,7 @@ using namespace mapgeneration_util;
 #define r2m (EARTH_RADIUS_M)
 #define r2r (1.0)
 
-namespace mapgeneration
+namespace mapgeneration_util
 {
 	
 	class GeoCoordinate;
@@ -817,6 +813,6 @@ namespace mapgeneration
 		Serializer::serialize(o_stream, _altitude);
 	}
 	
-}  //namespace mapgeneration
+}  //namespace mapgeneration_util
 
 #endif //GEOCOORDINATE_H

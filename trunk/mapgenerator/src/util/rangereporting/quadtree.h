@@ -44,7 +44,10 @@ namespace rangereporting
 #include "trapezoid.h"
 
 #include "util/fixpointvector.h"
+#include "util/serializer.h"
+
 using mapgeneration_util::FixpointVector;
+using mapgeneration_util::Serializer;
 
 /** @todo Should be in the configuration file.
  * But the transferation from the ServiceList over the TraceProcessor to the

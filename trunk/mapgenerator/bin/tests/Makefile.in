@@ -14,20 +14,20 @@ tests := test_fixpointvector test_gpspoint test_dbconnection \
 	#test_thread
 	#test_traceserver
 
-test_tracefilter :=  gpspoint.o filteredtrace.o  geocoordinate.o util/mlog.o tracefilter.o util/pubsub/servicelist.o tilemanager.o util/controlledthread.o edge.o node.o tile.o traceprocessor.o tracelogwriter.o util/configuration.o util/pubsub/genericservice.o 
-test_fixpointvector := geocoordinate.o gpspoint.o util/mlog.o
-test_gpspoint := geocoordinate.o gpspoint.o util/mlog.o
-#test_traceserver := util/mlog.o geocoordinate.o gpspoint.o tile.o traceprocessorlog.o traceprocessor.o tilemanager.o filteredtrace.o traceconnection.o traceserver.o
-test_dbconnection := util/mlog.o geocoordinate.o node.o edge.o tile.o dbconnection/filedbconnection.o
-test_filteredtrace := util/mlog.o geocoordinate.o gpspoint.o filteredtrace.o util/pubsub/servicelist.o
-test_serializer := util/mlog.o geocoordinate.o gpspoint.o 
-test_tilecache := util/mlog.o util/controlledthread.o geocoordinate.o node.o tile.o tilecache.o dbconnection/filedbconnection.o
+test_tracefilter :=  gpspoint.o filteredtrace.o util/geocoordinate.o util/mlog.o tracefilter.o util/pubsub/servicelist.o tilemanager.o util/controlledthread.o node.o tile.o traceprocessor.o tracelogwriter.o util/configuration.o util/pubsub/genericservice.o 
+test_fixpointvector := util/geocoordinate.o gpspoint.o util/mlog.o
+test_gpspoint := util/geocoordinate.o gpspoint.o util/mlog.o
+#test_traceserver := util/mlog.o util/geocoordinate.o gpspoint.o tile.o traceprocessorlog.o traceprocessor.o tilemanager.o filteredtrace.o traceconnection.o traceserver.o
+test_dbconnection := util/mlog.o util/geocoordinate.o node.o tile.o dbconnection/filedbconnection.o
+test_filteredtrace := util/mlog.o util/geocoordinate.o gpspoint.o filteredtrace.o node.o tile.o util/pubsub/servicelist.o
+test_serializer := util/mlog.o util/geocoordinate.o gpspoint.o 
+test_tilecache := util/mlog.o util/controlledthread.o util/geocoordinate.o node.o tile.o tilecache.o dbconnection/filedbconnection.o
 db_benchmark := util/mlog.o dbconnection/filedbconnection.o
 test_pubsub := util/pubsub/genericservice.o util/pubsub/servicelist.o
 test_cache := util/mlog.o  util/controlledthread.o
 test_configuration := util/mlog.o util/configuration.o util/pubsub/servicelist.o util/pubsub/genericservice.o
 test_thread := util/mlog.o
-test_rangereporting := util/mlog.o geocoordinate.o node.o
+test_rangereporting := util/mlog.o util/geocoordinate.o node.o
 
 # Directory definitions
 top_builddir := @top_builddir@

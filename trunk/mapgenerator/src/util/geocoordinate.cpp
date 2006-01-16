@@ -10,9 +10,8 @@
 
 #include <ctime>
 #include <cmath>
-#include <set>
 
-namespace mapgeneration
+namespace mapgeneration_util
 {
 	
 	std::ostream&

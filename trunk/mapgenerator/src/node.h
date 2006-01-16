@@ -17,16 +17,16 @@
 	#include "stdint.h"
 #endif
 
-#include <iostream>
 #include <vector>
-#include "geocoordinate.h"
+
 #include "gpspoint.h"
 #include "util/direction.h"
+#include "util/geocoordinate.h"
 #include "util/serializer.h"
 
-
-using namespace mapgeneration_util;
-
+using mapgeneration_util::Direction;
+using mapgeneration_util::GeoCoordinate;
+using mapgeneration_util::Serializer;
 
 namespace mapgeneration
 {

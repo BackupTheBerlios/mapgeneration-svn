@@ -8,10 +8,11 @@
 
 #include<string>
 #include<iostream>
-#include "geocoordinate.h"
 #include "gpspoint.h"
+#include "util/geocoordinate.h"
 
 using namespace mapgeneration;
+using namespace mapgeneration_util;
 using namespace std;
 
 int main()
@@ -157,11 +158,11 @@ int main()
 //	std::cout << senden.bearing_on_great_circle(b, GeoCoordinate::_DEGREE) << std::endl;
 	
 	std::cout << "senden->st_maergen" << std::endl;
-	GeoCoordinate d = b.nearest_geo_coordinate_on_segment_on_great_circle(senden, st_maergen);
+	GeoCoordinate d = b.nearest_geo_coordinate_to_segment_on_great_circle(senden, st_maergen);
 	std::cout << d << std::endl << std::endl;
 
 	std::cout << "st_maergen->senden" << std::endl;
-	GeoCoordinate e = b.nearest_geo_coordinate_on_segment_on_great_circle(st_maergen, senden);
+	GeoCoordinate e = b.nearest_geo_coordinate_to_segment_on_great_circle(st_maergen, senden);
 	std::cout << e << std::endl;
 	
 	return 0;

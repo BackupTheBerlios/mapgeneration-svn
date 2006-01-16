@@ -10,14 +10,13 @@
 #include <exception>
 #include <iostream>
 #include <list>
-//#include "stdint.h"
 
-#include "geocoordinate.h"
+#include "util/geocoordinate.h"
 #include "util/rangereporting/quadtree.h"
 
 using namespace std;
 using namespace rangereporting;
-using namespace mapgeneration;
+using namespace mapgeneration_util;
 
 
 int main(int argc, char* argv[])

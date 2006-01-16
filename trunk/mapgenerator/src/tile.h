@@ -17,13 +17,16 @@
 	#include "stdint.h"
 #endif
 
-#include "geocoordinate.h"
 #include "node.h"
+#include "util/geocoordinate.h"
+#include "util/mlog.h"
 #include "util/serializer.h"
 #include "util/rangereporting/quadtree.h"
 #include "util/rangereporting/segment.h"
 
-using namespace mapgeneration_util;
+using mapgeneration_util::GeoCoordinate;
+using mapgeneration_util::MLog;
+using mapgeneration_util::Serializer;
 using rangereporting::Quadtree;
 using rangereporting::Segment;
 

@@ -13,12 +13,11 @@
 
 #include <vector>
 
-#include "geocoordinate.h"
 #include "tile.h"
-
+#include "util/geocoordinate.h"
 
 using namespace mapgeneration;
-
+using mapgeneration_util::GeoCoordinate;
 
 namespace mapgeneration_gui
 {

@@ -10,11 +10,13 @@
 #define GPSPOINT_H
 
 #include <string>
-#include "geocoordinate.h"
 #include "util/direction.h"
+#include "util/geocoordinate.h"
 #include "util/serializer.h"
 
-using namespace mapgeneration_util;
+using mapgeneration_util::Direction;
+using mapgeneration_util::GeoCoordinate;
+using mapgeneration_util::Serializer;
 
 namespace mapgeneration
 {
