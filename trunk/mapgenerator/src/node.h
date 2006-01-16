@@ -37,15 +37,17 @@ namespace mapgeneration
 	 * This class provides methods to
 	 * <ul>
 	 * <li>merge a GPSPoint with a Node</li>
-	 * <li>get the edge IDs the Node is located on</li>
-	 * <li>test if the Node is located on a specified edge</li>
+	 * <li>add successor nodes (resp. their ids)</li>
+	 * <li>calculate the minimal direction difference between nodes</li>
+	 * <li>merge and split Node::Ids to Node::LocalId and Tile::Id</li>
 	 * <li>...</li>
 	 * </ul>
 	 * 
-	 * The class extends Direction and GeoCoordiante
+	 * The class extends a GeoCoordinate
 	 * 
 	 * @see Direction
 	 * @see GeoCoordiante
+	 * @see Tile
 	 */
 	class Node : public GeoCoordinate {
 
@@ -71,9 +73,9 @@ namespace mapgeneration
 			
 			
 			/**
-			 * @brief Copy constructor dealing a Node.
+			 * @brief Copy constructor dealing a GeoCoordinate.
 			 * 
-			 * @param node the node that will be copied
+			 * @param geo_coordinate the node that will be copied
 			 */
 			Node(const GeoCoordinate& geo_coordinate);
 			
@@ -86,15 +88,31 @@ namespace mapgeneration
 			Node(const GPSPoint& gps_point);
 			
 			
-			void
-			add_direction(double direction);
+			/**
+			 * @brief Adds a direction to this Node.
+			 * 
+			 * @param direction the direction value
+			 */
+//			inline void
+//			add_direction(double direction);
 			
 			
+			/**
+			 * @brief Adds a new successor to this Node.
+			 * 
+			 * @param node_id the node_id of the designated successor
+			 * @param direction the direction value
+			 */
 			void
 			add_next_node(Id node_id, double direction);
 
-				
-			int
+			
+			/**
+			 * @brief Calculates the number of connected nodes to this Node.
+			 * 
+			 * @return the number of connected nodes
+			 */
+			inline int
 			connected_nodes() const;
 			
 			
@@ -128,42 +146,79 @@ namespace mapgeneration
 			is_reachable(Id node_id) const;
 			
 			
+			/**
+			 * @brief Calculates the local node id.
+			 * 
+			 * @param id the id from which the local node id is calculated
+			 * 
+			 * @return the local node id
+			 */
 			static inline Node::LocalId
 			local_id(Id id);
 			
 			
-			double
-			minimal_direction_difference_to(const Direction& direction) const;
-			
-			
-			double
-			minimal_direction_difference_to(const Node& node) const;
-			
-
 			/**
-			 * @brief Merges two gpspoints.
+			 * @brief Merges a GeoCoordinate to this Node.
 			 * 
-			 * Tis method calculates the mean values of the
-			 * latitudes, longitudes, altitudes and directions
-			 * and gives the merged point a new weight (old weight + 1).
+			 * This method adds the GeoCoordinate's values (latitude,
+			 * longitude and altitude) with respect to the weight to this Node.
+			 * Afterwards a new weight (old weight + 1) is assigned.
 			 * 
-			 * @param gps_point the point which will be merged with this node
+			 * @param geo_coordinate the point which will be merged with this node
 			 */
-			void
-			merge(const GPSPoint& gps_point);
+			inline void
+			merge(const GeoCoordinate& geo_coordinate);
 			
 			
+			/**
+			 * @brief Merges the Node::LocalId and Tile::Id to the Node::Id.
+			 * This Node::Id is globally valid and unique.
+			 * 
+			 * @param tile_id the Tile::Id
+			 * @param local_node_id the Node::LocalId
+			 * 
+			 * @return the Node::Id
+			 */
 			static inline Id
 			merge_id_parts(uint32_t tile_id, LocalId local_node_id);
 			
 			
 			/**
+			 * @brief Calculates the minimal direction difference to the given
+			 * Direction object.
+			 * As a node may have several successors, each of them will be
+			 * tested and the minimal difference is returned.
+			 * 
+			 * @param direction the Direction object
+			 * 
+			 * @return the minimal direction difference value
+			 */
+			double
+			minimal_direction_difference_to(const Direction& direction) const;
+			
+			
+			/**
+			 * @brief Calculates the minimal direction difference to the given
+			 * Node object.
+			 * As a node may have several successors, each of them will be
+			 * tested (which result in an exhausting search) and the
+			 * minimal difference is returned.
+			 * 
+			 * @param node the Node object
+			 * 
+			 * @return the minimal direction difference value
+			 */
+			double
+			minimal_direction_difference_to(const Node& node) const;
+			
+
+			/**
 			 * @brief Returns a reference to the vector of next node ids.
 			 * 
 			 * @return Reference to vector of next node ids.
 			 */
-			inline std::vector<Id>&
-			next_node_ids();
+//			inline std::vector<Id>&
+//			next_node_ids();
 			
 			
 			/**
@@ -184,7 +239,7 @@ namespace mapgeneration
 			 * @param node a reference to a Node
 			 * @return (new) this
 			 */
-			Node&
+			inline Node&
 			operator=(const Node& node);
 			
 			
@@ -202,14 +257,31 @@ namespace mapgeneration
 			set_mpi(int mpi);
 			
 			
-			inline void
-			set_weight(int weight);
+			/**
+			 * @brief Set the weight of this Node.
+			 */
+//			inline void
+//			set_weight(int weight);
 			
 			
+			/**
+			 * @brief Splits the Node::Id into Tile::Id and Node::LocalId.
+			 * 
+			 * @param id the Node::Id
+			 * @param tile_id the (returned) Tile::Id
+			 * @param local_id the (returned) Node::LocalId
+			 */
 			static inline void
 			split_id(Id id, uint32_t& tile_id, LocalId& local_id);
 			
 			
+			/**
+			 * @brief Calculates the Tile::Id from a Node::Id.
+			 * 
+			 * @param id the Node::Id
+			 * 
+			 * @return the Tile::Id
+			 */
 			static inline uint32_t
 			tile_id(Id id);
 			
@@ -262,6 +334,20 @@ namespace mapgeneration
 	}
 	
 	
+/*	inline void
+	Node::add_direction(double direction)
+	{
+		_directions.push_back(Direction(direction));
+	}*/
+	
+	
+	inline int
+	Node::connected_nodes() const
+	{
+		return _next_node_ids.size();
+	}
+	
+	
 	inline int
 	Node::get_mpi() const
 	{
@@ -283,6 +369,43 @@ namespace mapgeneration
 	}
 	
 	
+	inline void
+	Node::merge(const GeoCoordinate& geo_coordinate)
+	{
+		double current_weight = static_cast<double>(_weight);
+		double incremented_weight = static_cast<double>(_weight + 1);
+		set_latitude(
+			(get_latitude() * current_weight + geo_coordinate.get_latitude())
+			/ (incremented_weight));
+		set_longitude(
+			(get_longitude() * current_weight + geo_coordinate.get_longitude())
+			/ (incremented_weight));
+		set_altitude(
+			(get_altitude() * current_weight + geo_coordinate.get_altitude())
+			/ (incremented_weight));
+
+/*		double old_direction = get_direction();
+		double merge_direction = gps_point.get_direction();
+		double difference = merge_direction - old_direction;			
+
+		if (difference > PI) merge_direction -= 2 * PI;
+		else if (difference < -PI) old_direction -= 2 * PI;
+
+		if ((old_direction < 0) || (merge_direction < 0))
+		{
+			old_direction += 2 * PI;
+			merge_direction += 2 * PI;
+		}
+
+		double new_direction = (old_direction * (double)_weight + merge_direction) / (_weight + 1);
+		if (new_direction >= 2 * PI) new_direction -= 2 * PI;
+		else if (new_direction < 0) new_direction += 2 * PI;
+		set_direction(new_direction);*/
+
+		++_weight;
+	}
+	
+	
 	inline Node::Id
 	Node::merge_id_parts(uint32_t tile_id, LocalId local_id)
 	{
@@ -290,11 +413,11 @@ namespace mapgeneration
 	}
 	
 	
-	inline std::vector<Node::Id>&
+/*	inline std::vector<Node::Id>&
 	Node::next_node_ids()
 	{
 		return _next_node_ids;
-	}
+	}*/
 			
 			
 	inline const std::vector<Node::Id>&
@@ -304,6 +427,18 @@ namespace mapgeneration
 	}
 	
 	
+	inline Node&
+	Node::operator=(const Node& node)
+	{
+		GeoCoordinate::operator=(node);
+		_directions = node._directions;
+		_next_node_ids = node._next_node_ids;
+		_weight = node._weight;
+		
+		return *this;
+	}
+
+
 	inline void
 	Node::serialize(std::ostream& o_stream) const
 	{
@@ -321,11 +456,11 @@ namespace mapgeneration
 	}
 	
 	
-	inline void
+/*	inline void
 	Node::set_weight(int weight)
 	{
 		_weight = weight;
-	}
+	}*/
 	
 	
 	inline void

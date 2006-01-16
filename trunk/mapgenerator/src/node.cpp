@@ -45,13 +45,6 @@ namespace mapgeneration
 	
 	
 	void
-	Node::add_direction(double direction)
-	{
-		_directions.push_back(Direction(direction));
-	}
-	
-	
-	void
 	Node::add_next_node(Id node_id, double direction)
 	{
 		std::vector<Id>::iterator iter = _next_node_ids.begin();
@@ -63,42 +56,6 @@ namespace mapgeneration
 			_next_node_ids.push_back(node_id);
 			_directions.push_back(Direction(direction));
 		}
-	}
-	
-	
-	int
-	Node::connected_nodes() const
-	{
-		return _next_node_ids.size();
-	}
-	
-	
-	void
-	Node::merge(const GPSPoint& gps_point)
-	{
-		set_latitude((get_latitude() * (double)_weight + gps_point.get_latitude()) / (_weight +1));
-		set_longitude((get_longitude() * (double)_weight + gps_point.get_longitude()) / (_weight +1));
-		set_altitude((get_altitude() * (double)_weight + gps_point.get_altitude()) / (_weight +1));
-
-/*		double old_direction = get_direction();
-		double merge_direction = gps_point.get_direction();
-		double difference = merge_direction - old_direction;			
-
-		if (difference > PI) merge_direction -= 2 * PI;
-		else if (difference < -PI) old_direction -= 2 * PI;
-
-		if ((old_direction < 0) || (merge_direction < 0))
-		{
-			old_direction += 2 * PI;
-			merge_direction += 2 * PI;
-		}
-
-		double new_direction = (old_direction * (double)_weight + merge_direction) / (_weight + 1);
-		if (new_direction >= 2 * PI) new_direction -= 2 * PI;
-		else if (new_direction < 0) new_direction += 2 * PI;
-		set_direction(new_direction);*/
-
-		++_weight;
 	}
 	
 	
@@ -162,17 +119,4 @@ namespace mapgeneration
 		return true;
 	}
 	
-	
-	Node&
-	Node::operator=(const Node& node)
-	{
-		GeoCoordinate::operator=(node);
-		_directions = node._directions;
-		_next_node_ids = node._next_node_ids;
-		_weight = node._weight;
-		
-		return *this;
-	}
-
-
 }
