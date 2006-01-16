@@ -551,24 +551,22 @@ namespace mapgeneration
 		rangereporting::Rectangle<Node> query_rectangle;
 		query_rectangle.set_corners(llc, urc);
 		
-		std::vector<Node::LocalId> temp_results;
+		std::vector<D_IndexType> temp_results;
 		_quadtree.range_query(query_rectangle, temp_results);
-//		std::cout << "\t\t" << temp_results.size() << " TEMP CLUSTER NODES FOUND!" << std::endl;
 		// done.
 		
 		// compose Node::Ids, compare distance and angles...
 		out_query_results.clear();
 		
-		std::vector<Node::LocalId>::iterator iter = temp_results.begin();
+		std::vector<D_IndexType>::iterator iter = temp_results.begin();
 		while (iter != temp_results.end())
 		{
-			bool erased = false;
-			const Node& the_node = node(*iter);
-//			std::cout << "\t\t\t" << *iter << ": "
-//				<< the_node.distance_approximated(in_gps_point) << "m, "
-//				<< the_node.minimal_direction_difference_to(in_gps_point)
-//				<< "rad." << std::endl;
+			// downcast: needed when D_IndexType is 64bit long, but
+			// Node::LocalId only 32bit
+			Node::LocalId the_node_local_id = static_cast<Node::LocalId>(*iter);
+			const Node& the_node = node(the_node_local_id);
 			
+			bool erased = false;
 			if ( !within_search_distance(in_gps_point, the_node, in_search_radius) )
 			{
 				iter = temp_results.erase(iter);
@@ -584,21 +582,13 @@ namespace mapgeneration
 			
 			if ( !erased )
 			{
-				Node::Id node_id = Node::merge_id_parts(get_id(), *iter);
+				Node::Id node_id
+					= Node::merge_id_parts(get_id(), the_node_local_id);
 				out_query_results.push_back(node_id);
 				
 				++iter;
 			}
 		}
-		
-//		std::vector<Node::Id>::iterator iter2 = out_query_results.begin();
-//		for(; iter2 != out_query_results.end(); ++iter2)
-//		{
-//			const Node& the_node = node(*iter2);
-//			std::cout << "\t\t\t\t" << *iter2 << ": "
-//				<< the_node.distance_approximated(in_gps_point) << std::endl;
-//		}
-		
 	}
 	
 	
@@ -648,17 +638,21 @@ namespace mapgeneration
 		rangereporting::Trapezoid<Node> query_trapezoid(
 			corner_1, corner_2, corner_3, corner_4);
 		
-		std::vector<Node::LocalId> temp_results;
+		std::vector<D_IndexType> temp_results;
 		_quadtree.range_query(query_trapezoid, temp_results);
 		// done.
 		
 		// compose Node::Ids, compare distance and angles...
 		out_query_results.clear();
 
-		std::vector<Node::LocalId>::iterator iter = temp_results.begin();
+		std::vector<D_IndexType>::iterator iter = temp_results.begin();
 		while (iter != temp_results.end())
 		{
-			const Node& the_node = node(*iter);
+			// downcast: needed when D_IndexType is 64bit long, but
+			// Node::LocalId only 32bit
+			Node::LocalId the_node_local_id = static_cast<Node::LocalId>(*iter);
+			const Node& the_node = node(the_node_local_id);
+			
 			mapgeneration_util::Direction segment_direction(p2p_bearing);
 			double min_direction_difference
 				= the_node.minimal_direction_difference_to(segment_direction);
@@ -668,7 +662,8 @@ namespace mapgeneration
 				iter = temp_results.erase(iter);
 			} else
 			{
-				Node::Id node_id = Node::merge_id_parts(get_id(), *iter);
+				Node::Id node_id
+					= Node::merge_id_parts(get_id(), the_node_local_id);
 				out_query_results.push_back(node_id);
 				
 				++iter;
