@@ -12,8 +12,8 @@ objects := mngconverter.o mngconvertermain.o
 	
 # Directory definitions
 top_builddir := @top_builddir@
-bindir := @top_builddir@bin
-srcdir := @top_builddir@src
+bindir := @top_builddir@bin/
+srcdir := @top_builddir@src/
 mngbindir = $(bindir)/util/mngconverter/
 mngsrcdir = $(srcdir)/util/mngconverter/
 
@@ -37,11 +37,11 @@ vpath %.cpp $(mngsrcdir)
 
 # Rules
 %.o : %.cpp
-	@top_builddir@libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) $< -o $@
+	@top_builddir@/libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) $< -o $@
 
 # Compiles the main executable
 mng_converter: $(objects)
-	@top_builddir@libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) -o mng_converter $(objects)
+	@top_builddir@/libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) -o mng_converter $(objects)
 
 # Removes the binaries
 .PHONY: clean
