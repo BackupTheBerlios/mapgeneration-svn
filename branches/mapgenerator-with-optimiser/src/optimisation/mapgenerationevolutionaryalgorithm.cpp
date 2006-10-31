@@ -60,6 +60,14 @@ namespace mapgeneration_opt
 				file_name += "/";
 				file_name += direntp->d_name;
 				
+//				ifstream input_file(filename.c_str());
+//				std::string input_string;
+//				while (input_file && input_file.good() && !input_file.eof())
+//				{
+//					input_string.append(input_file.get());
+//				}
+//				
+//				TraceFilter filter;
 				FilteredTrace filtered_trace;
 				
 				std::ifstream in_file_stream(file_name.c_str());
