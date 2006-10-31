@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<mgg_configuration>
+
+	<accepted_licence type="string">no</accepted_licence>
+
+	<db>
+		<type type="string">file</type>
+<!--		<type type="string">odbc</type> -->
+		<file>
+			<directory type="string">filedb</directory>
+		</file>
+		<odbc>
+			<dns type="string">MapGeneration</dns>
+			<user type="string">mapgeneration</user>
+			<password type="string">mg</password>
+		</odbc>
+	</db>
+</mgg_configuration>
+

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- Test configuration.
+Allowed types:
+- double
+- int
+-->
+<mapgenerator_configuration>
+	<traceprocessor>
+		<search_radius type="double">10.457</search_radius>
+		<threshold_tile_border type="double">30.00</threshold_tile_border>
+	</traceprocessor>
+	<test1>
+		<reichweite type="double">209</reichweite>
+		<hoehe type="string">stringhoehe</hoehe>
+		<breite type="double">35</breite>
+	</test1>
+	<test2>
+		<geschwindigkeit>
+			<halloTest type="int">80</halloTest>
+			<endl type="double">80.93</endl>
+		</geschwindigkeit>
+	</test2>
+
+</mapgenerator_configuration>

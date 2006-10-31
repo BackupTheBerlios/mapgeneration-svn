@@ -1,0 +1,54 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+# Makefile for the MapGeneratorGUI
+
+# Objectfiles to use for the MapAndGiude converter
+objects := prtconverter.o prtconvertermain.o
+	
+# Directory definitions
+top_builddir := @top_builddir@
+bindir := @top_builddir@bin
+srcdir := @top_builddir@src
+prtbindir = $(bindir)/util/prtconverter/
+prtsrcdir = $(srcdir)/util/prtconverter/
+
+# Variables from autoconf
+CXX = @CXX@
+CPPFLAGS = -I$(srcdir) -I$(top_builddir) @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+
+# List of full names for the object, dependency files
+deps := $(objects:%.o=%.d)
+
+
+#VPaths
+vpath %.h $(prtsrcdir)
+vpath %.cpp $(prtsrcdir)
+
+
+# Rules
+%.o : %.cpp
+	@top_builddir@libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) $< -o $@
+
+# Compiles the main executable
+prt_converter: $(objects)
+	@top_builddir@libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) -o prt_converter $(objects)
+
+# Removes the binaries
+.PHONY: clean
+clean:
+	-rm -f *.o *.lo *.d ./prt_converter@EXEEXT@
+	-rm -f -r .libs
+	-rm -f $(objects:%=$(prtbindir)%)
+
+-include *.d
+

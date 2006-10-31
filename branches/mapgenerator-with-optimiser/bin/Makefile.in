@@ -1,0 +1,126 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+# Makefile for the MapGenerator
+
+# Objectfiles to use for the main executable
+objects := util/configuration.o util/controlledthread.o \
+	util/direction.o util/geocoordinate.o util/mlog.o \
+	util/pubsub/genericservice.o util/pubsub/servicelist.o \
+	\
+	optimisation/individual.o optimisation/mapgenerationindividual.o \
+	optimisation/randomnumbergenerators.o \
+	optimisation/randomnumberfactory.o \
+	\
+	dbconnection/filedbconnection.o \
+	gpspoint.o node.o edge.o tile.o tilecache.o filteredtrace.o \
+	tilemanager.o traceconnection.o traceserver.o tracefilter.o \
+	\
+	traceprocessor_configuration.o traceprocessor_pathentry.o\
+	traceprocessor_protocol.o traceprocessor_virtualnode.o\
+	traceprocessor.o \
+	\
+	executionmanager.o main.o
+# removed edge.o, tracelog.o, tracelogwriter.o
+
+
+ifeq (@have_odbc@, yes)
+	objects := $(objects) dbconnection/odbcdbconnection.o
+endif
+
+
+# Directory definitions
+top_builddir := @top_builddir@/
+bindir := @top_builddir@/bin/
+srcdir := @top_builddir@/src/
+
+# Variables from autoconf
+CXX = @CXX@
+CPPFLAGS = -I$(srcdir) -I$(top_builddir) @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+
+# List of full names for the object and dependency files
+deps := $(objects:%.o=%.d)
+
+#VPaths
+vpath %.h $(srcdir)
+vpath %.cpp $(srcdir)
+
+
+# Rules
+%.o : %.cpp
+	@top_builddir@/libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) $< -o $@
+
+
+# Compiles the main executable
+main: $(objects)
+	@top_builddir@/libtool --mode=link $(CXX) @ODBC32_DLL@ $(LDFLAGS) $(LIBS) -o main $(objects)
+
+
+# Compiles the gui
+.PHONY: gui
+gui:
+	$(MAKE) -C ./gpstrans
+	$(MAKE) -C ./gui
+
+# Compiles the MapAndGuide converter
+.PHONY: mng
+mng:
+	$(MAKE) -C ./util/mngconverter
+
+# Compiles the PeterRoosenTracks converter
+.PHONY: prt
+prt:
+	$(MAKE) -C ./util/prtconverter
+
+# Compiles the Optimiser
+.PHONY: opt
+opt:
+	$(MAKE) -C ./optimisation
+
+# Compiles the serializers
+.PHONY: serializers
+serializers:
+	$(MAKE) -C ./serializers
+
+# Compiles the tests
+.PHONY: tests
+tests:
+	$(MAKE) -C ./tests all
+
+
+# Compiles the main executable and the tests
+.PHONY: all
+all:
+	$(MAKE) main
+ifeq (@enable_gui@, yes)
+	$(MAKE) gui 
+endif
+	$(MAKE) tests
+
+
+# Removes the binaries
+.PHONY: clean
+clean:
+	$(MAKE) -C ./tests clean
+	$(MAKE) -C ./gui clean
+	$(MAKE) -C ./gpstrans clean
+	$(MAKE) -C ./optimisation clean
+	$(MAKE) -C ./util/mngconverter clean
+	$(MAKE) -C ./util/prtconverter clean
+	-rm -f *.o *.lo *.d ./main@EXEEXT@ ./util/*.o ./util/*.lo ./util/*.d
+	-rm -f ./util/pubsub/*.o ./util/pubsub/*.lo ./util/pubsub/*.d
+	-rm -f ./dbconnection/*.o ./dbconnection/*.lo ./dbconnection/*.d
+	-rm -f -r .libs
+	-rm -f -r ./util/.libs
+	-rm -f -r ./util/pubsub/.libs
+
+-include $(deps)

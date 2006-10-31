@@ -1,0 +1,46 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+# Makefile for the gps transformation library 
+
+
+# Directory definitions
+bindir := @top_builddir@/bin/
+srcdir := @top_builddir@/src/
+
+
+# Variables from autoconf
+CXX = @CXX@
+CPPFLAGS = -I$(srcdir) @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+
+# List of full names for the object, dependency, xrc and image files
+deps := $(objects:%.o=%.d)
+fullmainobjects := $(mainobjects:%=$(bindir)/%)
+fullxrcs := $(xrcs:%=$(guisrcxrcdir)%)
+fullimages := $(images:%=$(guisrcimagesdir)%)
+
+
+#VPaths
+vpath %.h $(guisrcdir)
+vpath %.cpp $(guisrcdir)
+
+
+# Compiles the gps transformation library
+gpstrans:
+	@CC@ -c $(srcdir)/gpstrans/gpsproj.c
+	@CC@ -c $(srcdir)/gpstrans/gpsmath.c
+
+
+# Removes the binaries
+.PHONY: clean
+clean:
+	-rm -f *.o

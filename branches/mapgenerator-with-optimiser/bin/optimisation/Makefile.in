@@ -1,0 +1,74 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+# Makefile for the Optimiser
+
+# Objectfiles
+objects := randomnumbergenerators.o randomnumberfactory.o individual.o \
+	evolutionaryalgorithm.o evolutionaryalgorithmfactory.o \
+	mapgenerationindividual.o mapgenerationevolutionaryalgorithm.o
+
+main_object := main.o
+extractor_object := extractor.o
+
+# Objectfiles for MapGenerator
+mainobjects := util/configuration.o util/controlledthread.o util/direction.o \
+	util/geocoordinate.o util/mlog.o util/pubsub/genericservice.o \
+	util/pubsub/servicelist.o \
+	dbconnection/filedbconnection.o \
+	executionmanager.o filteredtrace.o gpspoint.o node.o tile.o \
+	tilecache.o tilemanager.o traceconnection.o tracefilter.o traceserver.o \
+	traceprocessor_configuration.o traceprocessor_pathentry.o \
+	traceprocessor_protocol.o traceprocessor_virtualnode.o traceprocessor.o
+
+# Directory definitions
+top_builddir := @top_builddir@/
+bindir := @top_builddir@/bin/
+srcdir := @top_builddir@/src/
+optbindir = $(bindir)/optimisation/
+optsrcdir = $(srcdir)/optimisation/
+
+# Variables from autoconf
+CXX = @CXX@
+CPPFLAGS = -I$(srcdir) -I$(top_builddir) @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+
+# List of full names for the object, dependency files
+deps := $(objects:%.o=%.d)
+fullmainobjects := $(mainobjects:%=$(bindir)/%)
+
+#VPaths
+vpath %.h $(optsrcdir)
+vpath %.cpp $(optsrcdir)
+
+
+# Rules
+%.o : %.cpp
+	@top_builddir@/libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) $< -o $@
+
+
+# Compiles the main executable
+optimiser: $(main_object) $(objects)
+	$(MAKE) -C $(bindir) $(mainobjects)
+	@top_builddir@/libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) -o optimiser $(objects) $(fullmainobjects) $(main_object)
+
+extractor: $(extractor_object) $(objects)
+	$(MAKE) -C $(bindir) $(mainobjects)
+	@top_builddir@/libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) -o extractor $(objects) $(fullmainobjects) $(extractor_object)
+
+# Removes the binaries
+.PHONY: clean
+clean:
+	-rm -f *.o *.lo *.d ./optimiser@EXEEXT@
+	-rm -f -r .libs
+	-rm -f $(objects:%=$(optbindir)%)
+
+-include *.d

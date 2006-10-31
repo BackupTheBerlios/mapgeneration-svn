@@ -1,0 +1,54 @@
+#*******************************************************************************
+# MapGeneration Project - Creating a road map for the world.                   *
+#                                                                              *
+# Copyright (C) 2004-2005 by Rene Bruentrup and Bjoern Scholz                  *
+# Licensed under the Academic Free License version 2.1                         *
+#******************************************************************************/
+
+# Makefile for the MapGeneratorGUI
+
+# Objectfiles to use for the MapAndGiude converter
+objects := mngconverter.o mngconvertermain.o
+	
+# Directory definitions
+top_builddir := @top_builddir@
+bindir := @top_builddir@bin
+srcdir := @top_builddir@src
+mngbindir = $(bindir)/util/mngconverter/
+mngsrcdir = $(srcdir)/util/mngconverter/
+
+# Variables from autoconf
+CXX = @CXX@
+CPPFLAGS = -I$(srcdir) -I$(top_builddir) @CPPFLAGS@
+CXXFLAGS = @CXXFLAGS@
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+
+# List of full names for the object, dependency files
+deps := $(objects:%.o=%.d)
+
+
+#VPaths
+vpath %.h $(mngsrcdir)
+vpath %.cpp $(mngsrcdir)
+
+
+# Rules
+%.o : %.cpp
+	@top_builddir@libtool --mode=compile $(CXX) -c -MMD $(CPPFLAGS) $(CXXFLAGS) $(DEFS) $< -o $@
+
+# Compiles the main executable
+mng_converter: $(objects)
+	@top_builddir@libtool --mode=link $(CXX) $(LDFLAGS) $(LIBS) -o mng_converter $(objects)
+
+# Removes the binaries
+.PHONY: clean
+clean:
+	-rm -f *.o *.lo *.d ./mng_converter@EXEEXT@
+	-rm -f -r .libs
+	-rm -f $(objects:%=$(mngbindir)%)
+
+-include *.d
+
