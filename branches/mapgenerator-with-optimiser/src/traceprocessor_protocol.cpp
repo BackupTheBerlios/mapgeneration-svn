@@ -73,9 +73,9 @@ namespace mapgeneration
 			
 			_used_tiles.clear();
 			
-			int used_tiles_size;
+			uint64_t used_tiles_size;
 			Serializer::deserialize(i_stream, used_tiles_size);
-			for (int i = 0; i < used_tiles_size; ++i)
+			for (uint64_t i = 0; i < used_tiles_size; ++i)
 			{
 				Tile* tile = new Tile;
 				Serializer::deserialize(i_stream, *tile);
@@ -141,7 +141,7 @@ namespace mapgeneration
 			D_Path::iterator path_iter = _path.begin();
 			D_Path::iterator path_iter_end = _path.end();
 			
-			int index = 0;
+//			int index = 0;
 			
 			for (; path_iter != path_iter_end; ++path_iter)
 			{
@@ -185,7 +185,7 @@ namespace mapgeneration
 //		std::cout << _path << std::endl;
 //		std::cout << "Protocol::serialize: _path.size() = " << _path.size() << std::endl;
 		
-		int used_tiles_size = _used_tile_ids.size();
+		uint64_t used_tiles_size = _used_tile_ids.size();
 		Serializer::serialize(o_stream, used_tiles_size);
 		
 		std::set<Tile::Id>::const_iterator used_tile_ids_iter
@@ -203,7 +203,7 @@ namespace mapgeneration
 			++used_tile_ids_iter;
 		}
 		
-		int index = 0;
+		int64_t index = 0;
 		D_Path::const_iterator iter = _path.begin();
 		D_Path::const_iterator iter_end = _path.end();
 		while (iter != iter_end)

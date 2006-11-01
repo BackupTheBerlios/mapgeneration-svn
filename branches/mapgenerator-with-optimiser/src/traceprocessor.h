@@ -195,7 +195,7 @@ namespace mapgeneration
 					PathEntry*	_backward_connection;
 					Direction	_direction;
 					bool		_do_not_use_connection;
-					int			_equal_state_successors_count;
+					uint32_t	_equal_state_successors_count;
 					bool		_interpolated_nodes_in_between;
 					bool		_is_beginning;
 					bool		_is_destination;
@@ -205,8 +205,8 @@ namespace mapgeneration
 					double		_position_on_trace; // only needed for virtual entries!!!
 					double		_scan_position;
 					double		_score;
-					mutable int			_serializer_id;
-					mutable int			_serializer_connection_id;
+					mutable int64_t			_serializer_id;
+					mutable int64_t			_serializer_connection_id;
 					State		_state;
 					Node::Id	_virtual_node_id;
 					

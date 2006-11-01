@@ -337,7 +337,7 @@ namespace mapgeneration_util
 	inline void
 	Serializer::deserialize(std::istream& i_stream, std::string& str)
 	{
-		int string_size;
+		uint64_t string_size;
 		Serializer::deserialize(i_stream, string_size);
 		
 		char* buffer = new char[string_size];
@@ -354,10 +354,10 @@ namespace mapgeneration_util
 	{
 		list.clear();
 		
-		int list_size;
+		uint64_t list_size;
 		Serializer::deserialize(i_stream, list_size);
 
-		for (int i=0; i<list_size; ++i)
+		for (uint64_t i=0; i<list_size; ++i)
 		{
 			T_Elem elem;
 			Serializer::deserialize(i_stream, elem);
@@ -373,10 +373,10 @@ namespace mapgeneration_util
 	{
 		container.clear();
 		
-		int container_size;
+		uint64_t container_size;
 		Serializer::deserialize(i_stream, container_size);
 
-		for (int i=0; i<container_size; ++i)
+		for (uint64_t i=0; i<container_size; ++i)
 		{
 			T_Elem elem;
 			Serializer::deserialize(i_stream, elem);
@@ -392,10 +392,10 @@ namespace mapgeneration_util
 	{
 		container.clear();
 		
-		int container_size;
+		uint64_t container_size;
 		Serializer::deserialize(i_stream, container_size);
 
-		for (int i=0; i<container_size; ++i)
+		for (uint64_t i=0; i<container_size; ++i)
 		{
 			T_Key key;
 			Serializer::deserialize(i_stream, key);
@@ -539,7 +539,7 @@ namespace mapgeneration_util
 	Serializer::serialize(std::ostream& o_stream, const std::string& str)
 	{
 		/** @todo Casting from size_t to int might be dangerous... */
-		int string_size = str.size();
+		uint64_t string_size = str.size();
 		Serializer::serialize(o_stream, string_size);
 		
 		const char* buffer = str.c_str();
@@ -551,7 +551,7 @@ namespace mapgeneration_util
 	void
 	Serializer::serialize(std::ostream& o_stream, const std::list<T_Elem>& list)
 	{
-		int list_size = list.size();
+		uint64_t list_size = list.size();
 		Serializer::serialize(o_stream, list_size);
 		
 		typename std::list<T_Elem>::const_iterator iter = list.begin();
@@ -567,7 +567,7 @@ namespace mapgeneration_util
 	void
 	Serializer::serialize(std::ostream& o_stream, const std::vector<T_Elem>& vec)
 	{
-		int vector_size = vec.size();
+		uint64_t vector_size = vec.size();
 		Serializer::serialize(o_stream, vector_size);
 		
 		typename std::vector<T_Elem>::const_iterator iter = vec.begin();
@@ -584,7 +584,7 @@ namespace mapgeneration_util
 	Serializer::serialize(std::ostream& o_stream,
 		const std::multimap<T_Key, T_Elem, T_Comp>& container)
 	{
-		int container_size = container.size();
+		uint64_t container_size = container.size();
 		Serializer::serialize(o_stream, container_size);
 		
 		typename std::multimap<T_Key, T_Elem, T_Comp>::const_iterator iter

@@ -1819,7 +1819,7 @@ namespace mapgeneration
 			from_node.add_successor(to_node_id, direction);
 		}
 		
-		//Add predecessor.
+		// Add predecessor.
 		if (true)
 		{
 			TileCache::Pointer to_node_tile
@@ -6313,6 +6313,27 @@ namespace mapgeneration
 	TraceProcessor::smooth_connections(
 		const std::multimap<Node::Id, CrossingItem>& crossings_mapper)
 	{
+		std::multimap<Node::Id, PathEntry*> node_ids_entries_mapper;
+		if (true)
+		{
+			D_Path::const_iterator iter = _path.begin();
+			D_Path::const_iterator iter_end = _path.end();
+			while ( (iter != iter_end) && (!iter->second->_is_beginning) )
+				++iter;
+			
+			if (iter == iter_end)
+				assert(crossings_mapper.empty());
+			
+			PathEntry* entry = iter->second;
+			while (entry != 0)
+			{
+				node_ids_entries_mapper.insert(
+					std::make_pair(entry->_node_id, entry) );
+				
+				entry = entry->_connection;
+			}
+		}
+		
 		std::set<Node::Id> nodes_predecessor_moved;
 		std::set<Node::Id> nodes_successors_moved;
 		
@@ -6359,20 +6380,48 @@ namespace mapgeneration
 								assert(node.has_successor(next_entry->_node_id));
 							#endif
 							
-							disconnect_nodes(previous_entry->_node_id,
-								entry->_node_id);
-							connect_nodes(previous_entry->_node_id,
-								next_entry->_node_id);
+							if (previous_entry->_node_id != next_entry->_node_id)
+							{
+								bool connection_used_multiply_times = false;
+								
+								typedef std::multimap<Node::Id, PathEntry*>::iterator FindIter;
+								std::pair<FindIter, FindIter> find_iters
+									= node_ids_entries_mapper.equal_range(previous_entry->_node_id);
+								while (find_iters.first != find_iters.second)
+								{
+									PathEntry* test_entry = find_iters.first->second;
+									if ( (test_entry != previous_entry)
+										&& (test_entry->_connection != 0)
+										&& (test_entry->_connection->_node_id == entry->_node_id) )
+									{
+										connection_used_multiply_times = true;
+										find_iters.first = find_iters.second;
+									} else
+									{
+										++find_iters.first;
+									}
+								}
+								
+								if (!connection_used_multiply_times)
+								{
+									disconnect_nodes(previous_entry->_node_id,
+										entry->_node_id);
+								}
+								
+								connect_nodes(previous_entry->_node_id,
+									next_entry->_node_id);
+								
+								previous_entry->_connection = next_entry;
+								next_entry->_backward_connection = previous_entry;
+								
+		//						create_extra_nodes_at_connection(
+		//							previous_entry->_node_id,
+		//							node.successors().back().get_next_node_id(),
+		//							_MIN_STEP_DISTANCE_M);
+								
+								nodes_predecessor_moved.insert(entry->_node_id);
+							}
 							
-							previous_entry->_connection = next_entry;
-							next_entry->_backward_connection = previous_entry;
-							
-	//						create_extra_nodes_at_connection(
-	//							previous_entry->_node_id,
-	//							node.successors().back().get_next_node_id(),
-	//							_MIN_STEP_DISTANCE_M);
-							
-							nodes_predecessor_moved.insert(entry->_node_id);
 						}
 					} // end if ( ... && ... && ... && ... && ... )
 				} // end if (find_iter == nodes_predecessor_moved.end())
@@ -6412,20 +6461,48 @@ namespace mapgeneration
 								assert(node.has_successor(next_entry->_node_id));
 							#endif
 							
-							disconnect_nodes(entry->_node_id,
-								next_entry->_node_id);
-							connect_nodes(previous_entry->_node_id,
-								next_entry->_node_id);
+							if (previous_entry->_node_id != next_entry->_node_id)
+							{
+								bool connection_used_multiply_times = false;
+								
+								typedef std::multimap<Node::Id, PathEntry*>::iterator FindIter;
+								std::pair<FindIter, FindIter> find_iters
+									= node_ids_entries_mapper.equal_range(entry->_node_id);
+								while (find_iters.first != find_iters.second)
+								{
+									PathEntry* test_entry = find_iters.first->second;
+									if ( (test_entry != previous_entry)
+										&& (test_entry->_connection != 0)
+										&& (test_entry->_connection->_node_id == next_entry->_node_id) )
+									{
+										connection_used_multiply_times = true;
+										find_iters.first = find_iters.second;
+									} else
+									{
+										++find_iters.first;
+									}
+								}
+								
+								if (!connection_used_multiply_times)
+								{
+									disconnect_nodes(entry->_node_id,
+										next_entry->_node_id);
+								}
+								
+								connect_nodes(previous_entry->_node_id,
+									next_entry->_node_id);
+								
+								previous_entry->_connection = next_entry;
+								next_entry->_backward_connection = previous_entry;
+								
+		//						create_extra_nodes_at_connection(
+		//							previous_entry->_node_id,
+		//							node.successors().back().get_next_node_id(),
+		//							_MIN_STEP_DISTANCE_M);
+								
+								nodes_successors_moved.insert(entry->_node_id);
+							}
 							
-							previous_entry->_connection = next_entry;
-							next_entry->_backward_connection = previous_entry;
-							
-	//						create_extra_nodes_at_connection(
-	//							previous_entry->_node_id,
-	//							node.successors().back().get_next_node_id(),
-	//							_MIN_STEP_DISTANCE_M);
-							
-							nodes_successors_moved.insert(entry->_node_id);
 						}
 					} // end if ( ... && ... && ... && ... && ... )
 				} // end if (find_iter == nodes_successors_moved.end())
